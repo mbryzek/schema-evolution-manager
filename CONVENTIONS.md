@@ -1,21 +1,19 @@
-Documents Gilt Groupe conventions for schema:
+# Documents Gilt Groupe conventions for schema:
 
   * Use bigint and bigserial everywhere, in place of int/bigint
     (e.g. we prefer longs for all Id columns)
 
   * When creating constraints, name them according to:
 
-     - primary key: Do not name. Postgresql will generate a good name
-       automatically.
+     - primary key: Do not name. Postgresql will generate a good name automatically.
 
-     - not null: Do not name. Constraint name is never needed in table
-       administration.
+     - not null: Do not name. Constraint name is never needed in table administration.
 
      - otherwise, names should follow <table_name>_<column_name>_<suffix> where suffix is:
 
-        check: ck
-        unique: un
-        foreign key: fk
+        - check: ck
+        - unique: un
+        - foreign key: fk
 
   * If you are creating a column that will store a guid, make sure its
     datatype is UUID. This will give you automated validation of the
@@ -26,9 +24,7 @@ Documents Gilt Groupe conventions for schema:
 
       - table names should be plural - users and not user
       - every table should have a primary key named 'id'
-      - A foreign key to another table should follow convention from
-        rails, e.g. 'user_id' column implies that it references a
-        table called 'users' with primary key 'id'
+      - A foreign key to another table should follow convention from rails, e.g. 'user_id' column implies that it references a table called 'users' with primary key 'id'
 
   * Use the provided plsql API (see scripts/20130318-105456.sql) to
     add audit columns for tracking created_at, created_by_guid, updated_at,
@@ -46,30 +42,30 @@ Documents Gilt Groupe conventions for schema:
     comment actually adds any information - if the column comment itself is
     useless, better to just not create.
 
-Example:
+# Example:
 
-  create table sites (
-    id             bigserial primary key
-  );
+    create table sites (
+      id             bigserial primary key
+    );
 
-  select schema_evolution_manager.create_basic_audit_data('public', 'sites');
-  create unique index examples_lower_email_address_not_deleted_un on examples(lower(email_address)) where deleted_at is null;
+    select schema_evolution_manager.create_basic_audit_data('public', 'sites');
+    create unique index examples_lower_email_address_not_deleted_un on examples(lower(email_address)) where deleted_at is null;
 
-  comment on table sites is '
-    A site is a general concept that ...
-  ';
+    comment on table sites is '
+      A site is a general concept that ...
+    ';
 
-  create table examples (
-    id             bigserial primary key,
-    email_address  varchar(300) not null,
-    site_id        bigint not null constraint examples_site_id_fk references sites(id)
-  );
+    create table examples (
+      id             bigserial primary key,
+      email_address  varchar(300) not null,
+      site_id        bigint not null constraint examples_site_id_fk references sites(id)
+    );
 
-  select schema_evolution_manager.create_basic_audit_data('public', 'examples');
-  create unique index examples_lower_email_address_not_deleted_un on examples(lower(email_address)) where deleted_at is null;
+    select schema_evolution_manager.create_basic_audit_data('public', 'examples');
+    create unique index examples_lower_email_address_not_deleted_un on examples(lower(email_address)) where deleted_at is null;
 
-  comment on table examples is '
-    Stores information on all of our registered examples.
-  ';
+    comment on table examples is '
+      Stores information on all of our registered examples.
+    ';
 
-\d examples -- to see columns that are actually created.
+    \d examples -- to see columns that are actually created.
