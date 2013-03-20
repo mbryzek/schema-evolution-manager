@@ -138,7 +138,6 @@ manage and release schema changes independent of application changes:
     cd /tmp/sample
     echo "create table tmp_table (id integer)" > new.sql
     sem-add ./new.sql
-    git commit -m "Adding a new tmp table to test sem process" scripts
 
 ### Applying changes to your local database:
 
@@ -146,6 +145,9 @@ manage and release schema changes independent of application changes:
     createdb sample_development
     sem-apply --host localhost --name sample_development --user postgres
 
+### When you are happy with your change, commit:
+
+    git commit -m "Adding a new tmp table to test sem process" scripts
 
 ## Publishing a Release
 
