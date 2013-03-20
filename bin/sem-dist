@@ -1,0 +1,75 @@
+#!/usr/bin/env ruby
+# == Creates a tarball containing SQL scripts that might need to be
+#    applied to a specific postgresql database. This tarball can then
+#    be uploaded, unpacked, and schema changes applied using
+#    software-evolution-manager scripts
+#
+# == Usage
+#  sem-dist [--tag <tag>]
+#
+#    tag
+#      Optional tag - if specified, we create a distirbution file for this tag.
+#      If not specified, we create a new tag.
+#
+# == Example
+#  sem-dist
+#    Creates a new tag and generates the distribution file
+#
+#  sem-dist --tag 0.0.1
+#    Creates a distribution file for the specified tag
+#
+
+load File.join(File.dirname(__FILE__), 'sem-config')
+Library.set_verbose(true)
+
+args = Args.from_stdin(:optional => ['tag'])
+
+if args.tag
+  tag = args.tag
+else
+  if latest = Library.latest_tag
+    suggested_tag = latest.next_micro.to_version_string
+  else
+    suggested_tag = "0.0.1"
+  end
+
+  tag = Ask.for_string("Version:", :default => suggested_tag)
+  Library.git_create_tag(tag)
+end
+Library.git_assert_tag_exists(tag)
+
+changes = Library.git_changes(:tag => tag)
+
+repo_path = Library.normalize_path(`pwd`.strip)
+repo_name = File.basename(repo_path)
+
+filename = "%s-%s" % [repo_name, tag]
+
+dist_dir = File.join(repo_path, "dist")
+Library.ensure_dir!(dist_dir)
+tarball = File.join(dist_dir, "#{filename}.tar")
+
+Library.with_temp_file do |tmp|
+  tmpdir = File.join(tmp, filename)
+  Library.ensure_dir!(tmpdir)
+
+  Library.system_or_error("cp -R %s %s" % [File.join(repo_path, "scripts"), File.join(tmpdir, "scripts")])
+  File.open(File.join(tmpdir, "CHANGES"), "w") { |out| out << changes }
+
+  Dir.chdir(tmp) do
+    Library.system_or_error("tar cf #{filename}.tar #{filename}")
+    FileUtils.cp("#{filename}.tar", tarball)
+  end
+end
+
+gzip_file = "#{tarball}.gz"
+if File.exists?(gzip_file)
+  puts "Removing old gzip file at #{gzip_file}"
+  FileUtils.rm(gzip_file)
+end
+
+command = "gzip #{tarball}"
+Library.system_or_error(command)
+
+puts ""
+puts "Created distribution file at #{gzip_file}"

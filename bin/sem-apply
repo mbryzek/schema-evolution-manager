@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+# == Applies all pending database upgrade scripts to the specified database. All pending SQL scripts are
+#    sorted by the timestamp assigned at the time the script was added
+#
+# == Usage
+#  sem-apply --host <database host> --user <db user> --name <db name>
+#
+# == Example
+#  sem-apply --host localhost --user web --name test
+#
+
+load File.join(File.dirname(__FILE__), 'sem-config')
+
+args = Args.from_stdin(:required => %w(host name user), :optional => %w(dry_run))
+
+db = Db.from_args(args)
+db.bootstrap!
+
+dry_run = args.dry_run.nil? ? false : args.dry_run
+
+util = ApplyUtil.new(db, :dry_run => dry_run)
+
+puts "Upgrading schema for #{db.to_pretty_string}"
+count = util.apply!("./scripts")
+
+if count == 0
+  puts "  All scripts have been previously applied"
+end

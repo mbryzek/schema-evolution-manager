@@ -1,0 +1,256 @@
+Schema Evolution Manager (sem)
+
+INTENDED AUDIENCE
+
+Engineers who regularly manage the creation of scripts to update
+the schema in a postgresql database.
+
+Engineers who want to simplify and/or standardize how other team
+members contribute schema changes to a postgresql database.
+
+PURPOSE
+
+Schema Evolution Manager makes it very simple for engineers to
+contribute schema changes to a postgresql database, managing the
+schema evolutions as proper source code. Schema changes are deployed
+as gzipped tarballs named with the corresponding git tag.
+
+To apply schema changes to a particular database, download a tarball
+and use sem to figure out which scripts have not yet been
+applied, then apply those scripts in chronological order.
+
+sem provides well tested, simple tools to manage the process
+of creating and applying schema upgrade scripts to databases in all
+environments.
+
+ - scripts are automatically named with a timestamp assigned at time
+   of creation
+
+ - all scripts applied to the postgresql database are recorded in
+   the table schema_evolution_manager.scripts - making it simple to
+   see what has been applied if needed.
+
+sem contains only tools for managing schema evolutions. The
+basic idea is that you create one git repository for each of your
+databases then use sem to manage the schema evolution of
+each database.
+
+At Gilt Groupe, we have used sem since early 2012 and have
+observed an increase in the reliability of our production schema
+deploys across dozens of independent postgresql databases.
+
+See INSTALLATION and GETTING STARTED for details.
+
+
+PROJECT GOALS
+
+  - Absolutely minimal set of dependencies. We found that anything
+    more complex led developers to prefer to manage their own schema
+    evolutions. We prefer small sets of scripts that each do one thing
+    well.
+
+  - Committed to true simplicity - features that would add complexity
+    are not added. We hope that more advanced features might be built
+    on top of schema evolution manager.
+
+  - Works for ALL applications - schema management is a first class
+    task now so any application framework can leverage these
+    migration tools.
+
+  - No rollback. We have found in practice that rolling back schema
+    changes is not 100% reliable. Therefore we intentially do NOT
+    support rollback. This is a often debated element of sem,
+    and although the design itself could be easily extended to support
+    rollback, we currently have no plans to do so.
+
+    In place of rollback, we prefer to keep focus on the criticalness
+    of schema changes, encouraging peer review and lots of smaller
+    evolutions that themselves are relatively harmless.
+
+    This stems from the idea that we believe schema evolutions are
+    fundamentally risky. We believe the best way to manage this risk
+    is to:
+
+      1. To treat schema evolution changes as normal software releases
+         as much as possible
+
+      2. Manage schema versions as simple tarballs - artifacts are
+         really important because they provide 100% reproducibility.
+         This means the exact same artifacts can be applied in
+         development then QA and finally production environments.
+
+      3. Isolate schema changes as their own deploy. This then
+         guarantees that every other application itself can be rolled
+         back if needed. In practice, we have seen greater risk when
+         applications couple code changes with schema changes.
+
+   This last point bears some more detail. By fundamentally deciding to
+   manage and release schema changes independent of application changes:
+
+    1. Schema changes are required to be incremental. For example, to
+       rename a column takes 4 separate, independent production deploys:
+
+        a. add new column
+        b. deploy changes in application to use old and new column
+        c. remove old column
+        d. deploy changes in application to use only new column
+
+      Though at first this may seem more complex, each individual
+      change itself is smaller and lower risk.
+
+    2. It is worth repeating that all application deploys can now be
+       rolled back. This has been a huge win for our teams.
+
+
+DEPENDENCIES
+
+  - Ruby: Most testing against 1.8.7, 1.9.x and 2.0.0 are supported and should work
+
+  - Postgres: Only tested against 9.x. We minimize use of advanced
+    features and should work against 8.x series. If you try 8.x and
+    run into problems, please let us know so we can update.
+
+  - Git: Designed to use git for history. At Gilt Groupe, we
+    additionally use Gerrit Code Review
+    [https://code.google.com/p/gerrit/] to have a very nice workflow
+    for code review of all schema changes.
+
+  - plpgsql must be available in the database. If needed you can:
+
+      createlang plpgsql template1
+      [http://www.postgresql.org/docs/8.4/static/app-createlang.html]
+
+
+INSTALLATION
+
+  git clone git@github.com:gilt/sem.git
+  git checkout 1.0.0
+  ruby ./configure.rb
+  sudo ./install.rb
+
+
+GETTING STARTED
+
+  1. Initialization
+
+    git init /tmp/sample
+    sem-init --dir /tmp/sample --name sample_development --user postgres
+
+  2. Writing your first sql script
+
+    cd /tmp/sample
+    echo "create table tmp_table (id integer)" > new.sql
+    sem-add ./new.sql
+    git commit -m "Adding a new tmp table to test sem process" scripts
+
+  3. Applying changes to your local database:
+
+    cd /tmp/sample
+    createdb sample_development
+    sem-apply --host localhost --name sample_development --user postgres
+
+
+PUBLISHING A RELEASE
+
+  cd /tmp/sample
+  git tag -a -m "0.0.2" 0.0.2
+  sem-dist --tag 0.0.2
+
+  You will now have a single artifict -
+  /tmp/sample/dist/sample-0.0.2.tar.gz - that you can manage in
+  standard deploy process. At Gilt Groupe, we upload these artifacts
+  to nexus and then deploy in production by downloading from
+  nexus. scp/rsync work fine as well.
+
+
+DEPLOYING SCHEMA CHANGES
+
+  1. Extract tarball on server
+    scp /tmp/sample/dist/sample-0.0.2.tar.gz <your server>:~/
+    ssh <your server>
+    tar xfz sample-0.0.2.tar.gz
+    cd sample-0.0.2
+
+  2. Do a dry run
+    sem-apply --host localhost --name sample_production --user postgres --dry_run
+
+    You will likely see a number of create table statements (see data model section below).
+
+    You should also see:
+
+      [DRY RUN] Applying 20130318-214407.sql
+
+    which tells you that if you apply these changes, that sql script will be applied to the sample_production db
+
+  3. Apply the changes
+
+    sem-apply --host localhost --name sample_production --user postgres
+
+    You will see:
+      Upgrading schema for postgres@localhost/sample_production
+      Applying 20130318-214407.sql
+
+  4. Attempt to apply again:
+
+    sem-apply --host localhost --name sample_production --user postgres
+
+    You will see:
+      Upgrading schema for postgres@localhost/sample_production
+        All scripts have been previously applied
+
+DATA MODEL
+
+  sem will create a new postgresql schema in your database named 'schema_evolution_manager'
+
+  psql sample_development
+  set search_path to schema_evolution_manager;
+  \dt
+
+                 List of relations
+   Schema    |       Name        | Type  |  Owner
+-------------+-------------------+-------+----------
+ schema_evolution_manager | bootstrap_scripts | table | postgres
+ schema_evolution_manager | scripts           | table | postgres
+
+
+Each of these tables has a column named 'filename' which keeps track
+of the sql files applied to each database.
+
+The scripts table is used for your application.
+
+The bootstrap_scripts table is used to manage upgrades to the sem application itself.
+
+For details on these tables, see scripts/*sql where the tables themselves are defined.
+
+
+PLPGSQL UTILITIES
+
+We've included a copy of the schema conventions we practice at Gilt
+Groupe. There are also a number of utility plpgsql functions to help
+developers apply these conventions in a systematic way.
+
+The helpers are defined in
+
+  scripts/20130318-105456.sql
+
+We have found these utilities incredibly useful - and are committed to
+providing only the most relevant, high quality, and extremely clear
+helpers as possible.
+
+In CONVENTIONS.md you will find a simple example of these conventions
+and utilities in practice.
+
+
+COMMAND LINE UTILITIES
+
+<install_dir>/bin/sem-init
+  -> Initialize a git repository for sem support
+
+<install_dir>/bin/sem-add
+  -> Adds a database upgrade script
+
+<install_dir>/bin/sem-dist
+  -> Create a distribution tar.gz file containing schema upgrade scripts
+
+<install_dir>/bin/sem-apply
+  -> Apply any deltas from a distribution tarball to a particular database
