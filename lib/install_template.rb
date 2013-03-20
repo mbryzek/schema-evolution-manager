@@ -77,10 +77,10 @@ end
   end
 end
 
-# Set up symlinks in bin_dir
+aliased_bin_dir = File.join(lib_dir, "schema-evolution-manager", "bin")
 Dir.chdir(bin_dir) do
-  Dir.foreach(version_bin_dir).each do |filename|
-    path = File.join(version_bin_dir, filename)
+  Dir.foreach(aliased_bin_dir).each do |filename|
+    path = File.join(aliased_bin_dir, filename)
     if File.file?(path)
       Library.system_or_error("rm -f %s && ln -s %s" % [filename, path])
     end
