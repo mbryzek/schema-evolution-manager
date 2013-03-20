@@ -48,14 +48,25 @@ class Scripts
     end
 
     files.keys.sort.each do |filename|
-      yield filename, files[filename]
+      ## We have to recheck if this script is still pending. Some
+      ## upgrade scripts may modify the scripts table themselves. This
+      ## is actually useful in cases like when we migrated gilt from
+      ## util_schema => schema_evolution_manager schema
+      if !has_run?(filename)
+        yield filename, files[filename]
+      end
     end
   end
 
   # True if this script has already been applied to the db. False
   # otherwise.
-  def has_run?(script)
-    scripts_previously_run([script]).size > 0
+  def has_run?(filename)
+    if @db.schema_schema_evolution_manager_exists?
+      query = "select count(*) from %s.%s where filename = '%s'" % [Db.schema_name, @table_name, filename]
+      @db.psql_command(query).to_i > 0
+    else
+      false
+    end
   end
 
   # Inserts a record to indiciate that we have loaded the specified file.

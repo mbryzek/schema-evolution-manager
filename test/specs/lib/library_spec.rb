@@ -43,7 +43,7 @@ describe Library do
   end
 
   it "Library.git_assert_tag_exists" do
-    Library.git_assert_tag_exists("0.0.1")
+    Library.git_assert_tag_exists("0.9.0")
     lambda {
       Library.git_assert_tag_exists("0.0.0")
     }.should raise_error(RuntimeError)

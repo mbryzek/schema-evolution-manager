@@ -2,6 +2,24 @@ load File.join(File.dirname(__FILE__), '../../init.rb')
 
 describe Scripts do
 
+  it "each_pending" do
+    Library.with_temp_file do |tmp|
+      Library.ensure_dir!(tmp)
+      File.open(File.join(tmp, "20121113-150902.sql"), "w") { |out| out << "select 1" }
+      File.open(File.join(tmp, "20121114-150902.sql"), "w") { |out| out << "select 1" }
+      File.open(File.join(tmp, "20121114-150903.sql"), "w") { |out| out << "select 1" }
+
+      TestUtils.with_bootstrapped_db do |db|
+        scripts = Scripts.new(db, Scripts::SCRIPTS)
+        found = []
+        scripts.each_pending(tmp) do |name, path|
+          found << name
+        end
+        found.sort.join(" ").should == "20121113-150902.sql 20121114-150902.sql 20121114-150903.sql"
+      end
+    end
+  end
+
   it "Scripts.all(dir)" do
     dir = File.join(Library.base_dir, "scripts")
     files = Scripts.all(dir)
