@@ -63,87 +63,85 @@ See INSTALLATION and GETTING STARTED for details.
     and although the design itself could be easily extended to support
     rollback, we currently have no plans to do so.
 
-    In place of rollback, we prefer to keep focus on the criticalness
-    of schema changes, encouraging peer review and lots of smaller
-    evolutions that themselves are relatively harmless.
+In place of rollback, we prefer to keep focus on the criticalness of
+schema changes, encouraging peer review and lots of smaller evolutions
+that themselves are relatively harmless.
 
-    This stems from the idea that we believe schema evolutions are
-    fundamentally risky. We believe the best way to manage this risk
-    is to:
+This stems from the idea that we believe schema evolutions are
+fundamentally risky. We believe the best way to manage this risk is
+to:
 
-      1. To treat schema evolution changes as normal software releases
-         as much as possible
+  1. To treat schema evolution changes as normal software releases
+     as much as possible
 
-      2. Manage schema versions as simple tarballs - artifacts are
-         really important because they provide 100% reproducibility.
-         This means the exact same artifacts can be applied in
-         development then QA and finally production environments.
+  2. Manage schema versions as simple tarballs - artifacts are really
+     important because they provide 100% reproducibility.  This means
+     the exact same artifacts can be applied in development then QA
+     and finally production environments.
 
-      3. Isolate schema changes as their own deploy. This then
-         guarantees that every other application itself can be rolled
-         back if needed. In practice, we have seen greater risk when
-         applications couple code changes with schema changes.
+  3. Isolate schema changes as their own deploy. This then
+     guarantees that every other application itself can be rolled
+     back if needed. In practice, we have seen greater risk when
+     applications couple code changes with schema changes.
 
-   This last point bears some more detail. By fundamentally deciding to
-   manage and release schema changes independent of application changes:
+This last point bears some more detail. By fundamentally deciding to
+manage and release schema changes independent of application changes:
 
-    1. Schema changes are required to be incremental. For example, to
-       rename a column takes 4 separate, independent production deploys:
+  1. Schema changes are required to be incremental. For example, to
+     rename a column takes 4 separate, independent production deploys:
 
-        a. add new column
-        b. deploy changes in application to use old and new column
-        c. remove old column
-        d. deploy changes in application to use only new column
+    a. add new column
+    b. deploy changes in application to use old and new column
+    c. remove old column
+    d. deploy changes in application to use only new column
 
-      Though at first this may seem more complex, each individual
-      change itself is smaller and lower risk.
+  Though at first this may seem more complex, each individual change itself is smaller and lower risk.
 
-    2. It is worth repeating that all application deploys can now be
-       rolled back. This has been a huge win for our teams.
+  2. It is worth repeating that all application deploys can now be rolled back. This has been a huge win for our teams.
 
 
 ## Dependencies
 
-  - Ruby: Most testing against 1.8.7, 1.9.x and 2.0.0 are supported and should work
+- Ruby: Most testing against 1.8.7, 1.9.x and 2.0.0 are supported and should work
 
-  - Postgres: Only tested against 9.x. We minimize use of advanced
-    features and should work against 8.x series. If you try 8.x and
-    run into problems, please let us know so we can update.
+- Postgres: Only tested against 9.x. We minimize use of advanced
+  features and should work against 8.x series. If you try 8.x and
+  run into problems, please let us know so we can update.
 
-  - Git: Designed to use git for history. At Gilt Groupe, we
-    additionally use Gerrit Code Review
-    [https://code.google.com/p/gerrit/] to have a very nice workflow
-    for code review of all schema changes.
+- Git: Designed to use git for history. At Gilt Groupe, we
+  additionally use Gerrit Code Review
+  [https://code.google.com/p/gerrit/] to have a very nice workflow
+  for code review of all schema changes.
 
-  - plpgsql must be available in the database. If needed you can:
+- plpgsql must be available in the database. If needed you can:
 
-      createlang plpgsql template1
-      [http://www.postgresql.org/docs/8.4/static/app-createlang.html]
+    createlang plpgsql template1
+    [http://www.postgresql.org/docs/8.4/static/app-createlang.html]
 
 
 ## Installation
 
-  git clone git@github.com:gilt/sem.git
-  git checkout 1.0.0
-  ruby ./configure.rb
-  sudo ./install.rb
+    git clone git@github.com:gilt/sem.git
+    git checkout 1.0.0
+    ruby ./configure.rb
+    sudo ./install.rb
 
 
 ## Getting Started
 
-  1. Initialization
+1. Initialization
 
     git init /tmp/sample
     sem-init --dir /tmp/sample --name sample_development --user postgres
 
-  2. Writing your first sql script
+2. Writing your first sql script
 
     cd /tmp/sample
     echo "create table tmp_table (id integer)" > new.sql
     sem-add ./new.sql
     git commit -m "Adding a new tmp table to test sem process" scripts
 
-  3. Applying changes to your local database:
+3. Applying changes to your local database:
 
     cd /tmp/sample
     createdb sample_development
@@ -240,17 +238,12 @@ In CONVENTIONS.md you will find a simple example of these conventions
 and utilities in practice.
 
 
-
 ## Command Line Utilities
 
-- sem-init
-  -> Initialize a git repository for sem support
+- sem-init: Initialize a git repository for sem support
 
-- sem-add
-  -> Adds a database upgrade script
+- sem-add: Adds a database upgrade script
 
-- sem-dist
-  -> Create a distribution tar.gz file containing schema upgrade scripts
+- sem-dist: Create a distribution tar.gz file containing schema upgrade scripts
 
-- sem-apply
-  -> Apply any deltas from a distribution tarball to a particular database
+- sem-apply: Apply any deltas from a distribution tarball to a particular database
