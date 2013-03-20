@@ -50,6 +50,7 @@ Dir.chdir(lib_dir) do
   if File.exists?("schema-evolution-manager")
     if File.symlink?("schema-evolution-manager")
       Library.system_or_error("rm schema-evolution-manager")
+      Library.system_or_error("ln -s %s %s" % [version_name, 'schema-evolution-manager'])
     else
       puts "*** WARNING: File[%s] already exists. Not creating symlink" % [File.join(lib_dir, "schema-evolution-manager")]
     end
