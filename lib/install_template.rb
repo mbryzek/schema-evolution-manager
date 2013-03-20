@@ -66,7 +66,7 @@ end
 ['bin', 'lib', 'template', 'scripts'].each do |dir|
   this_dir = File.join(version_dir, dir)
   Library.ensure_dir!(this_dir)
-  Dir.foreach(dir).each do |filename|
+  Dir.foreach(dir) do |filename|
     path = File.join(dir, filename)
     if File.file?(path)
       Library.system_or_error("cp %s %s" % [path, this_dir])
@@ -79,7 +79,7 @@ end
 
 aliased_bin_dir = File.join(lib_dir, "schema-evolution-manager", "bin")
 Dir.chdir(bin_dir) do
-  Dir.foreach(aliased_bin_dir).each do |filename|
+  Dir.foreach(aliased_bin_dir) do |filename|
     path = File.join(aliased_bin_dir, filename)
     if File.file?(path)
       Library.system_or_error("rm -f %s && ln -s %s" % [filename, path])
