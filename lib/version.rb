@@ -7,10 +7,10 @@ class Version
   def initialize(version_string)
     Preconditions.check_not_blank(version_string, "version_string cannot be blank")
     Library.assert_valid_tag(version_string)
-    pieces = version_string.split(".", 3).map(&:to_i)
-    @major = pieces[0]
-    @minor = pieces[1]
-    @micro = pieces[2]
+    pieces = version_string.split(".", 3)
+    @major = pieces[0].to_i
+    @minor = pieces[1].to_i
+    @micro = pieces[2].to_i
   end
 
   def to_version_string
