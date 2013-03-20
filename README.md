@@ -2,11 +2,9 @@
 
 ## Intended Audience
 
-Engineers who regularly manage the creation of scripts to update
-the schema in a postgresql database.
+- Engineers who regularly manage the creation of scripts to update the schema in a postgresql database.
 
-Engineers who want to simplify and/or standardize how other team
-members contribute schema changes to a postgresql database.
+- Engineers who want to simplify and/or standardize how other team members contribute schema changes to a postgresql database.
 
 ## Purpose
 
@@ -71,7 +69,7 @@ This stems from the idea that we believe schema evolutions are
 fundamentally risky. We believe the best way to manage this risk is
 to:
 
-  1. To treat schema evolution changes as normal software releases
+  1. Treat schema evolution changes as normal software releases
      as much as possible
 
   2. Manage schema versions as simple tarballs - artifacts are really
@@ -121,27 +119,27 @@ manage and release schema changes independent of application changes:
 
 ## Installation
 
-    git clone git@github.com:gilt/sem.git
-    git checkout 1.0.0
+    git clone git@github.com:gilt/schema-evolution-manager.git
+    git checkout 0.9.0
     ruby ./configure.rb
     sudo ./install.rb
 
 
 ## Getting Started
 
-1. Initialization
+### Initialization
 
     git init /tmp/sample
     sem-init --dir /tmp/sample --name sample_development --user postgres
 
-2. Writing your first sql script
+### Writing your first sql script
 
     cd /tmp/sample
     echo "create table tmp_table (id integer)" > new.sql
     sem-add ./new.sql
     git commit -m "Adding a new tmp table to test sem process" scripts
 
-3. Applying changes to your local database:
+### Applying changes to your local database:
 
     cd /tmp/sample
     createdb sample_development
@@ -150,9 +148,9 @@ manage and release schema changes independent of application changes:
 
 ## Publishing a Release
 
-  cd /tmp/sample
-  git tag -a -m "0.0.2" 0.0.2
-  sem-dist --tag 0.0.2
+    cd /tmp/sample
+    git tag -a -m "0.0.2" 0.0.2
+    sem-dist --tag 0.0.2
 
   You will now have a single artifict -
   /tmp/sample/dist/sample-0.0.2.tar.gz - that you can manage in
@@ -163,36 +161,39 @@ manage and release schema changes independent of application changes:
 
 ## Deploying Schema Changes
 
-  1. Extract tarball on server
+### Extract tarball on server
+
     scp /tmp/sample/dist/sample-0.0.2.tar.gz <your server>:~/
     ssh <your server>
     tar xfz sample-0.0.2.tar.gz
     cd sample-0.0.2
 
-  2. Do a dry run
+### Do a dry run
+
     sem-apply --host localhost --name sample_production --user postgres --dry_run
 
-    You will likely see a number of create table statements (see data model section below).
-
-    You should also see:
+You will likely see a number of create table statements (see data model section below). You should also see:
 
       [DRY RUN] Applying 20130318-214407.sql
 
-    which tells you that if you apply these changes, that sql script will be applied to the sample_production db
+which tells you that if you apply these changes, that sql script will be applied to the sample_production db
 
-  3. Apply the changes
+
+### Apply the changes
 
     sem-apply --host localhost --name sample_production --user postgres
 
-    You will see:
+You will see:
+
       Upgrading schema for postgres@localhost/sample_production
       Applying 20130318-214407.sql
 
-  4. Attempt to apply again:
+Attempt to apply again:
 
     sem-apply --host localhost --name sample_production --user postgres
 
-    You will see:
+You will see:
+
       Upgrading schema for postgres@localhost/sample_production
         All scripts have been previously applied
 
@@ -213,9 +214,8 @@ sem will create a new postgresql schema in your database named 'schema_evolution
 Each of these tables has a column named 'filename' which keeps track
 of the sql files applied to each database.
 
-The scripts table is used for your application.
-
-The bootstrap_scripts table is used to manage upgrades to the sem application itself.
+- The scripts table is used for your application.
+- The bootstrap_scripts table is used to manage upgrades to the sem application itself.
 
 For details on these tables, see scripts/*sql where the tables themselves are defined.
 
@@ -223,7 +223,7 @@ For details on these tables, see scripts/*sql where the tables themselves are de
 ## PLPGSQL Utilities
 
 We've included a copy of the schema conventions we practice at Gilt
-Groupe. There are also a number of utility plpgsql functions to help
+Groupe [CONVENTIONS.md]. There are also a number of utility plpgsql functions to help
 developers apply these conventions in a systematic way.
 
 The helpers are defined in
@@ -241,9 +241,6 @@ and utilities in practice.
 ## Command Line Utilities
 
 - sem-init: Initialize a git repository for sem support
-
 - sem-add: Adds a database upgrade script
-
 - sem-dist: Create a distribution tar.gz file containing schema upgrade scripts
-
 - sem-apply: Apply any deltas from a distribution tarball to a particular database
