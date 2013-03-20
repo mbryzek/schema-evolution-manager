@@ -1,6 +1,6 @@
-Schema Evolution Manager (sem)
+# Schema Evolution Manager (sem)
 
-INTENDED AUDIENCE
+## Intended Audience
 
 Engineers who regularly manage the creation of scripts to update
 the schema in a postgresql database.
@@ -8,7 +8,7 @@ the schema in a postgresql database.
 Engineers who want to simplify and/or standardize how other team
 members contribute schema changes to a postgresql database.
 
-PURPOSE
+## Purpose
 
 Schema Evolution Manager makes it very simple for engineers to
 contribute schema changes to a postgresql database, managing the
@@ -42,7 +42,7 @@ deploys across dozens of independent postgresql databases.
 See INSTALLATION and GETTING STARTED for details.
 
 
-PROJECT GOALS
+## Project Goals
 
   - Absolutely minimal set of dependencies. We found that anything
     more complex led developers to prefer to manage their own schema
@@ -102,7 +102,7 @@ PROJECT GOALS
        rolled back. This has been a huge win for our teams.
 
 
-DEPENDENCIES
+## Dependencies
 
   - Ruby: Most testing against 1.8.7, 1.9.x and 2.0.0 are supported and should work
 
@@ -121,7 +121,7 @@ DEPENDENCIES
       [http://www.postgresql.org/docs/8.4/static/app-createlang.html]
 
 
-INSTALLATION
+## Installation
 
   git clone git@github.com:gilt/sem.git
   git checkout 1.0.0
@@ -129,7 +129,7 @@ INSTALLATION
   sudo ./install.rb
 
 
-GETTING STARTED
+## Getting Started
 
   1. Initialization
 
@@ -150,7 +150,7 @@ GETTING STARTED
     sem-apply --host localhost --name sample_development --user postgres
 
 
-PUBLISHING A RELEASE
+## Publishing a Release
 
   cd /tmp/sample
   git tag -a -m "0.0.2" 0.0.2
@@ -163,7 +163,7 @@ PUBLISHING A RELEASE
   nexus. scp/rsync work fine as well.
 
 
-DEPLOYING SCHEMA CHANGES
+## Deploying Schema Changes
 
   1. Extract tarball on server
     scp /tmp/sample/dist/sample-0.0.2.tar.gz <your server>:~/
@@ -198,20 +198,19 @@ DEPLOYING SCHEMA CHANGES
       Upgrading schema for postgres@localhost/sample_production
         All scripts have been previously applied
 
-DATA MODEL
 
-  sem will create a new postgresql schema in your database named 'schema_evolution_manager'
+## Data Model
 
-  psql sample_development
-  set search_path to schema_evolution_manager;
-  \dt
+sem will create a new postgresql schema in your database named 'schema_evolution_manager'
 
-                 List of relations
-   Schema    |       Name        | Type  |  Owner
--------------+-------------------+-------+----------
- schema_evolution_manager | bootstrap_scripts | table | postgres
- schema_evolution_manager | scripts           | table | postgres
+    psql sample_development
+    set search_path to schema_evolution_manager;
+    \dt
 
+        Schema    |       Name        | Type  |  Owner
+     -------------+-------------------+-------+----------
+     schema_evolution_manager | bootstrap_scripts | table | postgres
+     schema_evolution_manager | scripts           | table | postgres
 
 Each of these tables has a column named 'filename' which keeps track
 of the sql files applied to each database.
@@ -223,7 +222,7 @@ The bootstrap_scripts table is used to manage upgrades to the sem application it
 For details on these tables, see scripts/*sql where the tables themselves are defined.
 
 
-PLPGSQL UTILITIES
+## PLPGSQL Utilities
 
 We've included a copy of the schema conventions we practice at Gilt
 Groupe. There are also a number of utility plpgsql functions to help
@@ -241,16 +240,17 @@ In CONVENTIONS.md you will find a simple example of these conventions
 and utilities in practice.
 
 
-COMMAND LINE UTILITIES
 
-<install_dir>/bin/sem-init
+## Command Line Utilities
+
+- sem-init
   -> Initialize a git repository for sem support
 
-<install_dir>/bin/sem-add
+- sem-add
   -> Adds a database upgrade script
 
-<install_dir>/bin/sem-dist
+- sem-dist
   -> Create a distribution tar.gz file containing schema upgrade scripts
 
-<install_dir>/bin/sem-apply
+- sem-apply
   -> Apply any deltas from a distribution tarball to a particular database
