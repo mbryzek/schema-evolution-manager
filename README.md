@@ -100,21 +100,22 @@ manage and release schema changes independent of application changes:
 
 ## Dependencies
 
-- Ruby: Most testing against 1.8.7, 1.9.x and 2.0.0 are supported and should work
+- Ruby: Most testing against 1.8.7; 1.9.x and 2.0.0 are supported and
+  should work
 
 - Postgres: Only tested against 9.x. We minimize use of advanced
   features and should work against 8.x series. If you try 8.x and
   run into problems, please let us know so we can update.
 
-- Git: Designed to use git for history. At Gilt Groupe, we
-  additionally use Gerrit Code Review
-  [https://code.google.com/p/gerrit/] to have a very nice workflow
-  for code review of all schema changes.
-
 - plpgsql must be available in the database. If needed you can:
 
     createlang plpgsql template1
     [http://www.postgresql.org/docs/8.4/static/app-createlang.html]
+
+- Git: Designed to use git for history. Most testing against git 1.7.
+  At Gilt Groupe, we additionally use Gerrit Code Review
+  [https://code.google.com/p/gerrit/] to have a very nice workflow for
+  code review of all schema changes.
 
 
 ## Installation
