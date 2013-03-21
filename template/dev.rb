@@ -5,6 +5,6 @@
 #  ./dev.rb
 #
 
-command = "schema-evolution-manager/bin/sem-apply --host localhost --user %%user%% --name %%name%%"
+command = "sem-apply --host localhost --user %%user%% --name %%name%%"
 puts command
 system(command)
