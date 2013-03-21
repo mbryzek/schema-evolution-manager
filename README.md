@@ -152,14 +152,17 @@ manage and release schema changes independent of application changes:
 ## Publishing a Release
 
     cd /tmp/sample
-    git tag -a -m "0.0.2" 0.0.2
+    sem-dist
+
+If you already have a tag:
+
     sem-dist --tag 0.0.2
 
-  You will now have a single artifict -
-  /tmp/sample/dist/sample-0.0.2.tar.gz - that you can manage in
-  standard deploy process. At Gilt Groupe, we upload these artifacts
-  to nexus and then deploy in production by downloading from
-  nexus. scp/rsync work fine as well.
+You will now have a single artifict -
+/tmp/sample/dist/sample-0.0.2.tar.gz - that you can manage in standard
+deploy process. At Gilt Groupe, we upload these artifacts to nexus and
+then deploy in production by downloading from nexus. scp/rsync work
+fine as well.
 
 
 ## Deploying Schema Changes
