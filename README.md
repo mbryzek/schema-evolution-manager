@@ -122,7 +122,7 @@ manage and release schema changes independent of application changes:
 
     git clone git@github.com:gilt/schema-evolution-manager.git
     cd schema-evolution-manager
-    git checkout 0.9.0
+    git checkout 0.9.2
     ruby ./configure.rb
     sudo ./install.rb
 
