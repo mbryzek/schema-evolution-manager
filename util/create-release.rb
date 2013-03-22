@@ -24,13 +24,37 @@ puts "Current version is %s" % [version.to_version_string]
 tmp = Ask.for_string("New version:", :default => version.next_micro.to_version_string)
 new_version = Version.new(tmp)
 
-if new_version.to_version_string != version.to_version_string
-  puts "Creating git tag[%s]" % new_version.to_version_string
-  puts "Writing new_version[%s] to %s" % [new_version.to_version_string, Version::VERSION_FILE]
-
-  Version.write(new_version)
-  Library.system_or_error("git commit -m 'Update version to %s' VERSION" % [new_version.to_version_string])
-  Library.system_or_error("git tag -a -m '%s' %s" % [new_version.to_version_string, new_version.to_version_string])
+if new_version.to_version_string == version.to_version_string
+  puts "Version has not changed. Exiting"
+  exit(1)
 end
 
-puts "Release tag[%s] created. Need to git push" % [new_version.to_version_string]
+# Parse README.md
+new_readme = ""
+found = false
+IO.readlines("README.md").each do |l|
+  if l.match(/git checkout \d\.\d\.\d$/)
+    found = true
+    l.sub!(/git checkout \d\.\d\.\d$/, "git checkout %s" %[new_version.to_version_string])
+  end
+  new_readme << l
+end
+
+if !found
+  raise "Failed to update README.md"
+end
+
+puts "Update version in README.md"
+File.open("README.md", "w") { |out| out << new_readme }
+
+puts "Writing new_version[%s] to %s" % [new_version.to_version_string, Version::VERSION_FILE]
+Version.write(new_version)
+
+Library.system_or_error("git commit -m 'Update version to %s' VERSION README.md" % [new_version.to_version_string])
+
+puts "Creating git tag[%s]" % new_version.to_version_string
+Library.system_or_error("git tag -a -m '%s' %s" % [new_version.to_version_string, new_version.to_version_string])
+
+puts "Release tag[%s] created. Need to:" % [new_version.to_version_string]
+puts "  git push origin"
+puts "  git push --tags origin"
