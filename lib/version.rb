@@ -17,6 +17,16 @@ class Version
     "%s.%s.%s" % [major, minor, micro]
   end
 
+  # Returns the next major version
+  def next_major
+    Version.new("%s.%s.%s" % [major+1, 0, 0])
+  end
+
+  # Returns the next minor version
+  def next_minor
+    Version.new("%s.%s.%s" % [major, minor+1, 0])
+  end
+
   # Returns the next micro version
   def next_micro
     Version.new("%s.%s.%s" % [major, minor, micro+1])

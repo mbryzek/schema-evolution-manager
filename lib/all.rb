@@ -13,5 +13,6 @@ load File.join(dir, 'db.rb')
 load File.join(dir, 'apply_util.rb')
 load File.join(dir, 'template.rb')
 load File.join(dir, 'install_template.rb')
+load File.join(dir, 'sem_info.rb')
 
 Library.set_base_dir(File.join(dir, '..'))

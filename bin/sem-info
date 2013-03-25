@@ -1,0 +1,29 @@
+#!/usr/bin/env ruby
+# == Utility script to pull information from the schema-evolution-manager
+#    libraries. Initially designed to help with wrapper scripts that
+#    needed information (like the next minor tag)
+#
+# == Usage
+#  sem-info command [arg1...]
+#
+# == Examples
+#  sem-info tag latest
+#    Output the latest tag
+#
+#  sem-info tag next [major|minor|micro]
+#    Output information on the next tag. Defaults to micro
+#    version increment from latest tag
+#
+
+load File.join(File.dirname(__FILE__), 'sem-config')
+
+command = ARGV.shift
+if command.to_s == ""
+  RdocUsage.printAndExit(1)
+end
+
+if command == "tag"
+  puts SemInfo.tag(ARGV)
+else
+  RdocUsage.printAndExit(1)
+end

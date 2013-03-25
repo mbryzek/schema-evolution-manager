@@ -31,4 +31,13 @@ module TestUtils
     end
   end
 
+  def TestUtils.in_test_repo_with_commit(&block)
+    TestUtils.in_test_repo do
+      Library.system_or_error("echo 'test' > README.md")
+      Library.system_or_error("git add README.md")
+      Library.system_or_error("git commit -m 'test' README.md")
+      yield
+    end
+  end
+
 end
