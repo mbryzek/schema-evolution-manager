@@ -5,6 +5,7 @@ class Args
 
   if !defined?(FLAGS_WITH_ARGUMENTS)
     FLAGS_WITH_ARGUMENTS = {
+      :artifact_name => "Specifies the name of the artifact. Tag will be appeneded to this name",
       :user => "Connect to the database as this username instead of the default",
       :host => "Specifies the host name of the machine on which the server is running",
       :name => "Specifies the name of the database to which to connect",
@@ -19,7 +20,7 @@ class Args
     }
   end
 
-  attr_reader :host, :name, :user, :dir, :dry_run, :tag
+  attr_reader :artifact_name, :host, :name, :user, :dir, :dry_run, :tag
 
   # args: Actual string arguments
   # :required => list of parameters that are required
@@ -44,6 +45,7 @@ class Args
     found_arguments = parse_string_arguments(args)
     missing = required.select { |field| blank?(found_arguments[field]) }
 
+    @artifact_name = found_arguments.delete(:artifact_name)
     @host = found_arguments.delete(:host)
     @name = found_arguments.delete(:name)
     @user = found_arguments.delete(:user)

@@ -5,10 +5,14 @@
 #    software-evolution-manager scripts
 #
 # == Usage
-#  sem-dist [--tag <tag>]
+#  sem-dist [--artifact_name <tag> --tag <tag>]
+#
+#    name
+#      Optional artifact_name - defaults to the current directory name. Used in the
+#      actual artifact name which has the format <artifact_name>-<tag>.tar.gz
 #
 #    tag
-#      Optional tag - if specified, we create a distirbution file for this tag.
+#      Optional tag - if specified, we create a distribution file for this tag.
 #      If not specified, we create a new tag.
 #
 # == Example
@@ -22,7 +26,7 @@
 load File.join(File.dirname(__FILE__), 'sem-config')
 Library.set_verbose(true)
 
-args = Args.from_stdin(:optional => ['tag'])
+args = Args.from_stdin(:optional => ['artifact_name', 'tag'])
 
 if args.tag
   tag = args.tag
@@ -39,11 +43,15 @@ end
 Library.git_assert_tag_exists(tag)
 
 changes = Library.git_changes(:tag => tag)
-
 repo_path = Library.normalize_path(`pwd`.strip)
-repo_name = File.basename(repo_path)
 
-filename = "%s-%s" % [repo_name, tag]
+if args.artifact_name
+  artifact_name = args.artifact_name
+else
+  artifact_name = File.basename(repo_path)
+end
+
+filename = "%s-%s" % [artifact_name, tag]
 
 dist_dir = File.join(repo_path, "dist")
 Library.ensure_dir!(dist_dir)
