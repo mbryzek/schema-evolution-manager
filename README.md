@@ -98,6 +98,10 @@ manage and release schema changes independent of application changes:
   2. It is worth repeating that all application deploys can now be rolled back. This has been a huge win for our teams.
 
 
+## Talks
+
+First presented at PGDay NYC 2013: https://speakerdeck.com/mbryzek/schema-evolutions-at-gilt-groupe
+
 ## Dependencies
 
 - Ruby: Most testing against 1.8.7; 1.9.x and 2.0.0 are supported and
