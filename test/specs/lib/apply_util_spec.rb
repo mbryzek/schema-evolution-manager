@@ -2,6 +2,18 @@ load File.join(File.dirname(__FILE__), '../../init.rb')
 
 describe ApplyUtil do
 
+  def with_sql_script(sql)
+    add = File.join(Library.base_dir, "bin/sem-add")
+    TestUtils.with_bootstrapped_db do |db|
+      TestUtils.in_test_repo do
+        File.open("new.sql", "w") { |out| out << sql }
+        Library.system_or_error("#{add} ./new.sql")
+        yield db
+      end
+    end
+
+  end
+
   it "dry_run?" do
     db = Db.new("localhost", "test", "postgres")
     ApplyUtil.new(db).dry_run?.should be_true
@@ -10,35 +22,32 @@ describe ApplyUtil do
     ApplyUtil.new(db, :dry_run => false).dry_run?.should be_false
   end
 
-  it "apply! with dry run" do
-    add = File.join(Library.base_dir, "bin/sem-add")
-    TestUtils.with_bootstrapped_db do |db|
-      TestUtils.in_test_repo do
-        File.open("new.sql", "w") do |out|
-          out << "create table tmp (id integer);\n"
-          out << "insert into tmp (id) values (5);\n"
-        end
-        Library.system_or_error("#{add} ./new.sql")
-        util = ApplyUtil.new(db, :dry_run => true)
-        util.apply!('./scripts').should == 1
-        util.apply!('./scripts').should == 1
+  it "does not record script as run if there is an error" do
+    with_sql_script("BAD") do |db|
+      db.psql_command("select count(*) from schema_evolution_manager.scripts").to_i.should == 0
+      util = ApplyUtil.new(db, :dry_run => false)
+      begin
+        util.apply!('./scripts')
+        fail("No exception thrown when applying invalid script")
+      rescue Exception => e
       end
+      db.psql_command("select count(*) from schema_evolution_manager.scripts").to_i.should == 0
+    end
+  end
+
+  it "apply! with dry run" do
+    with_sql_script("create table tmp (id integer);\ninsert into tmp (id) values (5);") do |db|
+      util = ApplyUtil.new(db, :dry_run => true)
+      util.apply!('./scripts').should == 1
+      util.apply!('./scripts').should == 1
     end
   end
 
   it "apply! for real" do
-    add = File.join(Library.base_dir, "bin/sem-add")
-    TestUtils.with_bootstrapped_db do |db|
-      TestUtils.in_test_repo do
-        File.open("new.sql", "w") do |out|
-          out << "create table tmp (id integer);\n"
-          out << "insert into tmp (id) values (5);\n"
-        end
-        Library.system_or_error("#{add} ./new.sql")
-        util = ApplyUtil.new(db, :dry_run => false)
-        util.apply!('./scripts').should == 1
-        util.apply!('./scripts').should == 0
-      end
+    with_sql_script("create table tmp (id integer);\ninsert into tmp (id) values (5);") do |db|
+      util = ApplyUtil.new(db, :dry_run => false)
+      util.apply!('./scripts').should == 1
+      util.apply!('./scripts').should == 0
       db.psql_command("select count(*) from tmp").to_i.should == 1
     end
   end

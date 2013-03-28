@@ -93,6 +93,10 @@ class Library
     @@tmpfile_count += 1
     yield path
   ensure
+    Library.delete_file_if_exists(path)
+  end
+
+  def Library.delete_file_if_exists(path)
     if File.exists?(path)
       FileUtils.rm_r(path)
     end

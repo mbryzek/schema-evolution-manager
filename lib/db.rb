@@ -25,13 +25,22 @@ class Db
     Library.system_or_error(command)
   end
 
-  # executes sql commands from a file
+  # executes sql commands from a file in a single transaction
   def psql_file(path)
     Preconditions.assert_class(path, String)
     Preconditions.check_state(File.exists?(path), "File[%s] not found" % [path])
 
-    command = "psql --host %s --no-align --tuples-only --username %s --single-transaction --file \"%s\" %s" % [@host, @user, path, @name]
-    Library.system_or_error(command)
+    tmpfile = "%s.tmp" % [path]
+    begin
+      File.open(tmpfile, "w") do |out|
+        out << "\\set ON_ERROR_STOP true\n\n"
+        out << IO.read(path)
+      end
+      command = "psql --quiet --host %s --no-align --tuples-only --username %s --single-transaction --file \"%s\" %s" % [@host, @user, tmpfile, @name]
+      Library.system_or_error(command)
+    ensure
+      Library.delete_file_if_exists(tmpfile)
+    end
   end
 
   # True if the specific schema exists; false otherwise

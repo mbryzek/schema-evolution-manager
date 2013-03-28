@@ -102,6 +102,18 @@ describe Library do
     File.exists?(file).should be_false
   end
 
+  it "Library.delete_file_if_exists" do
+    Library.with_temp_file do |tmp|
+      File.exists?(tmp).should be_false
+      Library.delete_file_if_exists(tmp)
+
+      File.open(tmp, "w") { |out| out << "touch" }
+      File.exists?(tmp).should be_true
+      Library.delete_file_if_exists(tmp)
+      File.exists?(tmp).should be_false
+    end
+  end
+
   it "Library.write_to_temp_file" do
     Library.write_to_temp_file("test") do |path|
       IO.read(path).should == "test"
