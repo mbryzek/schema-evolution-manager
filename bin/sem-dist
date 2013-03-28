@@ -28,6 +28,13 @@ Library.set_verbose(true)
 
 args = Args.from_stdin(:optional => ['artifact_name', 'tag'])
 
+# On MAC OS X, use gnutar to avoid warnings like
+#   Ignoring unknown extended header keyword `SCHILY.ino'
+tar_cmd = `which gnutar`.strip
+if tar_cmd == ""
+  tar_cmd = "tar"
+end
+
 if args.tag
   tag = args.tag
 else
@@ -65,7 +72,7 @@ Library.with_temp_file do |tmp|
   File.open(File.join(tmpdir, "CHANGES"), "w") { |out| out << changes }
 
   Dir.chdir(tmp) do
-    Library.system_or_error("tar cf #{filename}.tar #{filename}")
+    Library.system_or_error("#{tar_cmd} cf #{filename}.tar #{filename}")
     FileUtils.cp("#{filename}.tar", tarball)
   end
 end
