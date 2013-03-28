@@ -35,6 +35,20 @@ describe ApplyUtil do
     end
   end
 
+  it "rolls back entire transaction if there is any error" do
+    with_sql_script("insert into tmp (id) values (5);BAD") do |db|
+      db.psql_command("create table tmp (id integer);")
+      db.psql_command("select count(*) from tmp").to_i.should == 0
+      util = ApplyUtil.new(db, :dry_run => false)
+      begin
+        util.apply!('./scripts')
+        fail("No exception thrown when applying invalid script")
+      rescue Exception => e
+      end
+      db.psql_command("select count(*) from tmp").to_i.should == 0
+    end
+  end
+
   it "apply! with dry run" do
     with_sql_script("create table tmp (id integer);\ninsert into tmp (id) values (5);") do |db|
       util = ApplyUtil.new(db, :dry_run => true)
