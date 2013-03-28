@@ -30,16 +30,13 @@ class Db
     Preconditions.assert_class(path, String)
     Preconditions.check_state(File.exists?(path), "File[%s] not found" % [path])
 
-    tmpfile = "%s.tmp" % [path]
-    begin
-      File.open(tmpfile, "w") do |out|
+    Library.with_temp_file(:prefix => File.basename(path)) do |tmp|
+      File.open(tmp, "w") do |out|
         out << "\\set ON_ERROR_STOP true\n\n"
         out << IO.read(path)
       end
-      command = "psql --quiet --host %s --no-align --tuples-only --username %s --single-transaction --file \"%s\" %s" % [@host, @user, tmpfile, @name]
+      command = "psql --quiet --host %s --no-align --tuples-only --username %s --single-transaction --file \"%s\" %s" % [@host, @user, tmp, @name]
       Library.system_or_error(command)
-    ensure
-      Library.delete_file_if_exists(tmpfile)
     end
   end
 

@@ -1,6 +1,9 @@
 class Library
 
-  TMPFILE_PREFIX = "/tmp/schema-evolution-manager-#{Process.pid}.tmp" unless defined?(TMPFILE_PREFIX)
+  unless defined?(TMPFILE_DIR)
+    TMPFILE_DIR = "/tmp"
+    TMPFILE_PREFIX = "schema-evolution-manager-#{Process.pid}.tmp"
+  end
   @@tmpfile_count = 0
   @@verbose = false
 
@@ -88,8 +91,14 @@ class Library
 
   # Generates a temp file name, yield the full path to the
   # file. Cleans up automatically on exit.
-  def Library.with_temp_file
-    path = "#{TMPFILE_PREFIX}.#{@@tmpfile_count}"
+  def Library.with_temp_file(opts={})
+    prefix = opts.delete(:prefix)
+    Preconditions.assert_empty_opts(opts)
+
+    if prefix.to_s == ""
+      prefix = TMPFILE_PREFIX
+    end
+    path = File.join(TMPFILE_DIR, "%s.%s" % [prefix, @@tmpfile_count])
     @@tmpfile_count += 1
     yield path
   ensure

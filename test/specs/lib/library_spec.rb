@@ -92,14 +92,25 @@ describe Library do
     end
   end
 
-  it "Library.with_temp_file" do
-    file = nil
-    Library.with_temp_file do |tmp|
-      Library.system_or_error("touch #{tmp}")
-      File.exists?(tmp).should be_true
-      file = tmp
+
+  describe "Library.with_temp_file" do
+
+    it "no args" do
+      file = nil
+      Library.with_temp_file do |tmp|
+        Library.system_or_error("touch #{tmp}")
+        File.exists?(tmp).should be_true
+        file = tmp
+      end
+      File.exists?(file).should be_false
     end
-    File.exists?(file).should be_false
+
+    it "respects prefix" do
+      Library.with_temp_file(:prefix => "thisisaprefix") do |tmp|
+        tmp.split(".", 2).first.should == "/tmp/thisisaprefix"
+      end
+    end
+
   end
 
   it "Library.delete_file_if_exists" do
