@@ -30,7 +30,7 @@ args = Args.from_stdin(:optional => ['artifact_name', 'tag'])
 
 # On MAC OS X, use gnutar to avoid warnings like
 #   Ignoring unknown extended header keyword `SCHILY.ino'
-tar_cmd = `which gnutar`.strip
+tar_cmd = `which gnutar 2> /dev/null`.strip
 if tar_cmd == ""
   tar_cmd = "tar"
 end
