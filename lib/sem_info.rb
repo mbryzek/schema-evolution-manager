@@ -18,7 +18,7 @@ module SemInfo
   module Tag
 
     def Tag.latest
-      Library.latest_tag
+      Library.latest_tag || Version.new("0.0.0")
     end
 
     # @param component: One of major|minor|micro. Defaults to micro
