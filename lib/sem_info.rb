@@ -3,7 +3,11 @@ module SemInfo
   def SemInfo.tag(args)
     subcommand = args.shift
     if subcommand == "latest"
-      ::SemInfo::Tag.latest.to_version_string
+      if latest = ::SemInfo::Tag.latest
+        latest.to_version_string
+      else
+        nil
+      end
     elsif subcommand == "next"
       ::SemInfo::Tag.next(args).to_version_string
     else
