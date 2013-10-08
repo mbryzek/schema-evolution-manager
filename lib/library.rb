@@ -70,25 +70,6 @@ class Library
     end
   end
 
-  # Returns a string with user's name and email (from git config)
-  def Library.git_user
-    email = `git config user.email`.strip
-    name = `git config user.name`.strip
-    pieces = []
-    if name != ""
-      pieces << name
-    end
-    if email != ""
-      pieces << "<%s>" % [email.to_s.strip]
-    end
-
-    Preconditions.check_state(!pieces.empty?,
-                              "git user information not found. Run:\n" +
-                              "  git config --global user.name 'John Doe'\n" +
-                              "  git config --global user.email johndoe@example.com\n")
-    pieces.join(" ")
-  end
-
   # Generates a temp file name, yield the full path to the
   # file. Cleans up automatically on exit.
   def Library.with_temp_file(opts={})
@@ -171,13 +152,12 @@ class Library
     git_log_command = "git log --pretty=format:\"%h %ad | %s%d [%an]\" --date=short -#{number_changes}"
     git_log = Library.system_or_error(git_log_command)
     out = ""
-    out << "Created: %s\n" % [Library.format_time]
-    out << "Created By: %s\n" % [Library.git_user]
+    out << "Created: %s\n" % Library.format_time
     if tag
-      out << "Git Tag: %s\n" % [tag]
+      out << "Git Tag: %s\n" % tag
     end
     out << "\n"
-    out << "%s:\n" % [git_log_command]
+    out << "%s:\n" % git_log_command
     out << "  " << git_log.split("\n").join("\n  ") << "\n"
     out
   end

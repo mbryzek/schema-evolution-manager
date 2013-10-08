@@ -28,8 +28,6 @@ target = File.join(scripts_dir, "#{now}.sql")
 
 puts "Adding #{target}"
 File.open(target, 'w') do |out|
-  out << "-- Author: #{Library.git_user}\n"
-  out << "-- Date: #{now}\n\n"
   out << contents
 end
 

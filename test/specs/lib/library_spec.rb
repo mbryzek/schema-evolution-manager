@@ -85,14 +85,6 @@ describe Library do
 
   end
 
-  it "Library.git_user" do
-    user = Library.git_user
-    if user == ""
-      raise "git global user configuration not set - unit test cannot pass"
-    end
-  end
-
-
   describe "Library.with_temp_file" do
 
     it "no args" do
