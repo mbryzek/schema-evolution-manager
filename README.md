@@ -57,7 +57,7 @@ See INSTALLATION and GETTING STARTED for details.
 
   - No rollback. We have found in practice that rolling back schema
     changes is not 100% reliable. Therefore we intentially do NOT
-    support rollback. This is a often debated element of sem,
+    support rollback. This is an often debated element of sem,
     and although the design itself could be easily extended to support
     rollback, we currently have no plans to do so.
 
