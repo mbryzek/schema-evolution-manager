@@ -46,12 +46,7 @@ class ApplyUtil
       have_error = false
     ensure
       if have_error
-        msg = ""
-        msg << "ERROR APPLYING SCRIPT #{filename}\n"
-        msg << "If this script has previously been applied to this database, you can record it as having run by:\n"
-        msg << "  psql --host %s --username %s --command \"insert into %s.%s (filename) values ('%s')\" %s\n" %
-          [@db.host, @db.user, Db.schema_name, Scripts::SCRIPTS, filename, @db.name]
-        raise msg
+        raise ScriptError.new(@db, filename)
       end
     end
 
