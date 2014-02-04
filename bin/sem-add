@@ -22,7 +22,7 @@ Preconditions.check_state(file.match(/\.sql/i), "File[#{file}] must end with .sq
 scripts_dir = File.join(`pwd`.strip, "scripts")
 Library.ensure_dir!(scripts_dir)
 
-contents = IO.read(file).strip
+contents = IO.read(file).strip + "\n"
 now = Time.now.strftime('%Y%m%d-%H%M%S')
 target = File.join(scripts_dir, "#{now}.sql")
 
