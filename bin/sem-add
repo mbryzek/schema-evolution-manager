@@ -27,11 +27,7 @@ now = Time.now.strftime('%Y%m%d-%H%M%S')
 target = File.join(scripts_dir, "#{now}.sql")
 
 puts "Adding #{target}"
-File.open(target, 'w') do |out|
-  out << contents
-end
-
+Library.system_or_error("mv #{file} #{target}")
 Library.system_or_error("git add #{target}")
-Library.system_or_error("rm #{file}")
 
 puts "File staged in git. You need to commit and push"
