@@ -3,13 +3,13 @@
   * Use bigint and bigserial everywhere, in place of int/bigint
     (e.g. we prefer longs for all Id columns)
 
-  * When creating constraints, name them according to:
+  * When creating constraints, we in general let postgresql name
+    them. In some cases - it makes sense to provide a name when the
+    auto generated name is not clear. Good examples include:
 
-     - primary key: Do not name. Postgresql will generate a good name automatically.
+     - when having multiple indexes on a column
 
-     - not null: Do not name. Constraint name is never needed in table administration.
-
-     - otherwise, names should follow <table_name>_<column_name>_<suffix> where suffix is:
+     - names should follow <table_name>_<column_name>_<suffix> where suffix is:
 
         - check: ck
         - unique: un
