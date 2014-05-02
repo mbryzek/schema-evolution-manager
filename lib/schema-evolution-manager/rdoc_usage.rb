@@ -6,9 +6,6 @@ module SchemaEvolutionManager
       path = Library.normalize_path(RdocUsage.program_name)
 
       lines = []
-      lines << ""
-      lines << "USAGE: #{path}"
-      lines << ""
 
       IO.readlines(path).each do |line|
         if !line.match(/^\#/)
@@ -17,7 +14,7 @@ module SchemaEvolutionManager
         if line.match(/^\#\!/)
           next
         end
-        lines << line.sub(/^\#+/, '').strip
+        lines << line.sub(/^\#\s?/, '').sub(/\n$/, '')
       end
       lines << ""
 
