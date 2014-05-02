@@ -116,8 +116,8 @@ First presented at PGDay NYC 2013: https://speakerdeck.com/mbryzek/schema-evolut
     createlang plpgsql template1
     [http://www.postgresql.org/docs/8.4/static/app-createlang.html]
 
-- Git: Designed to use git for history. Most testing against git 1.7.
-  At Gilt Groupe, we additionally use Gerrit Code Review
+- Git: Designed to use git for history. Most testing against git 1.7
+  and git 1.8.  At Gilt Groupe, we additionally use Gerrit Code Review
   [https://code.google.com/p/gerrit/] to have a very nice workflow for
   code review of all schema changes.
 
