@@ -3,7 +3,7 @@ load File.join(File.dirname(__FILE__), '../../init.rb')
 describe "Apply" do
 
   def with_script_setup(&block)
-    add_path = File.join(Library.base_dir, "bin/sem-add")
+    add_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-add")
     random_number = rand(100000)
 
     TestUtils.with_bootstrapped_db do |db|
@@ -12,7 +12,7 @@ describe "Apply" do
           out << "create table tmp (id integer);\n"
           out << "insert into tmp (id) values (%s);\n" % [random_number]
         end
-        Library.system_or_error("#{add_path} ./new.sql")
+        SchemaEvolutionManager::Library.system_or_error("#{add_path} ./new.sql")
         yield db
       end
     end
@@ -20,8 +20,8 @@ describe "Apply" do
 
   it "does not apply sql scripts with dry_run" do
     with_script_setup do |db|
-      apply_path = File.join(Library.base_dir, "bin/sem-apply")
-      Library.system_or_error("#{apply_path} --host #{db.host} --name #{db.name} --user #{db.user} --dry_run")
+      apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
+      SchemaEvolutionManager::Library.system_or_error("#{apply_path} --host #{db.host} --name #{db.name} --user #{db.user} --dry_run")
       lambda {
         db.psql_command("select count(*) from tmp")
       }.should raise_error(RuntimeError)
@@ -30,8 +30,8 @@ describe "Apply" do
 
   it "applies sql scripts without dry_run" do
     with_script_setup do |db|
-      apply_path = File.join(Library.base_dir, "bin/sem-apply")
-      Library.system_or_error("#{apply_path} --host #{db.host} --name #{db.name} --user #{db.user}")
+      apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
+      SchemaEvolutionManager::Library.system_or_error("#{apply_path} --host #{db.host} --name #{db.name} --user #{db.user}")
       db.psql_command("select count(*) from tmp").to_i.should == 1
     end
   end

@@ -11,14 +11,14 @@
 
 load File.join(File.dirname(__FILE__), 'sem-config')
 
-args = Args.from_stdin(:required => %w(host name user), :optional => %w(dry_run))
+args = SchemaEvolutionManager::Args.from_stdin(:required => %w(host name user), :optional => %w(dry_run))
 
-db = Db.from_args(args)
+db = SchemaEvolutionManager::Db.from_args(args)
 db.bootstrap!
 
 dry_run = args.dry_run.nil? ? false : args.dry_run
 
-util = ApplyUtil.new(db, :dry_run => dry_run)
+util = SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => dry_run)
 
 puts "Upgrading schema for #{db.to_pretty_string}"
 
@@ -27,7 +27,7 @@ begin
   if count == 0
     puts "  All scripts have been previously applied"
   end
-rescue ScriptError => e
+rescue SchemaEvolutionManager::ScriptError => e
   puts ""
   puts "ERROR applying script: %s" % e.filename
   puts ""

@@ -1,1 +1,1 @@
-load File.join(File.dirname(__FILE__), '../lib/all.rb')
+load File.join(File.dirname(__FILE__), '../lib/schema-evolution-manager.rb')

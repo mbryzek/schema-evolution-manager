@@ -1,4 +1,4 @@
-load File.join(File.dirname(__FILE__), '../lib/all.rb')
+load File.join(File.dirname(__FILE__), '../lib/schema-evolution-manager.rb')
 
 module TestUtils
 
@@ -9,11 +9,20 @@ module TestUtils
     end
   end
 
+  def TestUtils.random_db_name
+    "schema_evolution_manager_test_db_%s" % [rand(100000)]
+  end
+
+  def TestUtils.create_db_config(opts={})
+    name = opts.delete(:name) || TestUtils.random_db_name
+    SchemaEvolutionManager::Preconditions.check_state(opts.empty?)
+    SchemaEvolutionManager::Db.parse_command_line_config("--host localhost --name #{name} --user postgres")
+  end
 
   def TestUtils.with_db
-    superdb = Db.new("localhost", "postgres", "postgres")
+    superdb = SchemaEvolutionManager::Db.new("localhost", "postgres", "postgres")
     name = "schema_evolution_manager_test_db_%s" % [rand(100000)]
-    db = Db.parse_command_line_config("--host localhost --name #{name} --user postgres")
+    db = SchemaEvolutionManager::Db.parse_command_line_config("--host localhost --name #{name} --user postgres")
     begin
       superdb.psql_command("create database #{db.name}")
       yield db
@@ -23,8 +32,8 @@ module TestUtils
   end
 
   def TestUtils.in_test_repo(&block)
-    Library.with_temp_file do |tmp|
-      Library.system_or_error("git init #{tmp}")
+    SchemaEvolutionManager::Library.with_temp_file do |tmp|
+      SchemaEvolutionManager::Library.system_or_error("git init #{tmp}")
       Dir.chdir(tmp) do
         yield
       end
@@ -33,9 +42,9 @@ module TestUtils
 
   def TestUtils.in_test_repo_with_commit(&block)
     TestUtils.in_test_repo do
-      Library.system_or_error("echo 'test' > README.md")
-      Library.system_or_error("git add README.md")
-      Library.system_or_error("git commit -m 'test' README.md")
+      SchemaEvolutionManager::Library.system_or_error("echo 'test' > README.md")
+      SchemaEvolutionManager::Library.system_or_error("git add README.md")
+      SchemaEvolutionManager::Library.system_or_error("git commit -m 'test' README.md")
       yield
     end
   end

@@ -19,11 +19,11 @@ load File.join(File.dirname(__FILE__), 'sem-config')
 
 command = ARGV.shift
 if command.to_s == ""
-  RdocUsage.printAndExit(1)
+  SchemaEvolutionManager::RdocUsage.printAndExit(1)
 end
 
 if command == "tag"
-  puts SemInfo.tag(ARGV)
+  puts SchemaEvolutionManager::SemInfo.tag(ARGV)
 else
-  RdocUsage.printAndExit(1)
+  SchemaEvolutionManager::RdocUsage.printAndExit(1)
 end

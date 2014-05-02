@@ -1,13 +1,13 @@
 load File.join(File.dirname(__FILE__), '../../init.rb')
 
-describe ApplyUtil do
+describe SchemaEvolutionManager::ApplyUtil do
 
   def with_sql_script(sql)
-    add = File.join(Library.base_dir, "bin/sem-add")
+    add = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-add")
     TestUtils.with_bootstrapped_db do |db|
       TestUtils.in_test_repo do
         File.open("new.sql", "w") { |out| out << sql }
-        Library.system_or_error("#{add} ./new.sql")
+        SchemaEvolutionManager::Library.system_or_error("#{add} ./new.sql")
         yield db
       end
     end
@@ -15,17 +15,17 @@ describe ApplyUtil do
   end
 
   it "dry_run?" do
-    db = Db.new("localhost", "test", "postgres")
-    ApplyUtil.new(db).dry_run?.should be_true
-    ApplyUtil.new(db, :dry_run => nil).dry_run?.should be_true
-    ApplyUtil.new(db, :dry_run => true).dry_run?.should be_true
-    ApplyUtil.new(db, :dry_run => false).dry_run?.should be_false
+    db = SchemaEvolutionManager::Db.new("localhost", "test", "postgres")
+    SchemaEvolutionManager::ApplyUtil.new(db).dry_run?.should be_true
+    SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => nil).dry_run?.should be_true
+    SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => true).dry_run?.should be_true
+    SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => false).dry_run?.should be_false
   end
 
   it "does not record script as run if there is an error" do
     with_sql_script("BAD") do |db|
       db.psql_command("select count(*) from schema_evolution_manager.scripts").to_i.should == 0
-      util = ApplyUtil.new(db, :dry_run => false)
+      util = SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => false)
       begin
         util.apply!('./scripts')
         fail("No exception thrown when applying invalid script")
@@ -39,7 +39,7 @@ describe ApplyUtil do
     with_sql_script("insert into tmp (id) values (5);BAD") do |db|
       db.psql_command("create table tmp (id integer);")
       db.psql_command("select count(*) from tmp").to_i.should == 0
-      util = ApplyUtil.new(db, :dry_run => false)
+      util = SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => false)
       begin
         util.apply!('./scripts')
         fail("No exception thrown when applying invalid script")
@@ -51,7 +51,7 @@ describe ApplyUtil do
 
   it "apply! with dry run" do
     with_sql_script("create table tmp (id integer);\ninsert into tmp (id) values (5);") do |db|
-      util = ApplyUtil.new(db, :dry_run => true)
+      util = SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => true)
       util.apply!('./scripts').should == 1
       util.apply!('./scripts').should == 1
     end
@@ -59,7 +59,7 @@ describe ApplyUtil do
 
   it "apply! for real" do
     with_sql_script("create table tmp (id integer);\ninsert into tmp (id) values (5);") do |db|
-      util = ApplyUtil.new(db, :dry_run => false)
+      util = SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => false)
       util.apply!('./scripts').should == 1
       util.apply!('./scripts').should == 0
       db.psql_command("select count(*) from tmp").to_i.should == 1

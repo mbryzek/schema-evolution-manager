@@ -13,21 +13,21 @@ load File.join(File.dirname(__FILE__), 'sem-config')
 file = ARGV.shift
 if file.to_s.strip == ""
   puts "**** ERROR: Need file path"
-  RdocUsage.printAndExit(1)
+  SchemaEvolutionManager::RdocUsage.printAndExit(1)
 end
 
-Preconditions.check_state(File.exists?(file), "File[#{file}] could not be found")
-Preconditions.check_state(file.match(/\.sql/i), "File[#{file}] must end with .sql")
+SchemaEvolutionManager::Preconditions.check_state(File.exists?(file), "File[#{file}] could not be found")
+SchemaEvolutionManager::Preconditions.check_state(file.match(/\.sql/i), "File[#{file}] must end with .sql")
 
 scripts_dir = File.join(`pwd`.strip, "scripts")
-Library.ensure_dir!(scripts_dir)
+SchemaEvolutionManager::Library.ensure_dir!(scripts_dir)
 
 contents = IO.read(file)
 now = Time.now.strftime('%Y%m%d-%H%M%S')
 target = File.join(scripts_dir, "#{now}.sql")
 
 puts "Adding #{target}"
-Library.system_or_error("mv #{file} #{target}")
-Library.system_or_error("git add #{target}")
+SchemaEvolutionManager::Library.system_or_error("mv #{file} #{target}")
+SchemaEvolutionManager::Library.system_or_error("git add #{target}")
 
 puts "File staged in git. You need to commit and push"

@@ -15,13 +15,13 @@
 #
 
 load File.join(File.dirname(__FILE__), 'sem-config')
-Library.set_verbose(true)
+SchemaEvolutionManager::Library.set_verbose(true)
 
-args = Args.from_stdin(:required => %w(name user dir))
-Preconditions.check_state(File.directory?(args.dir), "Dir[%s] does not exist" % [args.dir])
+args = SchemaEvolutionManager::Args.from_stdin(:required => %w(name user dir))
+SchemaEvolutionManager::Preconditions.check_state(File.directory?(args.dir), "Dir[%s] does not exist" % [args.dir])
 
 def copy_file(source, target, substitutions)
-  template = Template.new
+  template = SchemaEvolutionManager::Template.new
   substitutions.each do |name, value|
     template.add(name, value)
   end
@@ -31,14 +31,14 @@ def copy_file(source, target, substitutions)
   end
 end
 
-template_dir = File.join(Library.base_dir, "template")
-Preconditions.check_state(File.directory?(template_dir),
-                          "Could not find software-evolution-manager/template subdir. Expected it at[%s]" % [template_dir])
+template_dir = File.join(SchemaEvolutionManager::Library.base_dir, "template")
+SchemaEvolutionManager::Preconditions.check_state(File.directory?(template_dir),
+                                                  "Could not find software-evolution-manager/template subdir. Expected it at[%s]" % [template_dir])
 
 subs = {
   "name" => args.name,
   "user" => args.user,
-  "add_script_path" => File.join(Library.base_dir, "bin/sem-add")
+  "add_script_path" => File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-add")
 }
 
 puts "chdir %s" % [args.dir]
@@ -50,39 +50,39 @@ Dir.chdir(args.dir) do
     if !File.exists?(wrapper)
       puts "Creating wrapper script #{wrapper}"
       copy_file(path, wrapper, subs)
-      Library.system_or_error("chmod +x #{wrapper}")
-      Library.system_or_error("git add #{wrapper}")
+      SchemaEvolutionManager::Library.system_or_error("chmod +x #{wrapper}")
+      SchemaEvolutionManager::Library.system_or_error("git add #{wrapper}")
       wrappers << wrapper
     end
   end
   if !wrappers.empty?
-    Library.system_or_error("git commit -m 'Add software-evolution-manager wrapper scripts' #{wrappers.join(" ")}")
+    SchemaEvolutionManager::Library.system_or_error("git commit -m 'Add software-evolution-manager wrapper scripts' #{wrappers.join(" ")}")
   end
 
   readme = "README.md"
   if !File.exists?(readme)
     puts "Creating #{readme}"
     copy_file("software-evolution-manager/template/README.md", "README.md", subs)
-    Library.system_or_error("git add #{readme}")
-    Library.system_or_error("git commit -m 'Adding README.md' README.md")
+    SchemaEvolutionManager::Library.system_or_error("git add #{readme}")
+    SchemaEvolutionManager::Library.system_or_error("git commit -m 'Adding README.md' README.md")
   end
 
   if !File.exists?("scripts")
-    Library.system_or_error("mkdir scripts")
-    Library.system_or_error("touch scripts/.exists")
-    Library.system_or_error("git add scripts/.exists")
-    Library.system_or_error("git commit -m 'Adding scripts directory' scripts/.exists")
+    SchemaEvolutionManager::Library.system_or_error("mkdir scripts")
+    SchemaEvolutionManager::Library.system_or_error("touch scripts/.exists")
+    SchemaEvolutionManager::Library.system_or_error("git add scripts/.exists")
+    SchemaEvolutionManager::Library.system_or_error("git commit -m 'Adding scripts directory' scripts/.exists")
   end
 
   # Create the first git tag if necessary
-  tags = Library.system_or_error("git tag -l")
+  tags = SchemaEvolutionManager::Library.system_or_error("git tag -l")
   if tags.nil? || tags == ""
     puts "Creating initial git tag (0.0.1)"
-    Library.git_create_tag("0.0.1")
+    SchemaEvolutionManager::Library.git_create_tag("0.0.1")
   end
 
-  if Library.git_has_remote?
-    Library.system_or_error("git push origin master")
+  if SchemaEvolutionManager::Library.git_has_remote?
+    SchemaEvolutionManager::Library.system_or_error("git push origin master")
   end
 
 end
