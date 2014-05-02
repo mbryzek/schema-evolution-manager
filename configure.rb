@@ -13,22 +13,22 @@
 #    Configure installer for the specified lib and bin directories
 #
 
-load File.join(File.dirname(__FILE__), 'lib/all.rb')
-Library.set_verbose(true)
+load File.join(File.dirname(__FILE__), 'lib/schema-evolution-manager.rb')
+SchemaEvolutionManager::Library.set_verbose(true)
 
-args = Args.from_stdin(:optional => %w(lib_dir bin_dir))
+args = SchemaEvolutionManager::Args.from_stdin(:optional => %w(lib_dir bin_dir))
 
-lib_dir = args.lib_dir || Ask.for_string("lib dir", :default => "/usr/local/lib")
+lib_dir = args.lib_dir || SchemaEvolutionManager::Ask.for_string("lib dir", :default => "/usr/local/lib")
 
 if lib_dir.match(/\/lib$/)
   default_bin_dir = lib_dir.sub(/\/lib$/, '/bin')
 else
   default_bin_dir = "/usr/local/bin"
 end
-bin_dir = args.bin_dir || Ask.for_string("bin dir", :default => default_bin_dir)
+bin_dir = args.bin_dir || SchemaEvolutionManager::Ask.for_string("bin dir", :default => default_bin_dir)
 
 target = "./install.rb"
-template = InstallTemplate.new(:lib_dir => lib_dir, :bin_dir => bin_dir)
+template = SchemaEvolutionManager::InstallTemplate.new(:lib_dir => lib_dir, :bin_dir => bin_dir)
 template.write_to_file(target)
 
 puts ""
