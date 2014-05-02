@@ -63,7 +63,7 @@ module SchemaEvolutionManager
       @verbose = found_arguments.delete(:verbose)
 
       Preconditions.check_state(found_arguments.empty?,
-                                "Did not handle all flags: %s" % [found_arguments.keys.join(" ")])
+                                "Did not handle all flags: %s" % found_arguments.keys.join(" "))
 
       if @help
         RdocUsage.printAndExit(0)
@@ -112,7 +112,7 @@ module SchemaEvolutionManager
         docs << "-------------------"
         parameters.each do |flag|
           documentation = FLAGS_WITH_ARGUMENTS[flag] || FLAGS_NO_ARGUMENTS[flag]
-          Preconditions.check_not_null(documentation, "No documentation found for flag[%s]" % [flag])
+          Preconditions.check_not_null(documentation, "No documentation found for flag[%s]" % flag)
           docs << "  --#{flag}"
           docs <<  "    " + documentation
           docs <<  ""
@@ -139,7 +139,7 @@ module SchemaEvolutionManager
           found[flag] = true
 
         else
-          raise "Unknown flag[%s]" % [flag]
+          raise "Unknown flag[%s]" % flag
         end
 
       end

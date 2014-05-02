@@ -18,11 +18,11 @@ module SchemaEvolutionManager
     end
 
     def write_to_file(path)
-      puts "Writing %s" % [path]
+      puts "Writing %s" % path
       File.open(path, "w") do |out|
         out << generate
       end
-      Library.system_or_error("chmod +x %s" % [path])
+      Library.system_or_error("chmod +x %s" % path)
     end
 
     if !defined?(TEMPLATE)

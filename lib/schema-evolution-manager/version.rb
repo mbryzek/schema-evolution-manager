@@ -57,7 +57,7 @@ module SchemaEvolutionManager
     def Version.write(version)
       Preconditions.assert_class(version, Version)
       File.open(VERSION_FILE, "w") do |out|
-        out << "%s\n" % [version.to_version_string]
+        out << "%s\n" % version.to_version_string
       end
     end
 

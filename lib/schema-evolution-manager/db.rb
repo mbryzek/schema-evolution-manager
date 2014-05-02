@@ -30,7 +30,7 @@ module SchemaEvolutionManager
     # executes sql commands from a file in a single transaction
     def psql_file(path)
       Preconditions.assert_class(path, String)
-      Preconditions.check_state(File.exists?(path), "File[%s] not found" % [path])
+      Preconditions.check_state(File.exists?(path), "File[%s] not found" % path)
 
       Library.with_temp_file(:prefix => File.basename(path)) do |tmp|
         File.open(tmp, "w") do |out|
@@ -44,7 +44,7 @@ module SchemaEvolutionManager
 
     # True if the specific schema exists; false otherwise
     def schema_schema_evolution_manager_exists?
-      sql = "select count(*) from pg_namespace where nspname='%s'" % [Db.schema_name]
+      sql = "select count(*) from pg_namespace where nspname='%s'" % Db.schema_name
       psql_command(sql).to_i > 0
     end
 

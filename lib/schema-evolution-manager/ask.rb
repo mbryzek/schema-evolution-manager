@@ -13,7 +13,7 @@ module SchemaEvolutionManager
 
       final_message = message.dup
       if default
-        final_message << " [%s] " % [default]
+        final_message << " [%s] " % default
       end
 
       value = nil
@@ -30,7 +30,7 @@ module SchemaEvolutionManager
     # Asks the user a question. Returns a boolean. Boolean is defined as
     # matching the strings 'y' or 'yes', case insensitive
     def Ask.for_boolean(message)
-      value = Ask.for_string("%s (y/n) " % [message])
+      value = Ask.for_string("%s (y/n) " % message)
       TRUE_STRINGS.include?(value.downcase)
     end
 

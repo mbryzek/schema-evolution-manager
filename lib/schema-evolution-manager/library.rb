@@ -44,7 +44,7 @@ module SchemaEvolutionManager
     end
 
     def Library.assert_valid_tag(tag)
-      Preconditions.check_state(Version.is_valid?(tag), "Invalid tag[%s]. Format must be x.x.x (e.g. 1.1.2)" % [tag])
+      Preconditions.check_state(Version.is_valid?(tag), "Invalid tag[%s]. Format must be x.x.x (e.g. 1.1.2)" % tag)
     end
 
     def Library.git_has_remote?

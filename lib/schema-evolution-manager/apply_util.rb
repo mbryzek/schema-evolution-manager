@@ -19,7 +19,7 @@ module SchemaEvolutionManager
     # Applies scripts in order, returning number of scripts applied
     def apply!(dir)
       Preconditions.check_state(File.directory?(dir),
-                                "Dir[%s] does not exist" % [dir])
+                                "Dir[%s] does not exist" % dir)
 
       count = 0
       @scripts.each_pending(dir) do |filename, path|
