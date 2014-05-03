@@ -8,7 +8,7 @@
 
 ## Purpose
 
-Schema Evolution Manager makes it very simple for engineers to
+Schema Evolution Manager (sem) makes it very simple for engineers to
 contribute schema changes to a postgresql database, managing the
 schema evolutions as proper source code. Schema changes are deployed
 as gzipped tarballs named with the corresponding git tag.
@@ -56,7 +56,7 @@ See INSTALLATION and GETTING STARTED for details.
     migration tools.
 
   - No rollback. We have found in practice that rolling back schema
-    changes is not 100% reliable. Therefore we intentially do NOT
+    changes is not 100% reliable. Therefore we inentionally do NOT
     support rollback. This is an often debated element of sem,
     and although the design itself could be easily extended to support
     rollback, we currently have no plans to do so.
