@@ -63,7 +63,7 @@ end
   SchemaEvolutionManager::Library.system_or_error("cp %s %s" % [filename, version_dir])
 end
 
-['bin', 'lib', 'template', 'scripts'].each do |dir|
+['bin', 'lib', 'lib/schema-evolution-manager', 'template', 'scripts'].each do |dir|
   this_dir = File.join(version_dir, dir)
   SchemaEvolutionManager::Library.ensure_dir!(this_dir)
   Dir.foreach(dir) do |filename|
