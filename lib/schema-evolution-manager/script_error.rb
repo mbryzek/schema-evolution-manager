@@ -1,6 +1,6 @@
 module SchemaEvolutionManager
 
-  class ScriptError
+  class ScriptError < Exception
 
     attr_reader :filename
 
