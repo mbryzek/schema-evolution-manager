@@ -55,11 +55,7 @@ module SchemaEvolutionManager
     # no tags, otherwise returns an instance of Version. Only searches for
     # tags matching x.x.x (e.g. 1.0.2)
     def Library.latest_tag
-      if File.exists?(".git")
-        `git tag -l`.strip.split.select { |tag| Version.is_valid?(tag) }.map { |tag| Version.new(tag) }.sort.last
-      else
-        nil
-      end
+      `git tag -l`.strip.split.select { |tag| Version.is_valid?(tag) }.map { |tag| Version.new(tag) }.sort.last
     end
 
     # Ex: Library.git_create_tag("0.0.1")
