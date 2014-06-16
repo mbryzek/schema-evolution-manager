@@ -42,7 +42,7 @@ describe SchemaEvolutionManager::Library do
         begin
           template.write_to_file(install_file)
           File.exists?(install_file).should be_true
-          SchemaEvolutionManager::Library.system_or_error(install_file)
+          SchemaEvolutionManager::Library.system_or_error("./%s" % install_file)
           File.directory?(dir).should be_true
           version_dir = "schema-evolution-manager-%s" % [SchemaEvolutionManager::Version.read.to_version_string]
           File.symlink?(File.join(dir, "schema-evolution-manager")).should be_true
