@@ -8,7 +8,7 @@
 #
 
 load File.join(File.dirname(__FILE__), '../lib/schema-evolution-manager.rb')
-Library.set_verbose(true)
+SchemaEvolutionManager::Library.set_verbose(true)
 
 dirty_files = SchemaEvolutionManager::Library.system_or_error("git status --porcelain").strip
 SchemaEvolutionManager::Preconditions.check_state(dirty_files == "", "Local checkout is dirty:\n%s" % dirty_files)
