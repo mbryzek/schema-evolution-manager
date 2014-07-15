@@ -7,4 +7,4 @@
 
 command = "sem-apply --host localhost --user %%user%% --name %%name%%"
 puts command
-system(command)
+exec(command)
