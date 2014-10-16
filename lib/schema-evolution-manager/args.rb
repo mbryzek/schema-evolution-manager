@@ -13,8 +13,7 @@ module SchemaEvolutionManager
         :name => "Specifies the name of the database to which to connect",
         :dir => "Path to a directory",
         :tag => "A git tag (e.g. 0.0.1)",
-        :lib_dir => "Configure installer to use this lib_dir",
-        :bin_dir => "Configure installer to use this bin_dir",
+        :prefix => "Configure installer to use this prefix"
       }
 
       FLAGS_NO_ARGUMENTS = {
@@ -24,7 +23,7 @@ module SchemaEvolutionManager
       }
     end
 
-    attr_reader :artifact_name, :bin_dir, :host, :lib_dir, :name, :user, :dir, :dry_run, :tag
+    attr_reader :artifact_name, :host, :name, :prefix, :user, :dir, :dry_run, :tag
 
     # args: Actual string arguments
     # :required => list of parameters that are required
@@ -50,10 +49,9 @@ module SchemaEvolutionManager
       missing = required.select { |field| blank?(found_arguments[field]) }
 
       @artifact_name = found_arguments.delete(:artifact_name)
-      @bin_dir = found_arguments.delete(:bin_dir)
       @host = found_arguments.delete(:host)
-      @lib_dir = found_arguments.delete(:lib_dir)
       @name = found_arguments.delete(:name)
+      @prefix = found_arguments.delete(:prefix)
       @user = found_arguments.delete(:user)
       @dir = found_arguments.delete(:dir)
       @tag = found_arguments.delete(:tag)
