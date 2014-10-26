@@ -11,13 +11,13 @@ describe SchemaEvolutionManager::MigrationFile do
       FileUtils.mkdir("scripts")
       path = "scripts/%s" % filename
       File.open(path, "w") { |out| out << sql_command }
-      yield
+      yield path
     end
   end
 
   it "for a valid file" do
-    test_repo_with_script(:filename => "20130318-105434.sql") do
-      SchemaEvolutionManager::MigrationFile.new("scripts/20130318-105434.sql").path.should == "scripts/20130318-105434.sql"
+    test_repo_with_script do |path|
+      SchemaEvolutionManager::MigrationFile.new(path).path.should == path
     end
   end
 
@@ -25,6 +25,15 @@ describe SchemaEvolutionManager::MigrationFile do
     lambda {
       SchemaEvolutionManager::MigrationFile.new("scripts/foo.sql")
     }.should raise_error(RuntimeError, "File[scripts/foo.sql] does not exist")
+  end
+
+  it "default attributes" do
+    command = <<-eos
+# ey
+    eos
+    test_repo_with_script(:sql_command => command) do |path|
+      SchemaEvolutionManager::MigrationFile.new(path).attributes.should == [SchemaEvolutionManager::MigrationFile::Attribute::IN_TRANSACTION]
+    end
   end
 
 end

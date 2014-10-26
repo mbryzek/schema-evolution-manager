@@ -12,10 +12,10 @@ module SchemaEvolutionManager
         @name = Preconditions.check_not_blank(name, "name cannot be blank")
       end
 
-    end
+      unless defined?(IN_TRANSACTION)
+        IN_TRANSACTION = Attribute.new("Run migration file in a single transaction")
+      end
 
-    unless defined?(ATTRIBUTE_IN_TRANSACTION)
-      ATTRIBUTE_IN_TRANSACTION = Attribute.new("Run migration file in a single transaction")
     end
 
     attr_reader :path
@@ -29,7 +29,7 @@ module SchemaEvolutionManager
     # are defined in comments at the top of the file.
     # @see Attribute
     def attributes
-      [ATTRIBUTE_IN_TRANSACTION]
+      [Attribute::IN_TRANSACTION]
     end
 
   end
