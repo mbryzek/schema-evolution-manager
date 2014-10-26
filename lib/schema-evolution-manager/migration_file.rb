@@ -79,8 +79,8 @@ module SchemaEvolutionManager
     def each_property
       IO.readlines(path).each do |l|
         stripped = l.strip
-        if stripped.match(/^#\s+attribute\./)
-          stripped.sub!(/^#\s+attribute\./, '')
+        if stripped.match(/^\-\-\s+attribute\./)
+          stripped.sub!(/^\-\-\s+attribute\./, '')
           name, value = stripped.split(/\=/, 2).map(&:strip)
           yield name, value
         end
