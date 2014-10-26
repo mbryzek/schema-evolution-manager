@@ -40,6 +40,10 @@ module SchemaEvolutionManager
 
     end
 
+    unless defined?(DEFAULTS)
+      DEFAULTS = [AttributeValue.new("transaction", "single")]
+    end
+
     attr_reader :path
 
     def initialize(path)
@@ -47,13 +51,40 @@ module SchemaEvolutionManager
       Preconditions.check_state(File.exists?(@path), "File[#{@path}] does not exist")
     end
 
-    # Returns a list of AttributeValues from the file
-    # itself. AttributeValues are defined in comments at the top of
-    # the file.
-    # @see Attribute
-    # @see AttributeValue
+    # Returns a list of AttributeValues from the file itself,
+    # including all defaults set by SEM. AttributeValues are defined
+    # in comments at the top of the file.
     def attribute_values
-      [AttributeValue.new("transaction", "single")]
+      values = []
+      each_property do |name, value|
+        values << AttributeValue.new(name, value)
+      end
+
+      DEFAULTS.each do |default|
+        if values.find { |v| v.attribute.name == default.attribute.name }.nil?
+          values << default
+        end
+      end
+
+      values
+    end
+
+    private
+
+    # Parse properties from the comments. Looks for this pattern:
+    #
+    # # attribute.name = value
+    #
+    # and yields each matching row with |name, value|
+    def each_property
+      IO.readlines(path).each do |l|
+        stripped = l.strip
+        if stripped.match(/^#\s+attribute\./)
+          stripped.sub!(/^#\s+attribute\./, '')
+          name, value = stripped.split(/\=/, 2).map(&:strip)
+          yield name, value
+        end
+      end
     end
 
   end

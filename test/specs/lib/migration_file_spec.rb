@@ -91,4 +91,28 @@ select 1
     end
   end
 
+  it "reports error if attribute is unknown" do
+    command = <<-eos
+# attribute.foo=single
+select 1
+    eos
+    test_repo_with_script(:sql_command => command) do |path|
+      lambda {
+        SchemaEvolutionManager::MigrationFile.new(path).attribute_values
+      }.should raise_error(RuntimeError, "Attribute with name[foo] not found. Must be one of: transaction")
+    end
+  end
+
+  it "reports error if attribute value is unknown" do
+    command = <<-eos
+# attribute.transaction=bar
+select 1
+    eos
+    test_repo_with_script(:sql_command => command) do |path|
+      lambda {
+        SchemaEvolutionManager::MigrationFile.new(path).attribute_values
+      }.should raise_error(RuntimeError, "Attribute[transaction] - Invalid value[bar]. Must be one of: single none")
+    end
+  end
+
 end
