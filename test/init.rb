@@ -51,4 +51,18 @@ module TestUtils
     end
   end
 
+  def TestUtils.in_test_repo_with_script(opts={})
+    sql_command = opts.delete(:sql_command) || "select 1"
+    filename = opts.delete(:filename) || "20130318-105434.sql"
+    SchemaEvolutionManager::Preconditions.assert_empty_opts(opts)
+
+    TestUtils.in_test_repo do
+      FileUtils.mkdir("scripts")
+      path = "scripts/%s" % filename
+      File.open(path, "w") { |out| out << sql_command }
+      yield path
+    end
+  end
+
+
 end

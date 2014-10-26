@@ -2,19 +2,6 @@ load File.join(File.dirname(__FILE__), '../../init.rb')
 
 describe SchemaEvolutionManager::MigrationFile do
 
-  def test_repo_with_script(opts={})
-    sql_command = opts.delete(:sql_command) || "select 1"
-    filename = opts.delete(:filename) || "20130318-105434.sql"
-    SchemaEvolutionManager::Preconditions.assert_empty_opts(opts)
-
-    TestUtils.in_test_repo do
-      FileUtils.mkdir("scripts")
-      path = "scripts/%s" % filename
-      File.open(path, "w") { |out| out << sql_command }
-      yield path
-    end
-  end
-
   describe "AttributeValue" do
 
     it "accepts single" do
@@ -48,7 +35,7 @@ describe SchemaEvolutionManager::MigrationFile do
   end
 
   it "for a valid file" do
-    test_repo_with_script do |path|
+    TestUtils.in_test_repo_with_script do |path|
       SchemaEvolutionManager::MigrationFile.new(path).path.should == path
     end
   end
@@ -66,7 +53,7 @@ describe SchemaEvolutionManager::MigrationFile do
   end
 
   it "default attributes" do
-    test_repo_with_script do |path|
+    TestUtils.in_test_repo_with_script do |path|
       verify_transaction_value(SchemaEvolutionManager::MigrationFile.new(path).attribute_values, "single")
     end
   end
@@ -76,7 +63,7 @@ describe SchemaEvolutionManager::MigrationFile do
 # attribute.transaction=single
 select 1
     eos
-    test_repo_with_script(:sql_command => command) do |path|
+    TestUtils.in_test_repo_with_script(:sql_command => command) do |path|
       verify_transaction_value(SchemaEvolutionManager::MigrationFile.new(path).attribute_values, "single")
     end
   end
@@ -86,17 +73,14 @@ select 1
 # attribute.transaction=none
 select 1
     eos
-    test_repo_with_script(:sql_command => command) do |path|
+    TestUtils.in_test_repo_with_script(:sql_command => command) do |path|
       verify_transaction_value(SchemaEvolutionManager::MigrationFile.new(path).attribute_values, "none")
     end
   end
 
   it "reports error if attribute is unknown" do
-    command = <<-eos
-# attribute.foo=single
-select 1
-    eos
-    test_repo_with_script(:sql_command => command) do |path|
+    command = "# attribute.foo=single"
+    TestUtils.in_test_repo_with_script(:sql_command => command) do |path|
       lambda {
         SchemaEvolutionManager::MigrationFile.new(path).attribute_values
       }.should raise_error(RuntimeError, "Attribute with name[foo] not found. Must be one of: transaction")
@@ -104,11 +88,8 @@ select 1
   end
 
   it "reports error if attribute value is unknown" do
-    command = <<-eos
-# attribute.transaction=bar
-select 1
-    eos
-    test_repo_with_script(:sql_command => command) do |path|
+    command = "# attribute.transaction=bar"
+    TestUtils.in_test_repo_with_script(:sql_command => command) do |path|
       lambda {
         SchemaEvolutionManager::MigrationFile.new(path).attribute_values
       }.should raise_error(RuntimeError, "Attribute[transaction] - Invalid value[bar]. Must be one of: single none")

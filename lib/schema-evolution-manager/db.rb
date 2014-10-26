@@ -27,17 +27,46 @@ module SchemaEvolutionManager
       Library.system_or_error(command)
     end
 
+    def Db.attribute_values(path)
+      Preconditions.assert_class(path, String)
+
+      options = []
+
+      ['quiet', 'no-align', 'tuples-only'].each do |v|
+        options << "--#{v}"
+      end
+
+      SchemaEvolutionManager::MigrationFile.new(path).attribute_values.map do |value|
+        if value.attribute.name == "transaction"
+          if value.value == "single"
+            options << "--single-transaction"
+          elsif value.value == "none"
+            # No-op
+          else
+            raise "File[%s] - attribute[%s] unsupported value[%s]" % [path, value.attribute.name, value.value]
+          end
+        else
+          raise "File[%s] - unsupported attribute named[%s]" % [path, value.attribute.name]
+        end
+      end
+
+      options
+    end
+
     # executes sql commands from a file in a single transaction
     def psql_file(path)
       Preconditions.assert_class(path, String)
       Preconditions.check_state(File.exists?(path), "File[%s] not found" % path)
+
+      options = Db.attribute_values(path).join(" ")
 
       Library.with_temp_file(:prefix => File.basename(path)) do |tmp|
         File.open(tmp, "w") do |out|
           out << "\\set ON_ERROR_STOP true\n\n"
           out << IO.read(path)
         end
-        command = "psql --quiet --host %s --no-align --tuples-only --username %s --single-transaction --file \"%s\" %s" % [@host, @user, tmp, @name]
+
+        command = "psql --host %s --username %s --file \"%s\" #{options} %s" % [@host, @user, tmp, @name]
         Library.system_or_error(command)
       end
     end
