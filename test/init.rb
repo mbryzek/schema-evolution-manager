@@ -31,6 +31,8 @@ module TestUtils
     end
   end
 
+  # Creates a test repository for schema script
+  # management. Initialized with a git repo.
   def TestUtils.in_test_repo(&block)
     SchemaEvolutionManager::Library.with_temp_file do |tmp|
       SchemaEvolutionManager::Library.system_or_error("git init #{tmp}")
