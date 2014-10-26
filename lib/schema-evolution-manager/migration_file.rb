@@ -53,7 +53,7 @@ module SchemaEvolutionManager
 
     # Returns a list of AttributeValues from the file itself,
     # including all defaults set by SEM. AttributeValues are defined
-    # in comments at the top of the file.
+    # in comments in the file.
     def attribute_values
       values = []
       each_property do |name, value|
