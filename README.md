@@ -131,6 +131,15 @@ First presented at PGDay NYC 2013: https://speakerdeck.com/mbryzek/schema-evolut
     sudo ./install.rb
 
 
+## Upgrading
+
+Upgrading is as simple as following the Installation instructions for
+the new version. Each installation of sem will create a new directory
+for that specific version. When you install the newer version, a new
+directory will be created and symlinks updated to point to the latest
+version.
+
+
 ## Getting Started
 
 ### Initialization
