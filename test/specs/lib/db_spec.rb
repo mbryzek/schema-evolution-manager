@@ -13,6 +13,43 @@ describe SchemaEvolutionManager::Db do
     SchemaEvolutionManager::Db.schema_name.should == "schema_evolution_manager"
   end
 
+  describe "SchemaEvolutionManager::Db.attribute_values" do
+
+    it "defaults" do
+      TestUtils.in_test_repo_with_script do |path|
+        SchemaEvolutionManager::Db.attribute_values(path).join(" ").should == "--quiet --no-align --tuples-only --single-transaction"
+      end
+    end
+
+    it "with transaction=single" do
+      TestUtils.in_test_repo_with_script(:sql_command => "-- sem.attribute.transaction=single") do |path|
+        SchemaEvolutionManager::Db.attribute_values(path).join(" ").should == "--quiet --no-align --tuples-only --single-transaction"
+      end
+    end
+
+    it "with transaction=none" do
+      TestUtils.in_test_repo_with_script(:sql_command => "-- sem.attribute.transaction=none") do |path|
+        SchemaEvolutionManager::Db.attribute_values(path).join(" ").should == "--quiet --no-align --tuples-only"
+      end
+    end
+
+    it "reports error for invalid attribute name" do
+      TestUtils.in_test_repo_with_script(:sql_command => "-- sem.attribute.foo=single") do |path|
+        lambda {
+          SchemaEvolutionManager::Db.attribute_values(path)
+        }.should raise_error(RuntimeError, "Attribute with name[foo] not found. Must be one of: transaction")
+      end
+    end
+
+    it "reports error for invalid attribute value" do
+      TestUtils.in_test_repo_with_script(:sql_command => "-- sem.attribute.transaction=bar") do |path|
+        lambda {
+          SchemaEvolutionManager::Db.attribute_values(path)
+        }.should raise_error(RuntimeError, "Attribute[transaction] - Invalid value[bar]. Must be one of: single none")
+      end
+    end
+  end
+
   it "to_pretty_string" do
     db = TestUtils.create_db_config(:name => "test")
     db.to_pretty_string.should == "postgres@localhost/test"

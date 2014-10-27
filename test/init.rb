@@ -31,6 +31,8 @@ module TestUtils
     end
   end
 
+  # Creates a test repository for schema script
+  # management. Initialized with a git repo.
   def TestUtils.in_test_repo(&block)
     SchemaEvolutionManager::Library.with_temp_file do |tmp|
       SchemaEvolutionManager::Library.system_or_error("git init #{tmp}")
@@ -48,5 +50,19 @@ module TestUtils
       yield
     end
   end
+
+  def TestUtils.in_test_repo_with_script(opts={})
+    sql_command = opts.delete(:sql_command) || "select 1"
+    filename = opts.delete(:filename) || "20130318-105434.sql"
+    SchemaEvolutionManager::Preconditions.assert_empty_opts(opts)
+
+    TestUtils.in_test_repo do
+      FileUtils.mkdir("scripts")
+      path = "scripts/%s" % filename
+      File.open(path, "w") { |out| out << sql_command }
+      yield path
+    end
+  end
+
 
 end
