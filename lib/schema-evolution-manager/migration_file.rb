@@ -74,14 +74,14 @@ module SchemaEvolutionManager
 
     # Parse properties from the comments. Looks for this pattern:
     #
-    # -- attribute.name = value
+    # -- sem.attribute.name = value
     #
     # and yields each matching row with |name, value|
     def each_property
       IO.readlines(path).each do |l|
         stripped = l.strip
-        if stripped.match(/^\-\-\s+attribute\./)
-          stripped.sub!(/^\-\-\s+attribute\./, '')
+        if stripped.match(/^\-\-\s+sem\.attribute\./)
+          stripped.sub!(/^\-\-\s+sem\.attribute\./, '')
           name, value = stripped.split(/\=/, 2).map(&:strip)
           yield name, value
         end

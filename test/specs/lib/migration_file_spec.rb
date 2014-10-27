@@ -60,7 +60,7 @@ describe SchemaEvolutionManager::MigrationFile do
 
   it "attribute transaction explicitly enabled" do
     command = <<-eos
--- attribute.transaction=single
+-- sem.attribute.transaction=single
 select 1
     eos
     TestUtils.in_test_repo_with_script(:sql_command => command) do |path|
@@ -70,7 +70,7 @@ select 1
 
   it "attribute transaction explicitly enabled" do
     command = <<-eos
--- attribute.transaction=none
+-- sem.attribute.transaction=none
 select 1
     eos
     TestUtils.in_test_repo_with_script(:sql_command => command) do |path|
@@ -79,7 +79,7 @@ select 1
   end
 
   it "reports error if attribute is unknown" do
-    command = "-- attribute.foo=single"
+    command = "-- sem.attribute.foo=single"
     TestUtils.in_test_repo_with_script(:sql_command => command) do |path|
       lambda {
         SchemaEvolutionManager::MigrationFile.new(path).attribute_values
@@ -88,7 +88,7 @@ select 1
   end
 
   it "reports error if attribute value is unknown" do
-    command = "-- attribute.transaction=bar"
+    command = "-- sem.attribute.transaction=bar"
     TestUtils.in_test_repo_with_script(:sql_command => command) do |path|
       lambda {
         SchemaEvolutionManager::MigrationFile.new(path).attribute_values
