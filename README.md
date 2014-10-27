@@ -272,12 +272,11 @@ Currently supported attributes:
 
   - transaction
 
-      - single (default): the entire file is applied within a
-        transaction (by using the psql command line argument
-        --single-transaction)
-
-      - none: Each command in the file will be applied in order. If a
-        later command in the file fails, there will be no rollback.
+    - single (default): the entire file is applied within a
+      transaction (by using the psql command line argument
+      --single-transaction)
+    - none: Each command in the file will be applied in order. If a
+      later command in the file fails, there will be no rollback.
 
 
 ## TODO
