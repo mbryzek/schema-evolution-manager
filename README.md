@@ -257,6 +257,29 @@ and utilities in practice.
 - sem-apply: Apply any deltas from a distribution tarball to a particular database
 
 
+## Attributes supported in sql migration scripts
+
+Sometimes you may want to adjust the specific options used by SEM when
+applying SQL scripts. Attributes can be specified within each SQL file
+in comments.
+
+To specify an attribute, add a comment of the following format
+anywhere in your SQL file (but at the top by convention):
+
+-- sem.attribute.[name] = [value]
+
+Currently supported attributes:
+
+  - transaction
+
+      - single (default): the entire file is applied within a
+        transaction (by using the psql command line argument
+        --single-transaction)
+
+      - none: Each command in the file will be applied in order. If a
+        later command in the file fails, there will be no rollback.
+
+
 ## TODO
 
 - Consider offering an option to install via ruby gems
