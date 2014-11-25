@@ -287,6 +287,10 @@ Currently supported attributes:
     - none: Each command in the file will be applied in order. If a
       later command in the file fails, there will be no rollback.
 
+    Examples:
+      -- sem.attribute.transaction = none
+      -- sem.attribute.transaction = single
+
 
 ## TODO
 
