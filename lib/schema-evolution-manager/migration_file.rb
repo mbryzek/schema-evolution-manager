@@ -31,7 +31,7 @@ module SchemaEvolutionManager
         Preconditions.check_not_null(@attribute,
                                      "Attribute with name[%s] not found. Must be one of: %s" %
                                      [attribute_name, 
-                                      Attribute::ATTRIBUTES.map(&:name).join(" ")])
+                                      Attribute::ATTRIBUTES.map { |a| a.name }.join(" ")])
 
         Preconditions.check_state(@attribute.valid_values.include?(@value),
                                   "Attribute[%s] - Invalid value[%s]. Must be one of: %s" %
