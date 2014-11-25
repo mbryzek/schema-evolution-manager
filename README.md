@@ -288,6 +288,7 @@ Currently supported attributes:
       later command in the file fails, there will be no rollback.
 
     Examples:
+
       -- sem.attribute.transaction = none
       -- sem.attribute.transaction = single
 
