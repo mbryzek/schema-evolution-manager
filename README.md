@@ -289,8 +289,8 @@ Currently supported attributes:
 
     Examples:
 
-      -- sem.attribute.transaction = none
-      -- sem.attribute.transaction = single
+      - sem.attribute.transaction = none
+      - sem.attribute.transaction = single
 
 
 ## TODO
