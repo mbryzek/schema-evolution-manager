@@ -2,6 +2,11 @@ load File.join(File.dirname(__FILE__), '../../init.rb')
 
 describe SchemaEvolutionManager::SemInfo do
 
+  it "version" do
+    SchemaEvolutionManager::SemInfo.version.should == SchemaEvolutionManager::SemVersion::VERSION
+    SchemaEvolutionManager::SemInfo.version([]).should == SchemaEvolutionManager::SemVersion::VERSION
+  end
+
   describe "tag" do
 
     it "latest" do

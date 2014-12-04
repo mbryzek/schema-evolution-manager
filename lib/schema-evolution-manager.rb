@@ -11,6 +11,7 @@ load File.join(lib_dir, 'library.rb')
 # Need to set base_dir early - version.rb depends on dir being set
 SchemaEvolutionManager::Library.set_base_dir(File.join(dir, '..'))
 
+load File.join(lib_dir, 'sem_version.rb')
 load File.join(lib_dir, 'ask.rb')
 load File.join(lib_dir, 'version.rb')
 load File.join(lib_dir, 'args.rb')

@@ -2,6 +2,10 @@ module SchemaEvolutionManager
 
   module SemInfo
 
+    def SemInfo.version(args=nil)
+      SchemaEvolutionManager::SemVersion::VERSION.dup
+    end
+
     def SemInfo.tag(args)
       valid = ['latest', 'next']
 
