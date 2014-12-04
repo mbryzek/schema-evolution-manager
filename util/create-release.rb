@@ -64,7 +64,7 @@ File.open(sem_version_path, "w") { |out| out << new_sem_version }
 puts "Writing new_version[%s] to %s" % [new_version.to_version_string, SchemaEvolutionManager::Version::VERSION_FILE]
 SchemaEvolutionManager::Version.write(new_version)
 
-SchemaEvolutionManager::Library.system_or_error("git commit -m 'Update version to %s' VERSION README.md" % new_version.to_version_string)
+SchemaEvolutionManager::Library.system_or_error("git commit -m 'autocommit: Update version to %s' VERSION README.md" % new_version.to_version_string)
 
 puts "Creating git tag[%s]" % new_version.to_version_string
 SchemaEvolutionManager::Library.system_or_error("git tag -a -m '%s' %s" % [new_version.to_version_string, new_version.to_version_string])
