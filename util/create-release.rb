@@ -50,9 +50,9 @@ sem_version_path = "lib/schema-evolution-manager/sem_version.rb"
 new_sem_version = ""
 found = false
 IO.readlines(sem_version_path).each do |l|
-  if l.match(/VERSION\s*=\s*'\d+\.\d+\.\d+'$/)
+  if l.match(/VERSION\s*=\s*'\d+\.\d+\.\d+'/)
     found = true
-    l.sub!(/VERSION = '\d+\.\d+\.\d+'$/, "VERSION = '%s' # Automatically updated by util/create-release.rb" % new_version.to_version_string)
+    l.sub!(/VERSION = '\d+\.\d+\.\d+'.*$/, "VERSION = '%s' # Automatically updated by util/create-release.rb" % new_version.to_version_string)
   end
   new_sem_version << l
 end
