@@ -20,4 +20,11 @@ describe "sem-info" do
     end
   end
 
+  it "version" do
+    path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-info")
+    TestUtils.in_test_repo_with_commit do
+      `#{path} version`.strip.should == SchemaEvolutionManager::SemVersion::VERSION
+    end
+  end
+
 end
