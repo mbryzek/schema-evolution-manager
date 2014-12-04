@@ -6,6 +6,9 @@
 #  sem-info tag latest
 #    Display the latest tag
 #
+#  sem-info version
+#    Display the version of schema-evolution-manager
+#
 #  sem-info tag next [major|minor|micro]
 #    Output information on the next tag. Defaults to micro
 #    version increment from latest tag
@@ -23,6 +26,9 @@ command = ARGV.shift.to_s.strip
 
 if command == "tag"
   puts SchemaEvolutionManager::SemInfo.tag(ARGV)
+
+elsif command == "version"
+  puts SchemaEvolutionManager::SemInfo.version(ARGV)
 
 else
   if command != ""

@@ -39,13 +39,27 @@ IO.readlines("README.md").each do |l|
   end
   new_readme << l
 end
-
-if !found
-  raise "Failed to update README.md"
-end
+SchemaEvolutionManager::Preconditions.check_state(found, "Failed to update README.md")
 
 puts "Update version in README.md"
 File.open("README.md", "w") { |out| out << new_readme }
+
+
+# Parse sem_version.rb
+sem_version_path = "lib/schema-evolution-manager/sem_version.rb"
+new_sem_version = ""
+found = false
+IO.readlines(sem_version_path).each do |l|
+  if l.match(/VERSION\s*=\s*'\d+\.\d+\.\d+'$/)
+    found = true
+    l.sub!(/VERSION = '\d+\.\d+\.\d+'$/, "VERSION = '%s' # Automatically updated by util/create-release.rb" % new_version.to_version_string)
+  end
+  new_sem_version << l
+end
+SchemaEvolutionManager::Preconditions.check_state(found, "Failed to update #{sem_version_path}")
+
+puts "Update version in #{sem_version_path}"
+File.open(sem_version_path, "w") { |out| out << new_sem_version }
 
 puts "Writing new_version[%s] to %s" % [new_version.to_version_string, SchemaEvolutionManager::Version::VERSION_FILE]
 SchemaEvolutionManager::Version.write(new_version)
