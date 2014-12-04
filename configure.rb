@@ -16,16 +16,11 @@
 load File.join(File.dirname(__FILE__), 'lib/schema-evolution-manager.rb')
 SchemaEvolutionManager::Library.set_verbose(true)
 
-args = SchemaEvolutionManager::Args.from_stdin(:optional => %w(lib_dir bin_dir))
+args = SchemaEvolutionManager::Args.from_stdin(:optional => %w(prefix))
 
-lib_dir = args.lib_dir || SchemaEvolutionManager::Ask.for_string("lib dir", :default => "/usr/local/lib")
-
-if lib_dir.match(/\/lib$/)
-  default_bin_dir = lib_dir.sub(/\/lib$/, '/bin')
-else
-  default_bin_dir = "/usr/local/bin"
-end
-bin_dir = args.bin_dir || SchemaEvolutionManager::Ask.for_string("bin dir", :default => default_bin_dir)
+prefix = args.prefix || SchemaEvolutionManager::Ask.for_string("prefix", :default => "/usr/local")
+lib_dir = File.join(prefix, "lib")
+bin_dir = File.join(prefix, "bin")
 
 target = "./install.rb"
 template = SchemaEvolutionManager::InstallTemplate.new(:lib_dir => lib_dir, :bin_dir => bin_dir)
