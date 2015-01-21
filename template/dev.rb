@@ -5,6 +5,8 @@
 #  ./dev.rb
 #
 
-command = "sem-apply --host localhost --user %%user%% --name %%name%%"
-puts command
-exec(command)
+Dir.chdir(File.dirname($0)) {
+  command = "sem-apply --host localhost --user %%user%% --name %%name%%"
+  puts command
+  exec(command)
+}
