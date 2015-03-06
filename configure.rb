@@ -9,7 +9,7 @@
 #  ./configure.rb
 #    You will be asked for required options
 #
-#  ./configure.rb --lib_dir /usr/local/lib --bin_dir /usr/local/bin
+#  ./configure.rb --prefix /usr/local
 #    Configure installer for the specified lib and bin directories
 #
 
