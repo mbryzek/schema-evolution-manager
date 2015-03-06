@@ -242,9 +242,9 @@ For details on these tables, see scripts/*sql where the tables themselves are de
 
 ## PLPGSQL Utilities
 
-We've included a copy of the schema conventions we practice at Gilt
-Groupe [CONVENTIONS.md]. There are also a number of utility plpgsql functions to help
-developers apply these conventions in a systematic way.
+We've included a copy of the schema conventions we practice at
+(Gilt Groupe)[CONVENTIONS.md]. There are also a number of utility plpgsql
+functions to help developers apply these conventions in a systematic way.
 
 The helpers are defined in
 
@@ -300,7 +300,7 @@ Currently supported attributes:
 
 ## License
 
-Copyright 2013-2014 Gilt Groupe, Inc.
+Copyright 2013-2015 Gilt Groupe, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
