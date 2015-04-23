@@ -12,4 +12,24 @@ describe "Add" do
     end
   end
 
+  it "adding multiple files quickly results in unique filenames" do
+    path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-add")
+    TestUtils.in_test_repo do
+      File.open("new1.sql", "w") { |out| out << "select 1" }
+      File.open("new2.sql", "w") { |out| out << "select 1" }
+      File.open("new3.sql", "w") { |out| out << "select 1" }
+      SchemaEvolutionManager::Scripts.all("scripts").size.should == 0
+      SchemaEvolutionManager::Library.system_or_error("#{path} ./new1.sql && #{path} ./new2.sql && #{path} ./new3.sql")
+
+      scripts = SchemaEvolutionManager::Scripts.all("scripts").map { |s|
+        s.sub(/^scripts\//, '')
+      }
+      scripts.size.should == 3
+      first = scripts.first
+      second = first.sub(/\.sql$/, '.z1001.sql')
+      third = first.sub(/\.sql$/, '.z1002.sql')
+      scripts.join(" ").should == "#{first} #{second} #{third}"
+    end
+  end
+
 end
