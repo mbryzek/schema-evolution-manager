@@ -26,6 +26,19 @@ contents = IO.read(file)
 now = Time.now.strftime('%Y%m%d-%H%M%S')
 target = File.join(scripts_dir, "#{now}.sql")
 
+padding = 1000
+counter = 0
+while File.exists?(target)
+  counter += 1
+  if counter >= padding * 10
+    raise "ERROR: Cannot add more than #{padding * 10} files / second. Doing so would break the implementation of lexicographically sorted filenames"
+  end
+  # The .z prefix is here to ensure these files sort AFTER the first
+  # .sql file. Maintaining lexicographic sorting is important to
+  # support simple command line tools (e.g. ls)
+  target = File.join(scripts_dir, "#{now}.z#{padding + counter}.sql")
+end
+
 puts "Adding #{target}"
 SchemaEvolutionManager::Library.system_or_error("mv #{file} #{target}")
 SchemaEvolutionManager::Library.system_or_error("git add #{target}")
