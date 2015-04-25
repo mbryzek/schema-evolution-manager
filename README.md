@@ -126,7 +126,7 @@ First presented at PGDay NYC 2013: https://speakerdeck.com/mbryzek/schema-evolut
 
     git clone git://github.com/gilt/schema-evolution-manager.git
     cd schema-evolution-manager
-    git checkout 0.9.17
+    git checkout 0.9.18
     ruby ./configure.rb
     sudo ./install.rb
 
