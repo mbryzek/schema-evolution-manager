@@ -10,8 +10,8 @@ module SchemaEvolutionManager
     end
 
     def dml
-      "psql --host %s --username %s --command \"insert into %s.%s (filename) values ('%s')\" %s\n" %
-        [@db.host, @db.user, Db.schema_name, Scripts::SCRIPTS, filename, @db.name]
+      "psql --command \"insert into %s.%s (filename) values ('%s')\" %s\n" %
+        [Db.schema_name, Scripts::SCRIPTS, filename, @db.url]
     end
 
   end
