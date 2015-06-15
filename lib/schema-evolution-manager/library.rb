@@ -123,10 +123,14 @@ module SchemaEvolutionManager
         puts command
       end
 
-      result = `#{command}`.strip
-      status = $?
-      if status.to_i > 0
-        raise "Non zero exit code[%s] running command[%s]" % [status, command]
+      begin
+        result = `#{command}`.strip
+        status = $?
+        if status.to_i > 0
+          raise "Non zero exit code[%s] running command[%s]" % [status, command]
+        end
+      rescue Exception => e
+        raise "Error running command[%s]: %s" % [command, e.to_s]
       end
       result
     end
