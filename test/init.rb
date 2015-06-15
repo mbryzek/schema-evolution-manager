@@ -16,18 +16,18 @@ module TestUtils
   def TestUtils.create_db_config(opts={})
     name = opts.delete(:name) || TestUtils.random_db_name
     SchemaEvolutionManager::Preconditions.check_state(opts.empty?)
-    SchemaEvolutionManager::Db.parse_command_line_config("--host localhost --name #{name} --user postgres")
+    SchemaEvolutionManager::Db.parse_command_line_config("--url postgresql://localhost:5432:#{name}")
   end
 
   def TestUtils.with_db
-    superdb = SchemaEvolutionManager::Db.new("localhost", "postgres", "postgres")
+    superdb = SchemaEvolutionManager::Db.new("postgresql://localhost:5432:postgres")
     name = "schema_evolution_manager_test_db_%s" % [rand(100000)]
     db = SchemaEvolutionManager::Db.parse_command_line_config("--host localhost --name #{name} --user postgres")
     begin
-      superdb.psql_command("create database #{db.name}")
+      superdb.psql_command("create database #{name}")
       yield db
     ensure
-      superdb.psql_command("drop database #{db.name}")
+      superdb.psql_command("drop database #{name}")
     end
   end
 

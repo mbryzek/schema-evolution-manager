@@ -50,11 +50,6 @@ describe SchemaEvolutionManager::Db do
     end
   end
 
-  it "to_pretty_string" do
-    db = TestUtils.create_db_config(:name => "test")
-    db.to_pretty_string.should == "postgres@localhost/test"
-  end
-
   it "psql_command" do
     TestUtils.with_db do |db|
       db.psql_command("select 10").should == "10"

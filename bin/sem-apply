@@ -11,7 +11,7 @@
 
 load File.join(File.dirname(__FILE__), 'sem-config')
 
-args = SchemaEvolutionManager::Args.from_stdin(:required => %w(host name user), :optional => %w(dry_run))
+args = SchemaEvolutionManager::Args.from_stdin(:optional => %w(url host name user dry_run))
 
 db = SchemaEvolutionManager::Db.from_args(args)
 db.bootstrap!
@@ -20,7 +20,7 @@ dry_run = args.dry_run.nil? ? false : args.dry_run
 
 util = SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => dry_run)
 
-puts "Upgrading schema for #{db.to_pretty_string}"
+puts "Upgrading schema for #{db.url}"
 
 begin
   count = util.apply!("./scripts")
