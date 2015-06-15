@@ -6,7 +6,7 @@
 #
 
 Dir.chdir(File.dirname($0)) {
-  command = "sem-apply --host localhost --user %%user%% --name %%name%%"
+  command = "sem-apply --url %%url%%"
   puts command
   exec(command)
 }

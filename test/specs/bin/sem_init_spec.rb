@@ -8,7 +8,7 @@ describe "Init" do
     TestUtils.with_bootstrapped_db do |db|
       SchemaEvolutionManager::Library.with_temp_file do |tmp|
         SchemaEvolutionManager::Library.system_or_error("git init #{tmp}")
-        SchemaEvolutionManager::Library.system_or_error("#{init_path} --dir #{tmp} --name test --user postgres")
+        SchemaEvolutionManager::Library.system_or_error("#{init_path} --dir #{tmp} --url #{db.url}")
       end
     end
   end

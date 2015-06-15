@@ -145,7 +145,7 @@ version.
 ### Initialization
 
     git init /tmp/sample
-    sem-init --dir /tmp/sample --name sample_development --user postgres
+    sem-init --dir /tmp/sample --url postgresql://postgres@localhost/sample_development
 
 ### Writing your first sql script
 
