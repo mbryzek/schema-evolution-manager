@@ -4,9 +4,7 @@ describe SchemaEvolutionManager::Db do
 
   it "SchemaEvolutionManager::Db.parse_command_line_config" do
     db = TestUtils.create_db_config(:name => "test")
-    db.host.should == "localhost"
-    db.name.should == "test"
-    db.user.should == "postgres"
+    db.url.should == "postgresql://localhost:5432/test"
   end
 
   it "SchemaEvolutionManager::Db.schema_name" do

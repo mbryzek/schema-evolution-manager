@@ -21,7 +21,7 @@ describe "Apply" do
   it "does not apply sql scripts with dry_run" do
     with_script_setup do |db|
       apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
-      SchemaEvolutionManager::Library.system_or_error("#{apply_path} --host #{db.host} --name #{db.name} --user #{db.user} --dry_run")
+      SchemaEvolutionManager::Library.system_or_error("#{apply_path} --url #{db.url} --dry_run")
       lambda {
         db.psql_command("select count(*) from tmp")
       }.should raise_error(RuntimeError)
@@ -31,7 +31,7 @@ describe "Apply" do
   it "applies sql scripts without dry_run" do
     with_script_setup do |db|
       apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
-      SchemaEvolutionManager::Library.system_or_error("#{apply_path} --host #{db.host} --name #{db.name} --user #{db.user}")
+      SchemaEvolutionManager::Library.system_or_error("#{apply_path} --url #{db.url}")
       db.psql_command("select count(*) from tmp").to_i.should == 1
     end
   end
