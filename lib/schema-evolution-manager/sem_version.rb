@@ -2,7 +2,7 @@ module SchemaEvolutionManager
 
   module SemVersion
 
-    VERSION = '0.9.19' # Automatically updated by util/create-release.rb
+    VERSION = '0.9.20' # Automatically updated by util/create-release.rb
 
   end
 
