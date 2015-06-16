@@ -3,9 +3,12 @@
 #    sorted by the timestamp assigned at the time the script was added
 #
 # == Usage
+#  sem-apply --url <database url>
+#  or
 #  sem-apply --host <database host> --user <db user> --name <db name>
 #
-# == Example
+# == Examples
+#  sem-apply --url postgresql://postgres@localhost/sample_development
 #  sem-apply --host localhost --user web --name test
 #
 
