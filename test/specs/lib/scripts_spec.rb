@@ -30,7 +30,7 @@ describe SchemaEvolutionManager::Scripts do
   it "creates all scripts table" do
     TestUtils.with_bootstrapped_db do |db|
       tables = db.psql_command("select table_name from information_schema.tables where table_schema ='%s'" % [SchemaEvolutionManager::Db.schema_name])
-      tables.map(&:strip).sort.join(" ").should == SchemaEvolutionManager::Scripts::VALID_TABLE_NAMES.sort.join(" ")
+      tables.split("\n").map(&:strip).sort.join(" ").should == SchemaEvolutionManager::Scripts::VALID_TABLE_NAMES.sort.join(" ")
     end
   end
 

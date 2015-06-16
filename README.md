@@ -145,7 +145,7 @@ version.
 ### Initialization
 
     git init /tmp/sample
-    sem-init --dir /tmp/sample --name sample_development --user postgres
+    sem-init --dir /tmp/sample --url postgresql://postgres@localhost/sample_development
 
 ### Writing your first sql script
 
@@ -157,6 +157,10 @@ version.
 
     cd /tmp/sample
     createdb sample_development
+    sem-apply --url postgresql://postgres@localhost/sample_development
+
+Note that you can also pass in the username, db host, and db name explicitly:
+
     sem-apply --host localhost --name sample_development --user postgres
 
 ### When you are happy with your change, commit:
@@ -190,7 +194,7 @@ fine as well.
 
 ### Do a dry run
 
-    sem-apply --host localhost --name sample_production --user postgres --dry_run
+    sem-apply --url postgresql://postgres@localhost/sample_development --dry_run
 
 You will likely see a number of create table statements (see data model section below). You should also see:
 
@@ -201,7 +205,7 @@ which tells you that if you apply these changes, that sql script will be applied
 
 ### Apply the changes
 
-    sem-apply --host localhost --name sample_production --user postgres
+    sem-apply --url postgresql://postgres@localhost/sample_development
 
 You will see:
 
@@ -210,7 +214,7 @@ You will see:
 
 Attempt to apply again:
 
-    sem-apply --host localhost --name sample_production --user postgres
+    sem-apply --url postgresql://postgres@localhost/sample_development
 
 You will see:
 

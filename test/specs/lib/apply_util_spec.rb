@@ -15,7 +15,7 @@ describe SchemaEvolutionManager::ApplyUtil do
   end
 
   it "dry_run?" do
-    db = SchemaEvolutionManager::Db.new("localhost", "test", "postgres")
+    db = SchemaEvolutionManager::Db.new("postgres://postgres@localhost/test")
     SchemaEvolutionManager::ApplyUtil.new(db).dry_run?.should be_true
     SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => nil).dry_run?.should be_true
     SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => true).dry_run?.should be_true

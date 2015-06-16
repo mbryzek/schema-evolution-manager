@@ -4,9 +4,7 @@ describe SchemaEvolutionManager::Db do
 
   it "SchemaEvolutionManager::Db.parse_command_line_config" do
     db = TestUtils.create_db_config(:name => "test")
-    db.host.should == "localhost"
-    db.name.should == "test"
-    db.user.should == "postgres"
+    db.url.should == "postgresql://localhost:5432/test"
   end
 
   it "SchemaEvolutionManager::Db.schema_name" do
@@ -48,11 +46,6 @@ describe SchemaEvolutionManager::Db do
         }.should raise_error(RuntimeError, "Attribute[transaction] - Invalid value[bar]. Must be one of: single none")
       end
     end
-  end
-
-  it "to_pretty_string" do
-    db = TestUtils.create_db_config(:name => "test")
-    db.to_pretty_string.should == "postgres@localhost/test"
   end
 
   it "psql_command" do

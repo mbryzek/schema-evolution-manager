@@ -2,7 +2,7 @@
 # == Creates a tarball containing SQL scripts that might need to be
 #    applied to a specific postgresql database. This tarball can then
 #    be uploaded, unpacked, and schema changes applied using
-#    software-evolution-manager scripts
+#    schema-evolution-manager scripts
 #
 # == Usage
 #  sem-dist [--artifact_name <tag> --tag <tag>]

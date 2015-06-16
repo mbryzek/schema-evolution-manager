@@ -1,24 +1,26 @@
 #!/usr/bin/env ruby
 # == Initializes an existing git repository to support schema evolutions managed
-#    by software-evolution-manager
+#    by schema-evolution-manager
 #
 # == Usage
-#  sem-init --dir <dir> --name <name> --user <username>
+#  sem-init --dir <dir> --url <url>
+#  or
+#  sem-init --dir <dir> --host <database host> --user <db user> --name <db name>
 #
 #   dir: The directory containing a git repository that will contain the schema evolution files
-#   name: The name of the actual database that will be managed
-#   user: The postgresql username to connect to this database
+#   url: The connection string for the psql database
 #
 # == Example
 #  git init /tmp/example_repo
-#  bin/sem-init --dir /tmp/example_repo --name example_us_development --user dev
+#  bin/sem-init --dir /tmp/example_repo --url postgresql://username@localhost/sample_development
 #
 
 load File.join(File.dirname(__FILE__), 'sem-config')
 SchemaEvolutionManager::Library.set_verbose(true)
 
-args = SchemaEvolutionManager::Args.from_stdin(:required => %w(name user dir))
-SchemaEvolutionManager::Preconditions.check_state(File.directory?(args.dir), "Dir[%s] does not exist" % [args.dir])
+args = SchemaEvolutionManager::Args.from_stdin(:required => %w(dir), :optional => %w(url host name user))
+SchemaEvolutionManager::Preconditions.check_state(File.directory?(args.dir), "Dir[%s] does not exist" % args.dir)
+db = SchemaEvolutionManager::Db.from_args(args)
 
 def copy_file(source, target, substitutions)
   template = SchemaEvolutionManager::Template.new
@@ -33,15 +35,14 @@ end
 
 template_dir = File.join(SchemaEvolutionManager::Library.base_dir, "template")
 SchemaEvolutionManager::Preconditions.check_state(File.directory?(template_dir),
-                                                  "Could not find software-evolution-manager/template subdir. Expected it at[%s]" % [template_dir])
+                                                  "Could not find schema-evolution-manager/template subdir. Expected it at[%s]" % [template_dir])
 
 subs = {
-  "name" => args.name,
-  "user" => args.user,
+  "url" => db.url,
   "add_script_path" => File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-add")
 }
 
-puts "chdir %s" % [args.dir]
+puts "chdir %s" % args.dir
 Dir.chdir(args.dir) do
 
   wrappers = []
@@ -56,13 +57,13 @@ Dir.chdir(args.dir) do
     end
   end
   if !wrappers.empty?
-    SchemaEvolutionManager::Library.system_or_error("git commit -m 'Add software-evolution-manager wrapper scripts' #{wrappers.join(" ")}")
+    SchemaEvolutionManager::Library.system_or_error("git commit -m 'Add schema-evolution-manager wrapper scripts' #{wrappers.join(" ")}")
   end
 
   readme = "README.md"
   if !File.exists?(readme)
     puts "Creating #{readme}"
-    copy_file("software-evolution-manager/template/README.md", "README.md", subs)
+    copy_file("schema-evolution-manager/template/README.md", "README.md", subs)
     SchemaEvolutionManager::Library.system_or_error("git add #{readme}")
     SchemaEvolutionManager::Library.system_or_error("git commit -m 'Adding README.md' README.md")
   end

@@ -2,12 +2,10 @@ module SchemaEvolutionManager
 
   class Db
 
-    attr_reader :host, :user, :name
+    attr_reader :url
 
-    def initialize(host, user, name)
-      @host = Preconditions.check_not_blank(host, "host cannot be blank")
-      @user = Preconditions.check_not_blank(user, "user cannot be blank")
-      @name = Preconditions.check_not_blank(name, "name cannot be blank")
+    def initialize(url)
+      @url = Preconditions.check_not_blank(url, "url cannot be blank")
     end
 
     # Installs schema_evolution_manager. Automatically upgrades schema_evolution_manager.
@@ -23,7 +21,7 @@ module SchemaEvolutionManager
     # executes a simple sql command.
     def psql_command(sql_command)
       Preconditions.assert_class(sql_command, String)
-      command = "psql --host %s --no-align --tuples-only --username %s --command \"%s\" %s" % [@host, @user, sql_command, @name]
+      command = "psql --no-align --tuples-only --command \"%s\" %s" % [sql_command, @url]
       Library.system_or_error(command)
     end
 
@@ -66,7 +64,7 @@ module SchemaEvolutionManager
           out << IO.read(path)
         end
 
-        command = "psql --host %s --username %s --file \"%s\" #{options} %s" % [@host, @user, tmp, @name]
+        command = "psql --file \"%s\" #{options} %s" % [tmp, @url]
         Library.system_or_error(command)
       end
     end
@@ -77,21 +75,23 @@ module SchemaEvolutionManager
       psql_command(sql).to_i > 0
     end
 
-    def to_pretty_string
-      "%s@%s/%s" % [@user, @host, @name]
-    end
-
     # Parses command line arguments returning an instance of
     # Db. Exists if invalid config.
     def Db.parse_command_line_config(arg_string)
       Preconditions.assert_class(arg_string, String)
-      args = Args.new(arg_string, :required => ['host', 'user', 'name'])
+      args = Args.new(arg_string, :optional => ['url', 'host', 'user', 'name'])
       Db.from_args(args)
     end
 
     def Db.from_args(args)
       Preconditions.assert_class(args, Args)
-      Db.new(args.host, args.user, args.name)
+      if args.url
+        Db.new(args.url)
+      else
+        base = "%s:%s/%s" % [args.host || "localhost", 5432, args.name]
+        url = args.user ? "%s@%s" % [args.user, base] : base
+        Db.new("postgres://" + url)
+      end
     end
 
     # Returns the name of the schema_evolution_manager schema

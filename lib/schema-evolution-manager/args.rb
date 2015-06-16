@@ -11,6 +11,7 @@ module SchemaEvolutionManager
         :user => "Connect to the database as this username instead of the default",
         :host => "Specifies the host name of the machine on which the server is running",
         :name => "Specifies the name of the database to which to connect",
+        :url => "Connect to the database as this username instead of the default",
         :dir => "Path to a directory",
         :tag => "A git tag (e.g. 0.0.1)",
         :prefix => "Configure installer to use this prefix"
@@ -23,7 +24,7 @@ module SchemaEvolutionManager
       }
     end
 
-    attr_reader :artifact_name, :host, :name, :prefix, :user, :dir, :dry_run, :tag
+    attr_reader :artifact_name, :host, :name, :prefix, :url, :user, :dir, :dry_run, :tag
 
     # args: Actual string arguments
     # :required => list of parameters that are required
@@ -52,6 +53,7 @@ module SchemaEvolutionManager
       @host = found_arguments.delete(:host)
       @name = found_arguments.delete(:name)
       @prefix = found_arguments.delete(:prefix)
+      @url = found_arguments.delete(:url)
       @user = found_arguments.delete(:user)
       @dir = found_arguments.delete(:dir)
       @tag = found_arguments.delete(:tag)
