@@ -2,9 +2,11 @@
 
 ## Intended Audience
 
-- Engineers who regularly manage the creation of scripts to update the schema in a postgresql database.
+  - Engineers who regularly manage the creation of scripts to update the
+    schema in a postgresql database.
 
-- Engineers who want to simplify and/or standardize how other team members contribute schema changes to a postgresql database.
+  - Engineers who want to simplify and/or standardize how other team
+    members contribute schema changes to a postgresql database.
 
 ## Purpose
 
@@ -26,16 +28,15 @@ environments.
 
  - all scripts applied to the postgresql database are recorded in
    the table schema_evolution_manager.scripts - making it simple to
-   see what has been applied if needed.
+   see what has been applied, and when, if needed.
 
-sem contains only tools for managing schema evolutions. The
-basic idea is that you create one git repository for each of your
-databases then use sem to manage the schema evolution of
-each database.
+sem contains only tools for managing schema evolutions. The idea is
+that you create one git repository for each of your databases then use
+sem to manage the schema evolution of each database.
 
-At Gilt Groupe, we have used sem since early 2012 and have
-observed an increase in the reliability of our production schema
-deploys across dozens of independent postgresql databases.
+At Gilt Groupe, we started using sem in early 2012 and have observed
+an increase in the reliability of our production schema deploys across
+dozens of independent postgresql databases.
 
 See INSTALLATION and GETTING STARTED for details.
 
@@ -72,10 +73,10 @@ to:
   1. Treat schema evolution changes as normal software releases
      as much as possible
 
-  2. Manage schema versions as simple tarballs - artifacts are really
-     important because they provide 100% reproducibility.  This means
-     the exact same artifacts can be applied in development then QA
-     and finally production environments.
+  2. Manage schema versions as simple tarballs - artifacts are
+     critical to provide 100% reproducibility. This means the exact
+     same artifacts can be applied in development then QA and finally
+     production environments.
 
   3. Isolate schema changes as their own deploy. This then
      guarantees that every other application itself can be rolled
@@ -93,19 +94,21 @@ manage and release schema changes independent of application changes:
     c. remove old column
     d. deploy changes in application to use only new column
 
-  Though at first this may seem more complex, each individual change itself is smaller and lower risk.
+  Though at first this may seem more complex, each individual change
+  itself is smaller and lower risk.
 
-  2. It is worth repeating that all application deploys can now be rolled back. This has been a huge win for our teams.
+  2. It is worth repeating that all application deploys can now be
+     rolled back. This has been a huge win for our teams.
 
 
 ## Talks
 
-First presented at PGDay NYC 2013: https://speakerdeck.com/mbryzek/schema-evolutions-at-gilt-groupe
+First presented at PGDay NYC 2013:
+https://speakerdeck.com/mbryzek/schema-evolutions-at-gilt-groupe
 
 ## Dependencies
 
-- Ruby: Most testing against 1.8.7; 1.9.x and 2.0.0 are supported and
-  should work
+- Ruby: Current testing against ruby 2.x. 1.8 and 1.9 are supported.
 
 - Postgres: Only tested against 9.x. We minimize use of advanced
   features and should work against 8.x series. If you try 8.x and
@@ -116,7 +119,7 @@ First presented at PGDay NYC 2013: https://speakerdeck.com/mbryzek/schema-evolut
     createlang plpgsql template1
     [http://www.postgresql.org/docs/8.4/static/app-createlang.html]
 
-- Git: Designed to use git for history. Tested against git 1.7 - 2.x
+- Git: Designed to use git for history (all versions since 1.7).
 
 ## Installation
 
@@ -174,9 +177,7 @@ If you already have a tag:
 
 You will now have a single artifict -
 /tmp/sample/dist/sample-0.0.2.tar.gz - that you can manage in standard
-deploy process. At Gilt Groupe, we upload these artifacts to nexus and
-then deploy in production by downloading from nexus. scp/rsync work
-fine as well.
+deploy process.
 
 
 ## Deploying Schema Changes
@@ -234,8 +235,9 @@ sem will create a new postgresql schema in your database named 'schema_evolution
 Each of these tables has a column named 'filename' which keeps track
 of the sql files applied to each database.
 
-- The scripts table is used for your application.
-- The bootstrap_scripts table is used to manage upgrades to the sem application itself.
+  - The scripts table is used for your application.
+  - The bootstrap_scripts table is used to manage upgrades to the sem
+    application itself.
 
 For details on these tables, see scripts/*sql where the tables themselves are defined.
 
