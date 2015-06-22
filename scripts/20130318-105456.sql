@@ -1,6 +1,3 @@
--- Author: Michael Bryzek <michael@gilt.com>
--- Date: 20130318-105456
-
 -- library of common utility functions
 set search_path to schema_evolution_manager;
 

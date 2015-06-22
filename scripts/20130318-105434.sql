@@ -1,6 +1,3 @@
--- Author: Michael Bryzek <michael@gilt.com>
--- Date: 20130318-105434
-
 -- This script initializes the schema_evolution_manager schema and the scripts and
 -- the bootstrap_scripts tables
 
