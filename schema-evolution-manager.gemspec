@@ -8,6 +8,7 @@ Gem::Specification.new do |s|
   s.files             = %w( README.md )
   s.files             += Dir.glob("bin/**/*")
   s.files             += Dir.glob("lib/**/*")
+  s.files             += Dir.glob("scripts/**/*")
   s.files             += Dir.glob("template/**/*")
   s.executables       = Dir.entries("bin").select {|f| !File.directory? f}
 end
