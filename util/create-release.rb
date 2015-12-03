@@ -69,6 +69,9 @@ SchemaEvolutionManager::Library.system_or_error("git commit -m 'autocommit: Upda
 puts "Creating git tag[%s]" % new_version.to_version_string
 SchemaEvolutionManager::Library.system_or_error("git tag -a -m '%s' %s" % [new_version.to_version_string, new_version.to_version_string])
 
+SchemaEvolutionManager::Library.system_or_error("gem build schema-evolution-manager.gemspec")
+
 puts "Release tag[%s] created. Need to:" % new_version.to_version_string
 puts "  git push origin"
 puts "  git push --tags origin"
+puts "  push gem up to rubygems"
