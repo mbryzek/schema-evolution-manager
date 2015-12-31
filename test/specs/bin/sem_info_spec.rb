@@ -19,6 +19,15 @@ describe "sem-info" do
       `#{path} tag next major`.strip.should == "2.0.0"
     end
   end
+  
+  it "tag exists" do
+    path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-info")
+    TestUtils.in_test_repo_with_commit do
+      SchemaEvolutionManager::Library.git_create_tag("0.0.5")
+      `#{path} tag exists 9.1.2`.strip.should == "false"
+      `#{path} tag exists 0.0.5`.strip.should == "true"
+    end
+  end
 
   it "version" do
     path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-info")
