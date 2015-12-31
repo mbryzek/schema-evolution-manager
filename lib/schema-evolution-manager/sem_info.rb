@@ -7,11 +7,22 @@ module SchemaEvolutionManager
     end
 
     def SemInfo.tag(args)
-      valid = ['latest', 'next']
+      valid = ['exists', 'latest', 'next']
 
       subcommand = args.shift.to_s.strip
 
-      if subcommand == "latest"
+      if subcommand == "exists"
+        tag = args.shift.to_s.strip
+        if tag.empty?
+          puts "ERROR: Missing tag."
+          exit(3)
+        elsif ::SchemaEvolutionManager::Library.tag_exists?(tag)
+          puts "true"
+        else
+          puts "false"
+        end
+
+      elsif subcommand == "latest"
         if latest = ::SchemaEvolutionManager::SemInfo::Tag.latest
           latest.to_version_string
         else
@@ -21,7 +32,7 @@ module SchemaEvolutionManager
       elsif subcommand == "next"
         ::SchemaEvolutionManager::SemInfo::Tag.next(args).to_version_string
 
-      elsif subcommand == ""
+      elsif subcommand.empty?
         puts "ERROR: Missing tag subcommand. Must be one of: %s" % valid.join(", ")
         exit(3)
 
@@ -42,7 +53,7 @@ module SchemaEvolutionManager
         component = (args || []).first
         valid = ['micro', 'minor', 'major']
 
-        if component.to_s == ""
+        if component.to_s.empty?
           component = "micro"
         end
 

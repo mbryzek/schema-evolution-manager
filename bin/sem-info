@@ -3,6 +3,10 @@
 #
 #  sem-info command [arg1...]
 #
+#  sem-info tag exists 1.2.3
+#    Returns true if the specified tag exists,
+#    false otherwise
+#
 #  sem-info tag latest
 #    Display the latest tag
 #

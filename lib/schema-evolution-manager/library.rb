@@ -37,8 +37,7 @@ module SchemaEvolutionManager
         raise "No git tags found"
       end
 
-      all_tags = results.strip.split
-      if !all_tags.include?(tag)
+      if !Library.tag_exists?(tag)
         raise "Tag[#{tag}] not found. Check #{command}"
       end
     end
@@ -56,6 +55,10 @@ module SchemaEvolutionManager
     # tags matching x.x.x (e.g. 1.0.2)
     def Library.latest_tag
       `git tag -l`.strip.split.select { |tag| Version.is_valid?(tag) }.map { |tag| Version.new(tag) }.sort.last
+    end
+
+    def Library.tag_exists?(tag)
+      `git tag -l`.strip.include?(tag)
     end
 
     # Ex: Library.git_create_tag("0.0.1")
