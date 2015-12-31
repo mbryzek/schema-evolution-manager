@@ -45,7 +45,9 @@ else
   end
 
   tag = SchemaEvolutionManager::Ask.for_string("Version:", :default => suggested_tag)
-  SchemaEvolutionManager::Library.git_create_tag(tag)
+  if !SchemaEvolutionManager::Library.tag_exists?(tag)
+    SchemaEvolutionManager::Library.git_create_tag(tag)
+  end
 end
 SchemaEvolutionManager::Library.git_assert_tag_exists(tag)
 
