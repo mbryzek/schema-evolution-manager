@@ -125,7 +125,7 @@ https://speakerdeck.com/mbryzek/schema-evolutions-at-gilt-groupe
 
     git clone git://github.com/mbryzek/schema-evolution-manager.git
     cd schema-evolution-manager
-    git checkout 0.9.21
+    git checkout 0.9.22
     ruby ./configure.rb
     sudo ./install.rb
 
