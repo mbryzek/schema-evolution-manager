@@ -144,7 +144,7 @@ version.
 ### Initialization
 
     git init /tmp/sample
-    sem-init --dir /tmp/sample --url postgresql://postgres@localhost/sample_development
+    sem-init --dir /tmp/sample --url postgresql://postgres@localhost/sample
 
 ### Writing your first sql script
 
@@ -155,12 +155,12 @@ version.
 ### Applying changes to your local database:
 
     cd /tmp/sample
-    createdb sample_development
-    sem-apply --url postgresql://postgres@localhost/sample_development
+    createdb sample
+    sem-apply --url postgresql://postgres@localhost/sample
 
 Note that you can also pass in the username, db host, and db name explicitly:
 
-    sem-apply --host localhost --name sample_development --user postgres
+    sem-apply --host localhost --name sample --user postgres
 
 ### When you are happy with your change, commit:
 
@@ -170,6 +170,9 @@ Note that you can also pass in the username, db host, and db name explicitly:
 
     cd /tmp/sample
     sem-dist
+
+By default, the sem-dist script will create the next micro git tag,
+and use that tag in the file name.
 
 If you already have a tag:
 
@@ -191,31 +194,31 @@ deploy process.
 
 ### Do a dry run
 
-    sem-apply --url postgresql://postgres@localhost/sample_development --dry_run
+    sem-apply --url postgresql://postgres@localhost/sample --dry_run
 
 You will likely see a number of create table statements (see data model section below). You should also see:
 
       [DRY RUN] Applying 20130318-214407.sql
 
-which tells you that if you apply these changes, that sql script will be applied to the sample_production db
+which tells you that if you apply these changes, that sql script will be applied to the sample db
 
 
 ### Apply the changes
 
-    sem-apply --url postgresql://postgres@localhost/sample_development
+    sem-apply --url postgresql://postgres@localhost/sample
 
 You will see:
 
-      Upgrading schema for postgres@localhost/sample_production
+      Upgrading schema for postgres@localhost/sample
       Applying 20130318-214407.sql
 
 Attempt to apply again:
 
-    sem-apply --url postgresql://postgres@localhost/sample_development
+    sem-apply --url postgresql://postgres@localhost/sample
 
 You will see:
 
-      Upgrading schema for postgres@localhost/sample_production
+      Upgrading schema for postgres@localhost/sample
         All scripts have been previously applied
 
 
@@ -223,7 +226,7 @@ You will see:
 
 sem will create a new postgresql schema in your database named 'schema_evolution_manager'
 
-    psql sample_development
+    psql sample
     set search_path to schema_evolution_manager;
     \dt
 
