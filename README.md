@@ -103,8 +103,7 @@ manage and release schema changes independent of application changes:
 
 ## Talks
 
-First presented at PGDay NYC 2013:
-https://speakerdeck.com/mbryzek/schema-evolutions-at-gilt-groupe
+First presented at [PGDay NYC 2013](https://speakerdeck.com/mbryzek/schema-evolutions-at-gilt-groupe)
 
 ## Dependencies
 
@@ -116,19 +115,21 @@ https://speakerdeck.com/mbryzek/schema-evolutions-at-gilt-groupe
 
 - plpgsql must be available in the database. If needed you can:
 
-    createlang plpgsql template1
-    [http://www.postgresql.org/docs/8.4/static/app-createlang.html]
+  [createlang plpgsql template1](http://www.postgresql.org/docs/8.4/static/app-createlang.html)
 
 - Git: Designed to use git for history (all versions since 1.7).
 
 ## Installation
+
+    gem install schema-evolution-manager
+
+Alternately, to install from scratch:
 
     git clone git://github.com/mbryzek/schema-evolution-manager.git
     cd schema-evolution-manager
     git checkout 0.9.24
     ruby ./configure.rb
     sudo ./install.rb
-
 
 ## Upgrading
 
@@ -262,7 +263,7 @@ For details on these tables, see scripts/*sql where the tables themselves are de
 ## PLPGSQL Utilities
 
 We've included a copy of the schema conventions we practice at
-(Gilt Groupe)[CONVENTIONS.md]. There are also a number of utility plpgsql
+[Gilt Groupe](CONVENTIONS.md). There are also a number of utility plpgsql
 functions to help developers apply these conventions in a systematic way.
 
 The helpers are defined in
@@ -283,6 +284,7 @@ and utilities in practice.
 - sem-add: Adds a database upgrade script
 - sem-dist: Create a distribution tar.gz file containing schema upgrade scripts
 - sem-apply: Apply any deltas from a distribution tarball to a particular database
+- sem-baseline: Add any migration scripts to the schema tables without actually applying them. See [Migrating](#migrating)
 
 
 ## Attributes supported in sql migration scripts
@@ -311,11 +313,18 @@ Currently supported attributes:
       - -- sem.attribute.transaction = none
       - -- sem.attribute.transaction = single
 
+## Migrating
 
-## TODO
+In some cases you may be migrating from no schema evolutions, or another schema evolution model.
 
-- Consider offering an option to install via ruby gems
+For these cases, sem provides a 'baseline' command.
 
+Current workflow:
+
+  1. sem-add your current schema
+    1. Either via a database dump
+    1. Or by sem-adding existing DB scripts
+  1. Use sem-baseline to bootstrap the sem tables and add existing schema files to sem's migration table without actually applying them
 
 ## License
 
