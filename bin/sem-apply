@@ -8,7 +8,7 @@
 #  sem-apply --host <database host> --user <db user> --name <db name>
 #
 # == Examples
-#  sem-apply --url postgresql://postgres@localhost/sample_development
+#  sem-apply --url postgresql://postgres@localhost/sample
 #  sem-apply --host localhost --user web --name test
 #
 

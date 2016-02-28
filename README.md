@@ -225,6 +225,16 @@ You will see:
       Upgrading schema for postgres@localhost/sample
         All scripts have been previously applied
 
+### Baselines
+
+If you have an existing database, and you want to start using schema
+evolution manager, we support the notion of creating a baseline. The
+sem-baseline script will record that all of the scripts have been
+applied to the database, without actually applying them. From this
+point forward, only new scripts will be applied to the database.
+
+    sem-baseline --url postgresql://postgres@localhost/sample
+
 
 ## Data Model
 

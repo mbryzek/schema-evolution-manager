@@ -12,7 +12,7 @@
 #
 # == Example
 #  git init /tmp/example_repo
-#  bin/sem-init --dir /tmp/example_repo --url postgresql://username@localhost/sample_development
+#  bin/sem-init --dir /tmp/example_repo --url postgresql://username@localhost/sample
 #
 
 load File.join(File.dirname(__FILE__), 'sem-config')
