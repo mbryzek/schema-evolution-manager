@@ -35,7 +35,9 @@ describe SchemaEvolutionManager::Library do
       install_file = "unit_test_install.#{Process.pid}.rb"
 
       # List of files in root directory that should be copied over
-      root_files = Dir.glob("#{SchemaEvolutionManager::Library.base_dir}/*").select { |f| File.file?(f) && !f.match(/\.rb$/) }.map { |f| File.basename(f) }
+      root_files = Dir.glob("#{SchemaEvolutionManager::Library.base_dir}/*").select { |f|
+        File.file?(f) && !f.match(/\.rb$/) && !f.match(/\.gem$/) && !f.match(/\.gemspec$/)
+      }.map { |f| File.basename(f) }
 
       SchemaEvolutionManager::Library.with_temp_file do |dir|
         template = SchemaEvolutionManager::InstallTemplate.new(:lib_dir => dir, :bin_dir => File.join(dir, "bin"))
