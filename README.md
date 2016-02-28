@@ -162,6 +162,10 @@ Note that you can also pass in the username, db host, and db name explicitly:
 
     sem-apply --host localhost --name sample --user postgres
 
+Similarly, for non-standard setups, you can optionally pass in the port
+
+    sem-apply --host localhost --port 5433 --name sample --user postgres
+
 ### When you are happy with your change, commit:
 
     git commit -m "Adding a new tmp table to test sem process" scripts

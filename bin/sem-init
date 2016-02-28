@@ -18,7 +18,7 @@
 load File.join(File.dirname(__FILE__), 'sem-config')
 SchemaEvolutionManager::Library.set_verbose(true)
 
-args = SchemaEvolutionManager::Args.from_stdin(:required => %w(dir), :optional => %w(url host name user))
+args = SchemaEvolutionManager::Args.from_stdin(:required => %w(dir), :optional => %w(url host port name user))
 SchemaEvolutionManager::Preconditions.check_state(File.directory?(args.dir), "Dir[%s] does not exist" % args.dir)
 
 if args.url.nil? && args.name.nil?
