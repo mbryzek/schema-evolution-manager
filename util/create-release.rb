@@ -74,4 +74,4 @@ SchemaEvolutionManager::Library.system_or_error("gem build schema-evolution-mana
 puts "Release tag[%s] created. Need to:" % new_version.to_version_string
 puts "  git push origin"
 puts "  git push --tags origin"
-puts "  push gem up to rubygems"
+puts "  gem push schema-evolution-manager-%s.gem" % new_version.to_version_string
