@@ -14,7 +14,7 @@
 
 load File.join(File.dirname(__FILE__), 'sem-config')
 
-args = SchemaEvolutionManager::Args.from_stdin(:optional => %w(url host name user dry_run))
+args = SchemaEvolutionManager::Args.from_stdin(:optional => %w(url host port name user dry_run))
 
 db = SchemaEvolutionManager::Db.from_args(args)
 db.bootstrap!

@@ -79,7 +79,7 @@ module SchemaEvolutionManager
     # Db. Exists if invalid config.
     def Db.parse_command_line_config(arg_string)
       Preconditions.assert_class(arg_string, String)
-      args = Args.new(arg_string, :optional => ['url', 'host', 'user', 'name'])
+      args = Args.new(arg_string, :optional => ['url', 'host', 'user', 'name', 'port'])
       Db.from_args(args)
     end
 
@@ -88,7 +88,7 @@ module SchemaEvolutionManager
       if args.url
         Db.new(args.url)
       else
-        base = "%s:%s/%s" % [args.host || "localhost", 5432, args.name]
+        base = "%s:%s/%s" % [args.host || "localhost", args.port || 5432, args.name]
         url = args.user ? "%s@%s" % [args.user, base] : base
         Db.new("postgres://" + url)
       end

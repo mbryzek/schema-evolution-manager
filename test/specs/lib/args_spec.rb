@@ -23,8 +23,9 @@ describe SchemaEvolutionManager::Args do
   end
 
   it "handles full db config" do
-    args = SchemaEvolutionManager::Args.new("--host localhost --name test --user mbryzek", { :required => %w(host name user) })
+    args = SchemaEvolutionManager::Args.new("--host localhost --port 5433 --name test --user mbryzek", { :required => %w(host port name user) })
     args.host.should == "localhost"
+    args.port.should == "5433"
     args.name.should == "test"
     args.user.should == "mbryzek"
   end

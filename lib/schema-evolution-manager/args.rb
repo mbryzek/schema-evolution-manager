@@ -10,6 +10,7 @@ module SchemaEvolutionManager
         :artifact_name => "Specifies the name of the artifact. Tag will be appeneded to this name",
         :user => "Connect to the database as this username instead of the default",
         :host => "Specifies the host name of the machine on which the server is running",
+        :port => "Specifies the port on which the server is running",
         :name => "Specifies the name of the database to which to connect",
         :url => "Connect to the database as this username instead of the default",
         :dir => "Path to a directory",
@@ -24,7 +25,7 @@ module SchemaEvolutionManager
       }
     end
 
-    attr_reader :artifact_name, :host, :name, :prefix, :url, :user, :dir, :dry_run, :tag
+    attr_reader :artifact_name, :host, :port, :name, :prefix, :url, :user, :dir, :dry_run, :tag
 
     # args: Actual string arguments
     # :required => list of parameters that are required
@@ -51,6 +52,7 @@ module SchemaEvolutionManager
 
       @artifact_name = found_arguments.delete(:artifact_name)
       @host = found_arguments.delete(:host)
+      @port = found_arguments.delete(:port) 
       @name = found_arguments.delete(:name)
       @prefix = found_arguments.delete(:prefix)
       @url = found_arguments.delete(:url)
