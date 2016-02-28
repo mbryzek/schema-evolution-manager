@@ -123,12 +123,15 @@ https://speakerdeck.com/mbryzek/schema-evolutions-at-gilt-groupe
 
 ## Installation
 
+    gem install schema-evolution-manager
+
+Alternately, to install from scratch:
+
     git clone git://github.com/mbryzek/schema-evolution-manager.git
     cd schema-evolution-manager
     git checkout 0.9.23
     ruby ./configure.rb
     sudo ./install.rb
-
 
 ## Upgrading
 
