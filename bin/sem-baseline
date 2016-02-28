@@ -1,0 +1,34 @@
+#!/usr/bin/env ruby
+# == Makes sure that sem is bootstapped, and then adds all existing scripts to the sem-database without applying
+#    Useful for migration to sem
+#
+# == Usage
+#  sem-baseline --url <database url>
+#  or
+#  sem-baseline --host <database host> --user <db user> --name <db name>
+#
+# == Examples
+#  sem-baseline --url postgresql://postgres@localhost/sample_development
+#  sem-apply --host localhost --user web --name test
+#
+
+
+load File.join(File.dirname(__FILE__), 'sem-config')
+
+args = SchemaEvolutionManager::Args.from_stdin(:optional => %w(url host name user dry_run))
+
+db = SchemaEvolutionManager::Db.from_args(args)
+db.bootstrap!
+
+dry_run = args.dry_run.nil? ? false : args.dry_run
+
+util = SchemaEvolutionManager::BaselineUtil.new(db, :dry_run => dry_run)
+
+puts "Baselining schema for #{db.url}"
+
+begin
+  count = util.apply!("./scripts")
+  if count == 0
+    puts "  All scripts have been previously applied"
+  end
+end
