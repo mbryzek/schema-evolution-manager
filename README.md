@@ -332,7 +332,7 @@ Current workflow:
 
 ## License
 
-Copyright 2013-2015 Gilt Groupe, Inc.
+Copyright 2013-2016 Gilt Groupe, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
