@@ -19,7 +19,7 @@ module SchemaEvolutionManager
       }
 
       FLAGS_NO_ARGUMENTS = {
-        :pgpass => "Don't use the pgpass functionality",
+        :pgpass => "Store the password in pgpass for the duration of the process",
         :dry_run => "Include flag to echo commands that will run without actually executing them",
         :help => "Display help",
         :verbose => "Enable verbose logging of all system calls",
