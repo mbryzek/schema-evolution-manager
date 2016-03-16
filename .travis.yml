@@ -6,6 +6,7 @@ addons:
   postgresql: 9.4
 
 script:
+    - git tag -l
     - git config --global user.name "test"
     - git config --global user.email "test@example.com"
     - cd test
