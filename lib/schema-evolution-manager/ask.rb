@@ -1,5 +1,5 @@
 module SchemaEvolutionManager
-
+  require 'io/console'
   # Simple library to ask user for input, with easy mocakability for
   # testing
   class Ask
@@ -32,6 +32,10 @@ module SchemaEvolutionManager
     def Ask.for_boolean(message)
       value = Ask.for_string("%s (y/n) " % message)
       TRUE_STRINGS.include?(value.downcase)
+    end
+
+    def Ask.for_password()
+      password =  STDIN.noecho(&:gets)
     end
 
     # here to help with tests
