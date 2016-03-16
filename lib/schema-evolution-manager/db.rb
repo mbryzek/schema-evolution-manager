@@ -94,6 +94,29 @@ module SchemaEvolutionManager
       end
     end
 
+    def generate_pgpass_str(password)
+      regexWithUser = /postgres[ql]*:\/\/([\S]+)@([^:]+):?([\d]*)\/([\S]+)/
+      regexWithoutUser = /postgres[ql]*:\/\/([^:]+):?([\d]*)\/([\S]+)/
+
+      Preconditions.check_state(@url.match(regexWithUser) || @url.match(regexWithoutUser), "Invalid url #{url}, needs to be: \"postgres://user@host:port/db")
+      if (url.match(regexWithUser))
+        user, host, port, database = @url.match(regexWithUser).captures
+      else
+
+        host, port, database = @url.match(regexWithoutUser).captures
+      end
+
+      if (port.to_s.strip == "")
+        port = "*"
+      end
+
+      if (user.to_s.strip == "")
+        user = "*"
+      end
+
+      "#{host}:#{port}:#{database}:#{user}:#{password}"
+    end
+
     # Returns the name of the schema_evolution_manager schema
     def Db.schema_name
       "schema_evolution_manager"

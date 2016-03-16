@@ -212,6 +212,14 @@ You will likely see a number of create table statements (see data model section 
 which tells you that if you apply these changes, that sql script will be applied to the sample db
 
 
+### Database servers with passwords
+
+  sem-apply --url postgresql://postgres@localhost/sample --pgpass
+
+If your database server is protected by a password, you will be promped to enter the password on every sql command.
+To overcome this the aregumer `--pgpass` will generate a temporary .pgpass file which hold the password for the duration
+of the sem-apply.
+
 ### Apply the changes
 
     sem-apply --url postgresql://postgres@localhost/sample
