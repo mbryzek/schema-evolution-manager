@@ -216,9 +216,14 @@ which tells you that if you apply these changes, that sql script will be applied
 
   sem-apply --url postgresql://postgres@localhost/sample --pgpass
 
+WARNING: For security reasons this argument will delete the exsiting `.pgpass`.
+If your system already have a `.pgpass`, then you shouldn't use this argument and modify your .pgpass file with
+the needed password.
+
 If your database server is protected by a password, you will be promped to enter the password on every sql command.
-To overcome this the aregumer `--pgpass` will generate a temporary .pgpass file which hold the password for the duration
+To overcome this the argument `--pgpass` will generate a temporary .pgpass file which hold the password for the duration
 of the sem-apply.
+
 
 ### Apply the changes
 

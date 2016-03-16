@@ -1,4 +1,4 @@
-a#!/usr/bin/env ruby
+#!/usr/bin/env ruby
 #
 # Preprares schema-evolution-manager for installation. See also install.rb
 # script in this directory. Main work is to simply check a few
