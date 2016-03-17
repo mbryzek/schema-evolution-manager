@@ -19,14 +19,14 @@ module SchemaEvolutionManager
       }
 
       FLAGS_NO_ARGUMENTS = {
-        :pgpass => "Store the password in pgpass for the duration of the process",
+        :password => "Prompts for the password to store it for the duration of the process",
         :dry_run => "Include flag to echo commands that will run without actually executing them",
         :help => "Display help",
         :verbose => "Enable verbose logging of all system calls",
       }
     end
 
-    attr_reader :artifact_name, :host, :port, :name, :prefix, :url, :user, :dir, :dry_run, :tag, :pgpass
+    attr_reader :artifact_name, :host, :port, :name, :prefix, :url, :user, :dir, :dry_run, :tag, :password
 
     # args: Actual string arguments
     # :required => list of parameters that are required
@@ -62,7 +62,7 @@ module SchemaEvolutionManager
       @tag = found_arguments.delete(:tag)
 
       @dry_run = found_arguments.delete(:dry_run)
-      @pgpass = found_arguments.delete(:pgpass)
+      @password = found_arguments.delete(:password)
       @help = found_arguments.delete(:help)
       @verbose = found_arguments.delete(:verbose)
 

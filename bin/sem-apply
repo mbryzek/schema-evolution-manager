@@ -18,19 +18,20 @@ load File.join(File.dirname(__FILE__), 'sem-config')
 args = SchemaEvolutionManager::Args.from_stdin(:optional => %w(url host port name user dry_run))
 db = SchemaEvolutionManager::Db.from_args(args)
 dry_run = args.dry_run.nil? ? false : args.dry_run
-pgpass = args.pgpass.nil? ? false : args.pgpass
+passwordEnabled = args.password.nil? ? false : args.password
 pgpassfile = Tempfile.new('pgpass')
 util = SchemaEvolutionManager::ApplyUtil.new(db, pgpassfile, :dry_run => dry_run)
 
+SchemaEvolutionManager::Preconditions.check_state(!passwordEnabled || !File.exists?("#{ENV['HOME']}/.pgpass"),
+"~/.pgpass already exists (this is where your password is stored), please add your postgres server password to
+there and remove the --password argument or delete it")
 
 begin
-
-  if pgpass
-    puts "please enter your password (or press enter to continue)"
-    password = SchemaEvolutionManager::Ask.for_password()
-    if !(password.nil? || password.empty?)
-      util.persist_pgpass(password)
-    end
+  if passwordEnabled
+    puts "please enter your password"
+    password = SchemaEvolutionManager::Ask.for_password
+    SchemaEvolutionManager::Preconditions.check_state(!(password.nil? || password.empty?), "Password must be provided [or remove the --password attribute]")
+    util.with_password_file(password)
   end
 
   db.bootstrap!
@@ -48,7 +49,7 @@ rescue SchemaEvolutionManager::ScriptError => e
   puts ""
   exit(1)
 ensure
-  if pgpass
-    util.destroy_pgpass()
+  if passwordEnabled
+    util.destroy_password_file
   end
 end

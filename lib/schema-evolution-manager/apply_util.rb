@@ -36,20 +36,19 @@ module SchemaEvolutionManager
       count
     end
 
-    def persist_pgpass(password)
+    def with_password_file(password)
       Preconditions.check_not_blank(password, "password cannot be blank")
       puts "Creating temp pgpass at #{@pgpass_file.path}"
       FileUtils.chmod(0600, @pgpass_file.path)
 
-      FileUtils.rm_rf("#{ENV['HOME']}/.pgpass")
       FileUtils.ln_s(@pgpass_file.path, "#{ENV['HOME']}/.pgpass")
       FileUtils.chmod(0600, "#{ENV['HOME']}/.pgpass")
       @pgpass_file.write(@db.generate_pgpass_str(password))
       @pgpass_file.rewind
     end
 
-    def destroy_pgpass()
-      puts "Deleting the pgpass files"
+    def destroy_password_file()
+      puts "Deleting the password files"
       FileUtils.rm_rf("#{ENV['HOME']}/.pgpass")
       @pgpass_file.unlink
     end

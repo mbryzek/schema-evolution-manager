@@ -75,7 +75,7 @@ describe "Pgpass" do
     TestUtils.with_bootstrapped_db do |db|
       tmpPath = file.path
       util = SchemaEvolutionManager::ApplyUtil.new(db, file)
-      util.persist_pgpass("testPassword")
+      util.with_password_file("testPassword")
       pg_pass_string = db.generate_pgpass_str("testPassword")
 
       File.exists?(tmpPath).should == true
@@ -84,7 +84,7 @@ describe "Pgpass" do
       file.read.should == pg_pass_string
       File.readlines("#{ENV['HOME']}/.pgpass").first.chomp.should == pg_pass_string
 
-      util.destroy_pgpass()
+      util.destroy_password_file
 
       File.exists?("#{ENV['HOME']}/.pgpass").should == false
       File.exists?(tmpPath).should == false
