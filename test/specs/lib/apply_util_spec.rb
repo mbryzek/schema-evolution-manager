@@ -79,14 +79,9 @@ describe "Pgpass" do
       pg_pass_string = db.generate_pgpass_str("testPassword")
 
       File.exists?(tmpPath).should == true
-      File.exists?("#{ENV['HOME']}/.pgpass").should == true
-
       file.read.should == pg_pass_string
-      File.readlines("#{ENV['HOME']}/.pgpass").first.chomp.should == pg_pass_string
 
       util.destroy_password_file
-
-      File.exists?("#{ENV['HOME']}/.pgpass").should == false
       File.exists?(tmpPath).should == false
     end
   end

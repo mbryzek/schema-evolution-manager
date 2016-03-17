@@ -22,10 +22,6 @@ passwordEnabled = args.password.nil? ? false : args.password
 pgpassfile = Tempfile.new('pgpass')
 util = SchemaEvolutionManager::ApplyUtil.new(db, pgpassfile, :dry_run => dry_run)
 
-SchemaEvolutionManager::Preconditions.check_state(!passwordEnabled || !File.exists?("#{ENV['HOME']}/.pgpass"),
-"~/.pgpass already exists (this is where your password is stored), please add your postgres server password to
-there and remove the --password argument or delete it")
-
 begin
   if passwordEnabled
     puts "please enter your password"

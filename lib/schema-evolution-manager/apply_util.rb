@@ -40,16 +40,13 @@ module SchemaEvolutionManager
       Preconditions.check_not_blank(password, "password cannot be blank")
       puts "Creating temp pgpass at #{@pgpass_file.path}"
       FileUtils.chmod(0600, @pgpass_file.path)
-
-      FileUtils.ln_s(@pgpass_file.path, "#{ENV['HOME']}/.pgpass")
-      FileUtils.chmod(0600, "#{ENV['HOME']}/.pgpass")
       @pgpass_file.write(@db.generate_pgpass_str(password))
       @pgpass_file.rewind
+      ENV['PGPASSFILE'] = @pgpass_file.path
     end
 
     def destroy_password_file()
-      puts "Deleting the password files"
-      FileUtils.rm_rf("#{ENV['HOME']}/.pgpass")
+      puts "Deleting the temp pgpass file"
       @pgpass_file.unlink
     end
 
