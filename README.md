@@ -216,17 +216,11 @@ which tells you that if you apply these changes, that sql script will be applied
 
   sem-apply --url postgresql://postgres@localhost/sample --password
 
-If your database server is protected by a password, you will be promped to enter the password on every sql command.
-To overcome this the argument `--password` will prompt you to enter your password and it will generate a temporary
-.pgpass file which will hold the password for the duration of the sem-apply.
+If your database server is protected by a password, you will be prompted to enter the password on every sql command.To overcome this, the argument `--password` will prompt you to enter your password once and  then it will generate a temporary .pgpass file which will hold the password for the duration of the sem-apply.
 
-This argument will create a temp `.pgpass` file with your postgres server password, which will be deleted upon exiting the
-Ruby interpreter. On the other hand, if you are not concerend about placing the password in `~/.pgpass` , you can do that
-and then you won't need to use the  `--password` attribute.
+This argument will create a temp `.pgpass` file with your postgres server password, which will be deleted upon exiting the Ruby interpreter. On the other hand, if you are not concerned about placing the password in `~/.pgpass` , you can do that and then you won't need to use the `--password` attribute.
 
-[To read more about `.pgpass`](http://www.postgresql.org/docs/9.4/static/libpq-pgpass.html)
-
-
+[Click here to read more about `.pgpass`](http://www.postgresql.org/docs/9.4/static/libpq-pgpass.html)
 
 ### Apply the changes
 
