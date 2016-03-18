@@ -15,22 +15,20 @@ require 'tempfile'
 
 load File.join(File.dirname(__FILE__), 'sem-config')
 
-args = SchemaEvolutionManager::Args.from_stdin(:optional => %w(url host port name user dry_run))
-db = SchemaEvolutionManager::Db.from_args(args)
-dry_run = args.dry_run.nil? ? false : args.dry_run
-passwordEnabled = args.password.nil? ? false : args.password
-pgpassfile = Tempfile.new('pgpass')
-util = SchemaEvolutionManager::ApplyUtil.new(db, pgpassfile, :dry_run => dry_run)
+args = SchemaEvolutionManager::Args.from_stdin(:optional => %w(url host port name user dry_run password))
+
+password = if args.password
+             SchemaEvolutionManager::Ask.for_password("Please enter the database user password")
+           else
+             nil
+           end
+
+db = SchemaEvolutionManager::Db.from_args(args, :password => password)
+util = SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => args.dry_run || false)
 
 begin
-  if passwordEnabled
-    puts "please enter your password"
-    password = SchemaEvolutionManager::Ask.for_password
-    SchemaEvolutionManager::Preconditions.check_state(!(password.nil? || password.empty?), "Password must be provided [or remove the --password attribute]")
-    util.with_password_file(password)
-  end
-
   db.bootstrap!
+    
   puts "Upgrading schema for #{db.url}"
   count = util.apply!("./scripts")
   if count == 0
@@ -44,8 +42,4 @@ rescue SchemaEvolutionManager::ScriptError => e
   puts "  " + e.dml
   puts ""
   exit(1)
-ensure
-  if passwordEnabled
-    util.destroy_password_file
-  end
 end

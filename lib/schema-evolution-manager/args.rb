@@ -19,7 +19,7 @@ module SchemaEvolutionManager
       }
 
       FLAGS_NO_ARGUMENTS = {
-        :password => "Prompts for the password to store it for the duration of the process",
+        :password => "Prompt user to enter password for the database user. Password is stored for the duration of the process",
         :dry_run => "Include flag to echo commands that will run without actually executing them",
         :help => "Display help",
         :verbose => "Enable verbose logging of all system calls",

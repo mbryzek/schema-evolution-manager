@@ -2,7 +2,7 @@ module SchemaEvolutionManager
 
   class ApplyUtil
 
-    def initialize(db, pgpass_file, opts={})
+    def initialize(db, opts={})
       @dry_run = opts.delete(:dry_run)
       if @dry_run.nil?
         @dry_run = true
@@ -10,7 +10,6 @@ module SchemaEvolutionManager
 
       @db = Preconditions.assert_class(db, Db)
       @scripts = Scripts.new(@db, Scripts::SCRIPTS)
-      @pgpass_file = Preconditions.assert_class(pgpass_file, Tempfile)
     end
 
     def dry_run?
@@ -34,20 +33,6 @@ module SchemaEvolutionManager
         end
       end
       count
-    end
-
-    def with_password_file(password)
-      Preconditions.check_not_blank(password, "password cannot be blank")
-      puts "Creating temp pgpass at #{@pgpass_file.path}"
-      FileUtils.chmod(0600, @pgpass_file.path)
-      @pgpass_file.write(@db.generate_pgpass_str(password))
-      @pgpass_file.rewind
-      ENV['PGPASSFILE'] = @pgpass_file.path
-    end
-
-    def destroy_password_file()
-      puts "Deleting the temp pgpass file"
-      @pgpass_file.unlink
     end
 
     private

@@ -212,15 +212,23 @@ You will likely see a number of create table statements (see data model section 
 which tells you that if you apply these changes, that sql script will be applied to the sample db
 
 
-### Database servers with passwords
+### Specifying database password
 
-  sem-apply --url postgresql://postgres@localhost/sample --password
+There are two recommended ways in which to pass user passwords to psql:
 
-If your database server is protected by a password, you will be prompted to enter the password on every sql command.To overcome this, the argument `--password` will prompt you to enter your password once and  then it will generate a temporary .pgpass file which will hold the password for the duration of the sem-apply.
+ 1. Create a [~/.pgpass
+    file](http://www.postgresql.org/docs/9.4/static/libpq-pgpass.html)
+    with the appropriate credentials</li>
 
-This argument will create a temp `.pgpass` file with your postgres server password, which will be deleted upon exiting the Ruby interpreter. On the other hand, if you are not concerned about placing the password in `~/.pgpass` , you can do that and then you won't need to use the `--password` attribute.
+ 2. Specify a [--password] flag when running sem-apply. You will
+    then be prompted to enter your password once. sem will create a
+    temporary file to store your password, using that file during the
+    duration of the command and ensuring the file is deleted after sem
+    completed.
 
-[Click here to read more about `.pgpass`](http://www.postgresql.org/docs/9.4/static/libpq-pgpass.html)
+    Example:
+
+        sem-apply --url postgresql://postgres@localhost/sample --password
 
 ### Apply the changes
 

@@ -4,8 +4,16 @@ module SchemaEvolutionManager
 
     attr_reader :url
 
-    def initialize(url)
+    def initialize(url, opts={})
       @url = Preconditions.check_not_blank(url, "url cannot be blank")
+      password = opts.delete(:password)
+      Preconditions.assert_empty_opts(opts)
+      connection_data = ConnectionData.parse_url(@url)
+
+      if password
+        ENV['PGPASSFILE'] = Library.write_to_temp_file(connection_data.pgpass(password))
+        puts "Created PGPASSFILE=%s" % ENV['PGPASSFILE']
+      end
     end
 
     # Installs schema_evolution_manager. Automatically upgrades schema_evolution_manager.
@@ -83,38 +91,19 @@ module SchemaEvolutionManager
       Db.from_args(args)
     end
 
-    def Db.from_args(args)
+    # @param password: Optional password to use when connecting to the database.
+    def Db.from_args(args, opts={})
       Preconditions.assert_class(args, Args)
+      password = opts.delete(:password)
+      Preconditions.assert_empty_opts(opts)
+
       if args.url
-        Db.new(args.url)
+        Db.new(args.url, :password => password)
       else
-        base = "%s:%s/%s" % [args.host || "localhost", args.port || 5432, args.name]
+        base = "%s:%s/%s" % [args.host || "localhost", args.port || ConnectionData::DEFAULT_PORT, args.name]
         url = args.user ? "%s@%s" % [args.user, base] : base
-        Db.new("postgres://" + url)
+        Db.new("postgres://" + url, :password => password)
       end
-    end
-
-    def generate_pgpass_str(password)
-      regexWithUser = /postgres[ql]*:\/\/([\S]+)@([^:]+):?([\d]*)\/([\S]+)/
-      regexWithoutUser = /postgres[ql]*:\/\/([^:]+):?([\d]*)\/([\S]+)/
-
-      Preconditions.check_state(@url.match(regexWithUser) || @url.match(regexWithoutUser), "Invalid url #{url}, needs to be: \"postgres://user@host:port/db")
-      if (url.match(regexWithUser))
-        user, host, port, database = @url.match(regexWithUser).captures
-      else
-
-        host, port, database = @url.match(regexWithoutUser).captures
-      end
-
-      if (port.to_s.strip == "")
-        port = "*"
-      end
-
-      if (user.to_s.strip == "")
-        user = "*"
-      end
-
-      "#{host}:#{port}:#{database}:#{user}:#{password}"
     end
 
     # Returns the name of the schema_evolution_manager schema
