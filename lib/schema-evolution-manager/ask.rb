@@ -1,5 +1,5 @@
 module SchemaEvolutionManager
-  require 'io/console'
+
   # Simple library to ask user for input, with easy mocakability for
   # testing
   class Ask
