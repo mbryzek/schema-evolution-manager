@@ -77,4 +77,34 @@ describe SchemaEvolutionManager::Db do
     end
   end
 
+  describe "generate_pgpass_str" do
+
+    it "should generate a valid pgpass with user and port " do
+      db = SchemaEvolutionManager::Db.new("postgres://user1@db.com:5553/test_db")
+      db.generate_pgpass_str("pass1").should == "db.com:5553:test_db:user1:pass1"
+    end
+
+    it "should generate a valid pgpass with user and no port " do
+      db = SchemaEvolutionManager::Db.new("postgres://user1@db.com/test_db")
+      db.generate_pgpass_str("pass1").should == "db.com:*:test_db:user1:pass1"
+    end
+
+    it "should generate a valid pgpass with no user and port " do
+      db = SchemaEvolutionManager::Db.new("postgres://db.com:5443/test_db")
+      db.generate_pgpass_str("pass1").should == "db.com:5443:test_db:*:pass1"
+    end
+
+    it "should generate a valid pgpass with no user and no port " do
+      db = SchemaEvolutionManager::Db.new("postgres://db.com/test_db")
+      db.generate_pgpass_str("pass1").should == "db.com:*:test_db:*:pass1"
+    end
+
+    it "should raise an error for invalid url" do
+      url = "postgressss://db.com/test_db"
+      db = SchemaEvolutionManager::Db.new(url)
+      lambda {
+        db.generate_pgpass_str("pass1")
+      }.should raise_error(RuntimeError, "Invalid url #{url}, needs to be: \"postgres://user@host:port/db")
+    end
+  end
 end

@@ -8,24 +8,30 @@
 #  sem-apply --host <database host> --user <db user> --name <db name>
 #
 # == Examples
-#  sem-apply --url postgresql://postgres@localhost/sample
+#  sem-apply --url postgresql://postgres@localhost:port/sample
 #  sem-apply --host localhost --user web --name test
 #
+require 'tempfile'
 
 load File.join(File.dirname(__FILE__), 'sem-config')
 
 args = SchemaEvolutionManager::Args.from_stdin(:optional => %w(url host port name user dry_run))
-
 db = SchemaEvolutionManager::Db.from_args(args)
-db.bootstrap!
-
 dry_run = args.dry_run.nil? ? false : args.dry_run
-
-util = SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => dry_run)
-
-puts "Upgrading schema for #{db.url}"
+passwordEnabled = args.password.nil? ? false : args.password
+pgpassfile = Tempfile.new('pgpass')
+util = SchemaEvolutionManager::ApplyUtil.new(db, pgpassfile, :dry_run => dry_run)
 
 begin
+  if passwordEnabled
+    puts "please enter your password"
+    password = SchemaEvolutionManager::Ask.for_password
+    SchemaEvolutionManager::Preconditions.check_state(!(password.nil? || password.empty?), "Password must be provided [or remove the --password attribute]")
+    util.with_password_file(password)
+  end
+
+  db.bootstrap!
+  puts "Upgrading schema for #{db.url}"
   count = util.apply!("./scripts")
   if count == 0
     puts "  All scripts have been previously applied"
@@ -38,4 +44,8 @@ rescue SchemaEvolutionManager::ScriptError => e
   puts "  " + e.dml
   puts ""
   exit(1)
+ensure
+  if passwordEnabled
+    util.destroy_password_file
+  end
 end
