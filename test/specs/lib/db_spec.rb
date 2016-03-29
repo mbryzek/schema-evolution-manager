@@ -77,4 +77,10 @@ describe SchemaEvolutionManager::Db do
     end
   end
 
+  it "should raise an error for invalid url" do
+    lambda {
+      SchemaEvolutionManager::Db.new("postgres://test_db")
+    }.should raise_error(RuntimeError, "Invalid url[postgres://test_db]. Missing database name")
+  end
+
 end

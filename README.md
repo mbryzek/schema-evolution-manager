@@ -212,6 +212,24 @@ You will likely see a number of create table statements (see data model section 
 which tells you that if you apply these changes, that sql script will be applied to the sample db
 
 
+### Specifying database password
+
+There are two recommended ways in which to pass user passwords to psql:
+
+ 1. Create a [~/.pgpass
+    file](http://www.postgresql.org/docs/9.4/static/libpq-pgpass.html)
+    with the appropriate credentials</li>
+
+ 2. Specify a [--password] flag when running sem-apply. You will
+    then be prompted to enter your password once. sem will create a
+    temporary file to store your password, using that file during the
+    duration of the command and ensuring the file is deleted after sem
+    completed.
+
+    Example:
+
+        sem-apply --url postgresql://postgres@localhost/sample --password
+
 ### Apply the changes
 
     sem-apply --url postgresql://postgres@localhost/sample

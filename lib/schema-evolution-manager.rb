@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'pathname'
+require 'io/console'
 
 dir = File.dirname(__FILE__)
 lib_dir = File.join(dir, "schema-evolution-manager")
@@ -16,6 +17,7 @@ load File.join(lib_dir, 'ask.rb')
 load File.join(lib_dir, 'version.rb')
 load File.join(lib_dir, 'args.rb')
 load File.join(lib_dir, 'scripts.rb')
+load File.join(lib_dir, 'connection_data.rb')
 load File.join(lib_dir, 'db.rb')
 load File.join(lib_dir, 'apply_util.rb')
 load File.join(lib_dir, 'baseline_util.rb')

@@ -65,5 +65,4 @@ describe SchemaEvolutionManager::ApplyUtil do
       db.psql_command("select count(*) from tmp").to_i.should == 1
     end
   end
-
 end
