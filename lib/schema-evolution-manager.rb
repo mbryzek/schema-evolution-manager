@@ -1,6 +1,5 @@
 require 'fileutils'
 require 'pathname'
-require 'io/console'
 
 dir = File.dirname(__FILE__)
 lib_dir = File.join(dir, "schema-evolution-manager")
