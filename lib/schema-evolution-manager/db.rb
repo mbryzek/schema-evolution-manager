@@ -11,8 +11,7 @@ module SchemaEvolutionManager
       connection_data = ConnectionData.parse_url(@url)
 
       if password
-        ENV['PGPASSFILE'] = Library.write_to_temp_file(connection_data.pgpass(password))
-        puts "Created PGPASSFILE=%s" % ENV['PGPASSFILE']
+        ENV['PGPASSFILE'] = Db.password_to_tempfile(connection_data.pgpass(password))
       end
     end
 
@@ -109,6 +108,13 @@ module SchemaEvolutionManager
     # Returns the name of the schema_evolution_manager schema
     def Db.schema_name
       "schema_evolution_manager"
+    end
+
+    def Db.password_to_tempfile(contents)
+      file = Tempfile.new("sem-db")
+      file.write(contents)
+      file.rewind
+      file.path
     end
 
   end
