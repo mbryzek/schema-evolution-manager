@@ -18,7 +18,7 @@ load File.join(File.dirname(__FILE__), 'sem-config')
 args = SchemaEvolutionManager::Args.from_stdin(:optional => %w(url host port name user dry_run password))
 
 password = if args.password
-             SchemaEvolutionManager::Ask.for_password("Please enter the database user password")
+             SchemaEvolutionManager::Ask.for_password("Please enter your password: ")
            else
              nil
            end
