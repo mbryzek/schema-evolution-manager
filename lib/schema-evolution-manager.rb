@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'pathname'
+require 'tempfile'
 
 dir = File.dirname(__FILE__)
 lib_dir = File.join(dir, "schema-evolution-manager")
