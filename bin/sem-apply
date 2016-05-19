@@ -36,7 +36,17 @@ begin
   end
 rescue SchemaEvolutionManager::ScriptError => e
   puts ""
-  puts "ERROR applying script: %s" % e.filename
+  puts "ERROR applying script: %s" % e.path
+
+  puts ""
+  if e.output.strip.empty?
+    puts "  ==> There was no error output"
+  else
+    puts "  " + e.output.strip.split("\n").map { |l|
+      "  #{l}"
+    }.join("\n").strip
+  end
+
   puts ""
   puts "If this script has previously been applied to this database, you can record it as having been applied by:"
   puts "  " + e.dml
