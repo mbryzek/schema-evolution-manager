@@ -26,33 +26,15 @@ module SchemaEvolutionManager
         count += 1
         if @dry_run
           puts "[DRY RUN] Applying #{filename}"
-          apply_dry_run(filename, path)
+          puts path
+          puts ""
         else
           puts "Applying #{filename}"
-          apply_real(filename, path)
+          @db.psql_file(filename, path)
+          @scripts.record_as_run!(filename)
         end
       end
       count
-    end
-
-    private
-    def apply_dry_run(filename, path)
-      puts path
-      puts ""
-    end
-
-    def apply_real(filename, path)
-      have_error = true
-      begin
-        @db.psql_file(path)
-        have_error = false
-      ensure
-        if have_error
-          raise ScriptError.new(@db, filename)
-        end
-      end
-
-      @scripts.record_as_run!(filename)
     end
 
   end

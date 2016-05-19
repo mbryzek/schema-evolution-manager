@@ -20,7 +20,7 @@ module SchemaEvolutionManager
       scripts = Scripts.new(self, Scripts::BOOTSTRAP_SCRIPTS)
       dir = File.join(Library.base_dir, "scripts")
       scripts.each_pending(dir) do |filename, path|
-        psql_file(path)
+        psql_file(filename, path)
         scripts.record_as_run!(filename)
       end
     end
@@ -59,7 +59,7 @@ module SchemaEvolutionManager
     end
 
     # executes sql commands from a file in a single transaction
-    def psql_file(path)
+    def psql_file(filename, path)
       Preconditions.assert_class(path, String)
       Preconditions.check_state(File.exists?(path), "File[%s] not found" % path)
 
@@ -72,7 +72,15 @@ module SchemaEvolutionManager
         end
 
         command = "psql --file \"%s\" #{options} %s" % [tmp, @url]
-        Library.system_or_error(command)
+
+        Library.with_temp_file do |output|
+          result = `#{command} &> #{output}`.strip
+          status = $?
+          if status.to_i > 0
+            errors = File.exists?(output) ? IO.read(output) : result
+            raise ScriptError.new(self, filename, path, errors)
+          end
+        end
       end
     end
 
