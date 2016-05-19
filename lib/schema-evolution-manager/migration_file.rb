@@ -79,7 +79,7 @@ module SchemaEvolutionManager
     # and yields each matching row with |name, value|
     def each_property
       IO.readlines(path).each do |l|
-        stripped = l.strip
+        stripped = l.strip.encode("UTF-8")
         if stripped.match(/^\-\-\s+sem\.attribute\./)
           stripped.sub!(/^\-\-\s+sem\.attribute\./, '')
           name, value = stripped.split(/\=/, 2).map(&:strip)
