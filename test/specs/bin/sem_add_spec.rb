@@ -25,10 +25,7 @@ describe "Add" do
         s.sub(/^scripts\//, '')
       }
       scripts.size.should == 3
-      first = scripts.first
-      second = first.sub(/\.sql$/, '.z1001.sql')
-      third = first.sub(/\.sql$/, '.z1002.sql')
-      scripts.join(" ").should == "#{first} #{second} #{third}"
+      scripts.uniq.size.should == 3
     end
   end
 
