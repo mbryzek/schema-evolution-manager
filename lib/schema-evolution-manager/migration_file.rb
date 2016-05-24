@@ -90,6 +90,8 @@ module SchemaEvolutionManager
           # Ignore - attributes must be in ascii
         end
       end
+    rescue Encoding::InvalidByteSequenceError
+      # Ignore - file must be in ascii in order to parse attributes
     end
 
   end
