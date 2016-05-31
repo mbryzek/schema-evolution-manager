@@ -74,7 +74,7 @@ module SchemaEvolutionManager
         command = "psql --file \"%s\" #{options} %s" % [tmp, @url]
 
         Library.with_temp_file do |output|
-          result = `#{command} &> #{output}`.strip
+          result = `#{command} > #{output} 2>&1`.strip
           status = $?
           if status.to_i > 0
             errors = File.exists?(output) ? IO.read(output) : result
