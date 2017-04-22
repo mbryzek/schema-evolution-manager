@@ -1,3 +1,6 @@
 language: ruby
 script: 
   - cd test && ./run.rb
+branches:
+  only:
+    - master
