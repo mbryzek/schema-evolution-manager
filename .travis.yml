@@ -1,5 +1,7 @@
 language: ruby
 script: 
+  - git config --global user.email "mbryzek@test.foo"
+  - git config --global user.name "Mike"
   - cd test && ./run.rb
 branches:
   only:
