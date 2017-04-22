@@ -42,13 +42,6 @@ describe SchemaEvolutionManager::Library do
     end
   end
 
-  it "SchemaEvolutionManager::Library.git_assert_tag_exists" do
-    SchemaEvolutionManager::Library.git_assert_tag_exists("0.9.0")
-    lambda {
-      SchemaEvolutionManager::Library.git_assert_tag_exists("0.0.0")
-    }.should raise_error(RuntimeError)
-  end
-
   describe "SchemaEvolutionManager::Library.assert_valid_tag" do
 
     it "valid" do
