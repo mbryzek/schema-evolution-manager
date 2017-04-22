@@ -29,10 +29,10 @@ module SchemaEvolutionManager
           puts path
           puts ""
         else
-          print "Applying #{filename}... "
+          print "Applying #{filename}"
           @db.psql_file(filename, path)
           @scripts.record_as_run!(filename)
-          puts "Done"
+          puts " Done"
         end
       end
       count
