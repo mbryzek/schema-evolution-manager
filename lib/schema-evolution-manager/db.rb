@@ -28,7 +28,7 @@ module SchemaEvolutionManager
     # executes a simple sql command.
     def psql_command(sql_command)
       Preconditions.assert_class(sql_command, String)
-      command = "psql --no-align --tuples-only --command \"%s\" %s" % [sql_command, @url]
+      command = "psql --no-align --tuples-only --no-psqlrc --command \"%s\" %s" % [sql_command, @url]
       Library.system_or_error(command)
     end
 
