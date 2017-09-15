@@ -45,7 +45,7 @@ module SchemaEvolutionManager
     module Tag
 
       def Tag.latest
-        Library.latest_tag || Version.new("0.0.0")
+        Library.latest_tag || Version.parse("0.0.0")
       end
 
       # @param component: One of major|minor|micro. Defaults to micro. Currently passed in as an array

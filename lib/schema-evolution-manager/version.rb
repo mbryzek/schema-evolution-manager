@@ -6,32 +6,43 @@ module SchemaEvolutionManager
 
     attr_reader :major, :minor, :micro
 
-    def initialize(version_string)
+    def initialize(major, minor, micro, opts={})
+      @major = major.to_i
+      @minor = minor.to_i
+      @micro = micro.to_i
+      @prefix = opts.delete(:prefix) || nil
+      if !opts.empty?
+        raise "Invalid keys: " + opts.keys
+      end
+    end
+
+    def Version.parse(version_string)
       Preconditions.check_not_blank(version_string, "version_string cannot be blank")
       Library.assert_valid_tag(version_string)
-      pieces = version_string.split(".", 3)
-      @major = pieces[0].to_i
-      @minor = pieces[1].to_i
-      @micro = pieces[2].to_i
+      if md = version_string.match(/^(\w*)(\d+)\.(\d+)\.(\d+)$/)
+        Version.new(md[2], md[3], md[4], :prefix => md[1])
+      else
+        raise "ERROR: Bug in version string parser for version[%s]" % version_string
+      end
     end
 
     def to_version_string
-      "%s.%s.%s" % [major, minor, micro]
+      "%s%s.%s.%s" % [@prefix, major, minor, micro]
     end
 
     # Returns the next major version
     def next_major
-      Version.new("%s.%s.%s" % [major+1, 0, 0])
+      Version.new(major+1, 0, 0, :prefix => @prefix)
     end
 
     # Returns the next minor version
     def next_minor
-      Version.new("%s.%s.%s" % [major, minor+1, 0])
+      Version.new(major, minor+1, 0, :prefix => @prefix)
     end
 
     # Returns the next micro version
     def next_micro
-      Version.new("%s.%s.%s" % [major, minor, micro+1])
+      Version.new(major, minor, micro+1, :prefix => @prefix)
     end
 
     def <=>(other)
@@ -51,7 +62,7 @@ module SchemaEvolutionManager
     def Version.read
       Preconditions.check_state(File.exists?(VERSION_FILE), "Version file at path[%s] not found" % VERSION_FILE)
       version = IO.read(VERSION_FILE).strip
-      Version.new(version)
+      Version.parse(version)
     end
 
     def Version.write(version)
@@ -63,7 +74,7 @@ module SchemaEvolutionManager
 
     def Version.is_valid?(version_string)
       Preconditions.check_not_blank(version_string, "version_string cannot be blank")
-      version_string.match(/^\d+\.\d+\.\d+$/)
+      version_string.match(/^\w*\d+\.\d+\.\d+$/)
     end
 
   end

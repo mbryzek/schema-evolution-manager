@@ -22,7 +22,7 @@ puts "All tests passed"
 version = SchemaEvolutionManager::Version.read
 puts "Current version is %s" % version.to_version_string
 tmp = SchemaEvolutionManager::Ask.for_string("New version:", :default => version.next_micro.to_version_string)
-new_version = SchemaEvolutionManager::Version.new(tmp)
+new_version = SchemaEvolutionManager::Version.parse(tmp)
 
 if new_version.to_version_string == version.to_version_string
   puts "Version has not changed. Exiting"
