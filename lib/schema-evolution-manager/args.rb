@@ -7,12 +7,12 @@ module SchemaEvolutionManager
 
     if !defined?(FLAGS_WITH_ARGUMENTS)
       FLAGS_WITH_ARGUMENTS = {
-        :artifact_name => "Specifies the name of the artifact. Tag will be appeneded to this name",
+        :artifact_name => "Specifies the name of the artifact. Tag will be appended to this name",
         :user => "Connect to the database as this username instead of the default",
         :host => "Specifies the host name of the machine on which the server is running",
         :port => "Specifies the port on which the server is running",
         :name => "Specifies the name of the database to which to connect",
-        :url => "Connect to the database as this username instead of the default",
+        :url => "The connection string for the psql database",
         :dir => "Path to a directory",
         :tag => "A git tag (e.g. 0.0.1)",
         :prefix => "Configure installer to use this prefix"
