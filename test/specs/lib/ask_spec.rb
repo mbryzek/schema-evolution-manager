@@ -2,19 +2,28 @@ load File.join(File.dirname(__FILE__), '../../init.rb')
 
 describe SchemaEvolutionManager::Ask do
 
-  it "SchemaEvolutionManager::Ask.for_string" do
-    SchemaEvolutionManager::Ask.should_receive(:get_input).and_return("hello world")
-    SchemaEvolutionManager::Ask.for_string("Testing").should == "hello world"
-  end
+  describe "SchemaEvolutionManager::Ask.for_string" do
 
-  it "SchemaEvolutionManager::Ask.for_string trims input" do
-    SchemaEvolutionManager::Ask.should_receive(:get_input).and_return("   Hello world  ")
-    SchemaEvolutionManager::Ask.for_string("Testing").should == "Hello world"
-  end
+    it "works" do
+      SchemaEvolutionManager::Ask.should_receive(:get_input).and_return("hello world")
+      SchemaEvolutionManager::Ask.for_string("Testing").should == "hello world"
+    end
 
-  it "SchemaEvolutionManager::Ask.for_string with default" do
-    SchemaEvolutionManager::Ask.should_receive(:get_input).and_return("")
-    SchemaEvolutionManager::Ask.for_string("Testing", :default => "  hello world  ").should == "hello world"
+    it "trims input" do
+      SchemaEvolutionManager::Ask.should_receive(:get_input).and_return("   Hello world  ")
+      SchemaEvolutionManager::Ask.for_string("Testing").should == "Hello world"
+    end
+
+    it "uses default" do
+      SchemaEvolutionManager::Ask.should_receive(:get_input).and_return("")
+      SchemaEvolutionManager::Ask.for_string("Testing", :default => "  hello world  ").should == "hello world"
+    end
+
+    it "does not fail with no input" do
+      SchemaEvolutionManager::Ask.should_receive(:get_input).and_return(nil)
+      SchemaEvolutionManager::Ask.for_string("Testing", :default => "hello world").should == "hello world"
+    end
+
   end
 
   describe "SchemaEvolutionManager::Ask.for_boolean" do
