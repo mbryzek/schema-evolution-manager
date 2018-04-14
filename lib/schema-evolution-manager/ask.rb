@@ -24,7 +24,7 @@ module SchemaEvolutionManager
       value = nil
       while value.to_s == ""
         print final_message
-        value = get_input(echo).strip
+        value = get_input(echo).to_s.strip
         if value.to_s == "" && default
           value = default.to_s.strip
         end
