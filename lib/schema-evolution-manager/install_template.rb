@@ -59,7 +59,7 @@ Dir.chdir(lib_dir) do
   end
 end
 
-['CONVENTIONS.md', 'LICENSE', 'README.md', 'VERSION'].each do |filename|
+['CONVENTIONS.md', 'LICENSE', 'README.md', 'VERSION', 'install.sh'].each do |filename|
   SchemaEvolutionManager::Library.system_or_error("cp %s %s" % [filename, version_dir])
 end
 
