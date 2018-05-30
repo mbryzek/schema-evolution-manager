@@ -29,7 +29,7 @@ if [ -z "$1" ]; then
 fi
 
 SEM_ROOT="$(abs_dirname "$0")"
-mkdir -p "$PREFIX"/{bin,src}
+mkdir -p "$PREFIX"/{bin,lib}
 cp -R "$SEM_ROOT"/bin/* "$PREFIX"/bin
 cp -R "$SEM_ROOT"/lib/* "$PREFIX"/lib
 
