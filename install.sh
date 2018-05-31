@@ -29,11 +29,18 @@ if [ -z "$1" ]; then
 fi
 
 SEM_ROOT="$(abs_dirname "$0")"
-mkdir -p "$PREFIX"/{bin,lib}
+mkdir -p "$PREFIX"/{bin,src}
 cp -R "$SEM_ROOT"/bin/* "$PREFIX"/bin
-cp -R "$SEM_ROOT"/lib/* "$PREFIX"/lib
+cp -R "$SEM_ROOT"/lib/* "$PREFIX"/src
 
-eval "./util/update-library-path.rb $PREFIX/bin/sem-config ../lib/schema-evolution-manager.rb $PREFIX/lib/schema-evolution-manager.rb"
+eval "./util/update-library-path.rb $PREFIX/bin/sem-add ${PREFIX}/src/schema-evolution-manager.rb"
+eval "./util/update-library-path.rb $PREFIX/bin/sem-apply ${PREFIX}/src/schema-evolution-manager.rb"
+eval "./util/update-library-path.rb $PREFIX/bin/sem-baseline ${PREFIX}/src/schema-evolution-manager.rb"
+eval "./util/update-library-path.rb $PREFIX/bin/sem-dist ${PREFIX}/src/schema-evolution-manager.rb"
+eval "./util/update-library-path.rb $PREFIX/bin/sem-info ${PREFIX}/src/schema-evolution-manager.rb"
+eval "./util/update-library-path.rb $PREFIX/bin/sem-init ${PREFIX}/src/schema-evolution-manager.rb"
+
+rm "$PREFIX/bin/sem-config"
 
 echo "Installed schema-evolution-manager scripts to $PREFIX/bin"
 
