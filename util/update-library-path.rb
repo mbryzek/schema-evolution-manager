@@ -1,42 +1,36 @@
 #!/usr/bin/env ruby
 
-file = ARGV.shift.to_s.strip
-fromlib = ARGV.shift.to_s.strip
-tolib = ARGV.shift.to_s.strip
-if file.empty?
-  puts "ERROR: Specify file to update"
+path = ARGV.shift.to_s.strip
+lib = ARGV.shift.to_s.strip
+if path.empty?
+  puts "ERROR: Specify path to sem executable"
   exit(1)
 end
 
-if fromlib.empty?
+if lib.empty?
   puts "ERROR: Specify path to sem library"
   exit(1)
 end
 
-if tolib.empty?
-  puts "ERROR: Specify path to sem library"
+if !File.exists?(path)
+  puts "ERROR: File '#{path}' does not exist"
   exit(1)
 end
 
-if !File.exists?(file)
-  puts "ERROR: File '#{file}' does not exist"
-  exit(1)
-end
-
-if !File.exists?(tolib)
-  puts "ERROR: Library file '#{tolib}' does not exist"
+if !File.exists?(lib)
+  puts "ERROR: Library file '#{lib}' does not exist"
   exit(1)
 end
 
 tmp = []
-IO.readlines(file).each do |l|
-  if l.strip == "load File.join(File.dirname(__FILE__), '#{fromlib}')"
-    tmp << "load File.join('#{tolib}')\n"
+IO.readlines(path).each do |l|
+  if l.strip == "load File.join(File.dirname(__FILE__), 'sem-config')"
+    tmp << "load File.join('#{lib}')\n"
   else
     tmp << l
   end
 end
 
-File.open(file, "w") do |out|
+File.open(path, "w") do |out|
   out << tmp.join("")
 end
