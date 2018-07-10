@@ -29,9 +29,13 @@ if [ -z "$1" ]; then
 fi
 
 SEM_ROOT="$(abs_dirname "$0")"
-mkdir -p "$PREFIX"/{bin,src}
-cp -R "$SEM_ROOT"/bin/* "$PREFIX"/bin
-cp -R "$SEM_ROOT"/lib/* "$PREFIX"/src
+mkdir -p "$PREFIX"/{bin,src,scripts,template}
+cp -R "$SEM_ROOT"/bin/*      "$PREFIX"/bin
+cp -R "$SEM_ROOT"/lib/*      "$PREFIX"/src
+cp -R "$SEM_ROOT"/scripts/*  "$PREFIX"/scripts
+cp -R "$SEM_ROOT"/template/* "$PREFIX"/template
+cp    "$SEM_ROOT"/LICENSE    "$PREFIX"
+cp    "$SEM_ROOT"/VERSION    "$PREFIX"
 
 eval "./util/update-library-path.rb $PREFIX/bin/sem-add ${PREFIX}/src/schema-evolution-manager.rb"
 eval "./util/update-library-path.rb $PREFIX/bin/sem-apply ${PREFIX}/src/schema-evolution-manager.rb"
