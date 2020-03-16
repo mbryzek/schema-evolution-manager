@@ -74,7 +74,7 @@ module SchemaEvolutionManager
 
     def Version.is_valid?(version_string)
       Preconditions.check_not_blank(version_string, "version_string cannot be blank")
-      version_string.match(/^\w*\d+\.\d+\.\d+$/)
+      version_string.match(/^\w*\d+\.\d+\.\d+$/) ? true : false
     end
 
   end

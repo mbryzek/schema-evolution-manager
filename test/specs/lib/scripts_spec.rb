@@ -37,8 +37,8 @@ describe SchemaEvolutionManager::Scripts do
   it "applies all bootstrap scripts" do
     TestUtils.with_bootstrapped_db do |db|
       scripts = SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::BOOTSTRAP_SCRIPTS)
-      scripts.has_run?("20130318-105434.sql").should be_true
-      scripts.has_run?("20130318-105456.sql").should be_true
+      scripts.has_run?("20130318-105434.sql").should be true
+      scripts.has_run?("20130318-105456.sql").should be true
     end
   end
 
@@ -47,9 +47,9 @@ describe SchemaEvolutionManager::Scripts do
     it "valid filename" do
       TestUtils.with_bootstrapped_db do |db|
         scripts = SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS)
-        scripts.has_run?("20130318-123458.sql").should be_false
+        scripts.has_run?("20130318-123458.sql").should be false
         scripts.record_as_run!("20130318-123458.sql")
-        scripts.has_run?("20130318-123458.sql").should be_true
+        scripts.has_run?("20130318-123458.sql").should be true
       end
     end
 
@@ -58,7 +58,7 @@ describe SchemaEvolutionManager::Scripts do
         scripts = SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS)
         scripts.record_as_run!("20130318-123458.sql")
         scripts.record_as_run!("20130318-123458.sql")
-        scripts.has_run?("20130318-123458.sql").should be_true
+        scripts.has_run?("20130318-123458.sql").should be true
       end
     end
 

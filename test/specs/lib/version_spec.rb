@@ -9,13 +9,13 @@ describe SchemaEvolutionManager::Version do
 
     it "valid versions" do
       VALID.each do |string|
-        SchemaEvolutionManager::Version.is_valid?(string).should be_true
+        SchemaEvolutionManager::Version.is_valid?(string).should be true
       end
     end
 
     it "invalid versions" do
       INVALID.each do |string|
-        SchemaEvolutionManager::Version.is_valid?(string).should be_false
+        SchemaEvolutionManager::Version.is_valid?(string).should be false
       end
     end
 
@@ -61,7 +61,7 @@ describe SchemaEvolutionManager::Version do
   end
 
   it "SchemaEvolutionManager::Version.read" do
-    SchemaEvolutionManager::Version.read.nil?.should be_false
+    SchemaEvolutionManager::Version.read.nil?.should be false
   end
 
   it "next_major" do
