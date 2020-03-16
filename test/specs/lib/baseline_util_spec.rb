@@ -16,10 +16,10 @@ describe SchemaEvolutionManager::BaselineUtil do
 
   it "dry_run?" do
     db = SchemaEvolutionManager::Db.new("postgres://postgres@localhost/test")
-    SchemaEvolutionManager::BaselineUtil.new(db).dry_run?.should be_true
-    SchemaEvolutionManager::BaselineUtil.new(db, :dry_run => nil).dry_run?.should be_true
-    SchemaEvolutionManager::BaselineUtil.new(db, :dry_run => true).dry_run?.should be_true
-    SchemaEvolutionManager::BaselineUtil.new(db, :dry_run => false).dry_run?.should be_false
+    SchemaEvolutionManager::BaselineUtil.new(db).dry_run?.should be true
+    SchemaEvolutionManager::BaselineUtil.new(db, :dry_run => nil).dry_run?.should be true
+    SchemaEvolutionManager::BaselineUtil.new(db, :dry_run => true).dry_run?.should be true
+    SchemaEvolutionManager::BaselineUtil.new(db, :dry_run => false).dry_run?.should be false
   end
 
   it "apply! with dry run" do

@@ -30,27 +30,27 @@ describe SchemaEvolutionManager::Ask do
 
     it "case insensitive" do
       SchemaEvolutionManager::Ask.should_receive(:get_input).and_return("Yes")
-      SchemaEvolutionManager::Ask.for_boolean("Testing").should be_true
+      SchemaEvolutionManager::Ask.for_boolean("Testing").should be true
     end
 
     it "case insensitive" do
       SchemaEvolutionManager::Ask.should_receive(:get_input).and_return("y")
-      SchemaEvolutionManager::Ask.for_boolean("Testing").should be_true
+      SchemaEvolutionManager::Ask.for_boolean("Testing").should be true
     end
 
     it "handles no case insensitive" do
       SchemaEvolutionManager::Ask.should_receive(:get_input).and_return("No")
-      SchemaEvolutionManager::Ask.for_boolean("Testing").should be_false
+      SchemaEvolutionManager::Ask.for_boolean("Testing").should be false
     end
 
     it "handles n" do
       SchemaEvolutionManager::Ask.should_receive(:get_input).and_return("n")
-      SchemaEvolutionManager::Ask.for_boolean("Testing").should be_false
+      SchemaEvolutionManager::Ask.for_boolean("Testing").should be false
     end
 
     it "assumes false for invalid input" do
       SchemaEvolutionManager::Ask.should_receive(:get_input).and_return("something else")
-      SchemaEvolutionManager::Ask.for_boolean("Testing").should be_false
+      SchemaEvolutionManager::Ask.for_boolean("Testing").should be false
     end
 
   end

@@ -33,11 +33,11 @@ describe SchemaEvolutionManager::Library do
   end
 
   it "SchemaEvolutionManager::Library.git_has_remote?" do
-    SchemaEvolutionManager::Library.git_has_remote?.should be_true
+    SchemaEvolutionManager::Library.git_has_remote?.should be true
     SchemaEvolutionManager::Library.with_temp_file do |tmp|
       SchemaEvolutionManager::Library.system_or_error("git init #{tmp}")
       Dir.chdir(tmp) do
-        SchemaEvolutionManager::Library.git_has_remote?.should be_false
+        SchemaEvolutionManager::Library.git_has_remote?.should be false
       end
     end
   end
@@ -84,10 +84,10 @@ describe SchemaEvolutionManager::Library do
       file = nil
       SchemaEvolutionManager::Library.with_temp_file do |tmp|
         SchemaEvolutionManager::Library.system_or_error("touch #{tmp}")
-        File.exists?(tmp).should be_true
+        File.exists?(tmp).should be true
         file = tmp
       end
-      File.exists?(file).should be_false
+      File.exists?(file).should be false
     end
 
     it "respects prefix" do
@@ -100,13 +100,13 @@ describe SchemaEvolutionManager::Library do
 
   it "SchemaEvolutionManager::Library.delete_file_if_exists" do
     SchemaEvolutionManager::Library.with_temp_file do |tmp|
-      File.exists?(tmp).should be_false
+      File.exists?(tmp).should be false
       SchemaEvolutionManager::Library.delete_file_if_exists(tmp)
 
       File.open(tmp, "w") { |out| out << "touch" }
-      File.exists?(tmp).should be_true
+      File.exists?(tmp).should be true
       SchemaEvolutionManager::Library.delete_file_if_exists(tmp)
-      File.exists?(tmp).should be_false
+      File.exists?(tmp).should be false
     end
   end
 
@@ -117,9 +117,9 @@ describe SchemaEvolutionManager::Library do
   end
 
   it "SchemaEvolutionManager::Library.base_dir" do
-    File.directory?(SchemaEvolutionManager::Library.base_dir).should be_true
-    File.directory?(File.join(SchemaEvolutionManager::Library.base_dir, "bin")).should be_true
-    File.directory?(File.join(SchemaEvolutionManager::Library.base_dir, "lib")).should be_true
+    File.directory?(SchemaEvolutionManager::Library.base_dir).should be true
+    File.directory?(File.join(SchemaEvolutionManager::Library.base_dir, "bin")).should be true
+    File.directory?(File.join(SchemaEvolutionManager::Library.base_dir, "lib")).should be true
   end
 
   describe "SchemaEvolutionManager::Library.system_or_error" do
@@ -154,11 +154,11 @@ describe SchemaEvolutionManager::Library do
   end
 
   it "SchemaEvolutionManager::Library.is_verbose?" do
-    SchemaEvolutionManager::Library.is_verbose?.should be_false
+    SchemaEvolutionManager::Library.is_verbose?.should be false
     SchemaEvolutionManager::Library.set_verbose(true)
-    SchemaEvolutionManager::Library.is_verbose?.should be_true
+    SchemaEvolutionManager::Library.is_verbose?.should be true
     SchemaEvolutionManager::Library.set_verbose(false)
-    SchemaEvolutionManager::Library.is_verbose?.should be_false
+    SchemaEvolutionManager::Library.is_verbose?.should be false
   end
 
   describe "SchemaEvolutionManager::Library.git_changes" do

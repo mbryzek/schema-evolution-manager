@@ -16,10 +16,10 @@ describe SchemaEvolutionManager::ApplyUtil do
 
   it "dry_run?" do
     db = SchemaEvolutionManager::Db.new("postgres://postgres@localhost/test")
-    SchemaEvolutionManager::ApplyUtil.new(db).dry_run?.should be_true
-    SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => nil).dry_run?.should be_true
-    SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => true).dry_run?.should be_true
-    SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => false).dry_run?.should be_false
+    SchemaEvolutionManager::ApplyUtil.new(db).dry_run?.should be true
+    SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => nil).dry_run?.should be true
+    SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => true).dry_run?.should be true
+    SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => false).dry_run?.should be false
   end
 
   it "does not record script as run if there is an error" do

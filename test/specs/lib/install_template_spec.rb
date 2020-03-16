@@ -18,7 +18,7 @@ describe SchemaEvolutionManager::Library do
       SchemaEvolutionManager::Library.with_temp_file do |install_file|
         template = SchemaEvolutionManager::InstallTemplate.new(:lib_dir => dir, :bin_dir => File.join(dir, "bin"))
         template.write_to_file(install_file)
-        File.exists?(install_file).should be_true
+        File.exists?(install_file).should be true
       end
     end
   end
@@ -43,14 +43,14 @@ describe SchemaEvolutionManager::Library do
         template = SchemaEvolutionManager::InstallTemplate.new(:lib_dir => dir, :bin_dir => File.join(dir, "bin"))
         begin
           template.write_to_file(install_file)
-          File.exists?(install_file).should be_true
+          File.exists?(install_file).should be true
           SchemaEvolutionManager::Library.system_or_error("./%s" % install_file)
-          File.directory?(dir).should be_true
+          File.directory?(dir).should be true
           version_dir = "schema-evolution-manager-%s" % [SchemaEvolutionManager::Version.read.to_version_string]
-          File.symlink?(File.join(dir, "schema-evolution-manager")).should be_true
+          File.symlink?(File.join(dir, "schema-evolution-manager")).should be true
           File.readlink(File.join(dir, "schema-evolution-manager")).should == version_dir
-          File.directory?(File.join(dir, version_dir, "bin")).should be_true
-          File.directory?(File.join(dir, version_dir, "lib")).should be_true
+          File.directory?(File.join(dir, version_dir, "bin")).should be true
+          File.directory?(File.join(dir, version_dir, "lib")).should be true
           root_files.each do |file|
             if file.match(/\~/) || file.match(/^\#/)
               next

@@ -66,13 +66,13 @@ describe SchemaEvolutionManager::Db do
 
     it "new db" do
       TestUtils.with_db do |db|
-        db.schema_schema_evolution_manager_exists?.should be_false
+        db.schema_schema_evolution_manager_exists?.should be false
       end
     end
 
     it "bootstrapped db" do
       TestUtils.with_bootstrapped_db do |db|
-        db.schema_schema_evolution_manager_exists?.should be_true
+        db.schema_schema_evolution_manager_exists?.should be true
       end
     end
   end

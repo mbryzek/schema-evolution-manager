@@ -3,23 +3,23 @@ load File.join(File.dirname(__FILE__), '../../init.rb')
 describe SchemaEvolutionManager::Args do
 
   it "needs at least one required or optional argument" do
-    lambda {
+    expect {
       SchemaEvolutionManager::Args.new("")
-    }.should raise_error(RuntimeError)
+    }.to raise_error(RuntimeError)
   end
 
   it "handles basic flags" do
     args = SchemaEvolutionManager::Args.new("--host localhost", { :required => ['host'], :optional => ['dry_run'] })
     args.host.should == "localhost"
-    args.dry_run.should be_false
+    args.dry_run.should be nil
 
     args = SchemaEvolutionManager::Args.new("--dry_run --host localhost", { :required => ['host'], :optional => ['dry_run'] })
     args.host.should == "localhost"
-    args.dry_run.should be_true
+    args.dry_run.should be true
 
     args = SchemaEvolutionManager::Args.new(" --host localhost --dry_run", { :required => ['host'], :optional => ['dry_run'] })
     args.host.should == "localhost"
-    args.dry_run.should be_true
+    args.dry_run.should be true
   end
 
   it "handles full db config" do
