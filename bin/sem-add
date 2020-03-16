@@ -23,12 +23,12 @@ scripts_dir = File.join(`pwd`.strip, "scripts")
 SchemaEvolutionManager::Library.ensure_dir!(scripts_dir)
 
 contents = IO.read(file)
-now = Time.now.strftime('%Y%m%d-%H%M%S')
+now = Time.now.utc.strftime('%Y%m%d-%H%M%S')
 target = File.join(scripts_dir, "#{now}.sql")
 
 while File.exists?(target)
   sleep 0.1
-  now = Time.now.strftime('%Y%m%d-%H%M%S')
+  now = Time.now.utc.strftime('%Y%m%d-%H%M%S')
   target = File.join(scripts_dir, "#{now}.sql")
 end
 
