@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.description       = 
   s.authors           = ["Michael Bryzek"]
   s.email             = 'mbryzek@alum.mit.edu'
-  s.licenses          = 'Apache 2.0'
+  s.licenses          = 'Apache-2.0'
   s.files             = %w( README.md )
   s.files             += Dir.glob("bin/**/*")
   s.files             += Dir.glob("lib/**/*")
