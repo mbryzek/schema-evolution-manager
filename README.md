@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/mbryzek/schema-evolution-manager.svg?branch=master)](https://travis-ci.org/mbryzek/schema-evolution-manager)
+[![Build Status](https://travis-ci.org/mbryzek/schema-evolution-manager.svg?branch=main)](https://travis-ci.org/mbryzek/schema-evolution-manager)
 
 # Schema Evolution Manager (sem)
 
