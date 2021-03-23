@@ -1,8 +1,9 @@
+# File automatically created and updated by util/create-release.rb
 module SchemaEvolutionManager
 
   module SemVersion
 
-    VERSION = '0.9.43' # Automatically updated by util/create-release.rb
+    VERSION ||= '0.9.43'
 
   end
 
