@@ -89,7 +89,8 @@ Dir.chdir(args.dir) do
   end
 
   if SchemaEvolutionManager::Library.git_has_remote?
-    SchemaEvolutionManager::Library.system_or_error("git push origin master")
+    branch = SchemaEvolutionManager::Library.system_or_error("git symbolic-ref --short HEAD")
+    SchemaEvolutionManager::Library.system_or_error("git push origin #{branch}")
   end
 
 end

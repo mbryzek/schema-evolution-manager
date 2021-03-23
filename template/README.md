@@ -1,9 +1,9 @@
 To add a new database migration script:
 
-  1. Make sure you have head of master:
-     git checkout master
+  1. Make sure you have head of main:
+     git checkout main
      git fetch
-     git rebase origin/master
+     git rebase origin/main
 
   2. Create a local branch for your change
      git checkout -b tmp
