@@ -52,7 +52,6 @@ File.open(sem_version_path, "w") do |out|
   out << "module SemVersion\n\n"
   out << "VERSION ||= '0.9.43'\n\n"
   out << "end\n\n"
-  out << "end\n\n"
   out << "end\n"
 end
 
