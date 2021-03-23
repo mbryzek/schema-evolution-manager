@@ -2,7 +2,6 @@ language: ruby
 services:
   - docker
 before_script:
-  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
   - docker run -d -p 127.0.0.1:5432:5432 flowcommerce/apibuilder-postgresql:latest
 script: 
   - git config --global user.email "mbryzek@test.foo"
