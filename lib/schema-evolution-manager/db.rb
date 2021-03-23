@@ -7,6 +7,10 @@ module SchemaEvolutionManager
     def initialize(url, opts={})
       @url = Preconditions.check_not_blank(url, "url cannot be blank")
       password = opts.delete(:password)
+
+      set = opts.delete(:set).to_s.strip
+      @psql_executable_with_options = set.empty? ? "psql" : "psql --set='%s'" % set
+
       Preconditions.assert_empty_opts(opts)
       connection_data = ConnectionData.parse_url(@url)
 
@@ -28,7 +32,7 @@ module SchemaEvolutionManager
     # executes a simple sql command.
     def psql_command(sql_command)
       Preconditions.assert_class(sql_command, String)
-      command = "psql --no-align --tuples-only --no-psqlrc --command \"%s\" %s" % [sql_command, @url]
+      command = "#{@psql_executable_with_options} --no-align --tuples-only --no-psqlrc --command \"%s\" %s" % [sql_command, @url]
       Library.system_or_error(command)
     end
 
@@ -71,7 +75,7 @@ module SchemaEvolutionManager
           out << IO.read(path)
         end
 
-        command = "psql --file \"%s\" #{options} %s" % [tmp, @url]
+        command = "#{@psql_executable_with_options} --file \"%s\" #{options} %s" % [tmp, @url]
 
         Library.with_temp_file do |output|
           result = `#{command} > #{output} 2>&1`.strip
@@ -94,7 +98,7 @@ module SchemaEvolutionManager
     # Db. Exists if invalid config.
     def Db.parse_command_line_config(arg_string)
       Preconditions.assert_class(arg_string, String)
-      args = Args.new(arg_string, :optional => ['url', 'host', 'user', 'name', 'port'])
+      args = Args.new(arg_string, :optional => ['url', 'host', 'user', 'name', 'port', 'set'])
       Db.from_args(args)
     end
 
@@ -104,12 +108,13 @@ module SchemaEvolutionManager
       password = opts.delete(:password)
       Preconditions.assert_empty_opts(opts)
 
+      options = { :password => password, :set => args.set }
       if args.url
-        Db.new(args.url, :password => password)
+        Db.new(args.url, options)
       else
         base = "%s:%s/%s" % [args.host || "localhost", args.port || ConnectionData::DEFAULT_PORT, args.name]
         url = args.user ? "%s@%s" % [args.user, base] : base
-        Db.new("postgres://" + url, :password => password)
+        Db.new("postgres://" + url, options)
       end
     end
 

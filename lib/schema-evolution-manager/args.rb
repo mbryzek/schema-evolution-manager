@@ -15,7 +15,8 @@ module SchemaEvolutionManager
         :url => "The connection string for the psql database",
         :dir => "Path to a directory",
         :tag => "A git tag (e.g. 0.0.1)",
-        :prefix => "Configure installer to use this prefix"
+        :prefix => "Configure installer to use this prefix",
+        :set => "Passthrough for postgresql --set argument"
       }
 
       FLAGS_NO_ARGUMENTS = {
@@ -26,7 +27,7 @@ module SchemaEvolutionManager
       }
     end
 
-    attr_reader :artifact_name, :host, :port, :name, :prefix, :url, :user, :dir, :dry_run, :tag, :password
+    attr_reader :artifact_name, :host, :port, :name, :prefix, :url, :user, :dir, :dry_run, :tag, :password, :set
 
     # args: Actual string arguments
     # :required => list of parameters that are required
@@ -60,6 +61,7 @@ module SchemaEvolutionManager
       @user = found_arguments.delete(:user)
       @dir = found_arguments.delete(:dir)
       @tag = found_arguments.delete(:tag)
+      @set = found_arguments.delete(:set)
 
       @dry_run = found_arguments.delete(:dry_run)
       @password = found_arguments.delete(:password)
