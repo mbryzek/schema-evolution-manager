@@ -123,7 +123,11 @@ First presented at [PGDay NYC 2013](https://speakerdeck.com/mbryzek/schema-evolu
 
 ## Installation
 
-There are two ways to install schema evolution manager:
+There are three ways to install schema evolution manager:
+
+1. Via brew
+
+        brew install schema-evolution-manager
 
 1. Direct install using ruby (no dependency on ruby gems)
 
@@ -133,7 +137,7 @@ There are two ways to install schema evolution manager:
         ruby ./configure.rb
         sudo ./install.rb
 
-2. If you have ruby gems:
+1. If you have ruby gems:
 
         gem install schema-evolution-manager
 
