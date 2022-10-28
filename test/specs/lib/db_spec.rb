@@ -83,4 +83,9 @@ describe SchemaEvolutionManager::Db do
     }.should raise_error(RuntimeError, "Invalid url[postgres://test_db]. Missing database name")
   end
 
+  it "should process multiple set commandline options" do
+    db = SchemaEvolutionManager::Db.parse_command_line_config("--url postgresql://localhost:5432/test --set v1=value1 --set v2=value2")
+    db.url.should == "postgresql://localhost:5432/test"
+    db.psql_executable_with_options.should == "psql --set 'v1=value1' --set 'v2=value2'"
+  end
 end

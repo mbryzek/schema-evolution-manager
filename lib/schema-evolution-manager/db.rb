@@ -3,13 +3,14 @@ module SchemaEvolutionManager
   class Db
 
     attr_reader :url
+    attr_reader :psql_executable_with_options
 
     def initialize(url, opts={})
       @url = Preconditions.check_not_blank(url, "url cannot be blank")
       password = opts.delete(:password)
 
-      set = opts.delete(:set).to_s.strip
-      @psql_executable_with_options = set.empty? ? "psql" : "psql --set='%s'" % set
+      set = opts.delete(:set)
+      @psql_executable_with_options = set.empty? ? "psql" : "psql %s" % set.map{ |v| "--set '%s'" % v }.join(" ")
 
       Preconditions.assert_empty_opts(opts)
       connection_data = ConnectionData.parse_url(@url)

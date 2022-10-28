@@ -138,7 +138,14 @@ module SchemaEvolutionManager
         index += 1
 
         if FLAGS_WITH_ARGUMENTS.has_key?(flag)
-          found[flag] = values[index]
+          if flag == :set
+            if !found.has_key?(flag)
+              found[flag] = []
+            end
+            found[flag].append(values[index])
+          else
+            found[flag] = values[index]
+          end
           index += 1
 
         elsif FLAGS_NO_ARGUMENTS.has_key?(flag)

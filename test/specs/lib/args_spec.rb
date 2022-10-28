@@ -44,4 +44,14 @@ describe SchemaEvolutionManager::Args do
     end
   end
 
+  it "handles a single set argument" do
+    args = SchemaEvolutionManager::Args.new("--set v1=value1", { :required => %w(set) })
+    args.set.should == ["v1=value1"]
+  end
+
+  it "handles two set arguments" do
+    args = SchemaEvolutionManager::Args.new("--set v1=value1 --set v2=value2", { :required => %w(set) })
+    args.set.should == ["v1=value1", "v2=value2"]
+  end
+
 end
