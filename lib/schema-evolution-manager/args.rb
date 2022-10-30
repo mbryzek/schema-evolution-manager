@@ -5,7 +5,9 @@ module SchemaEvolutionManager
   # tests around it... so we have our own internal simple implementation.
   class Args
 
-    if !defined?(FLAGS_WITH_ARGUMENTS)
+    if !defined?(ARRAY_FLAGS)
+      ARRAY_FLAGS = [:set]
+
       FLAGS_WITH_ARGUMENTS = {
         :artifact_name => "Specifies the name of the artifact. Tag will be appended to this name",
         :user => "Connect to the database as this username instead of the default",
@@ -16,7 +18,7 @@ module SchemaEvolutionManager
         :dir => "Path to a directory",
         :tag => "A git tag (e.g. 0.0.1)",
         :prefix => "Configure installer to use this prefix",
-        :set => "Passthrough for postgresql --set argument"
+        :set => "Passthrough for postgresql --set argument. Returns an array of the options set"
       }
 
       FLAGS_NO_ARGUMENTS = {
@@ -61,7 +63,7 @@ module SchemaEvolutionManager
       @user = found_arguments.delete(:user)
       @dir = found_arguments.delete(:dir)
       @tag = found_arguments.delete(:tag)
-      @set = found_arguments.delete(:set)
+      @set = found_arguments.delete(:set) || []
 
       @dry_run = found_arguments.delete(:dry_run)
       @password = found_arguments.delete(:password)
@@ -138,7 +140,12 @@ module SchemaEvolutionManager
         index += 1
 
         if FLAGS_WITH_ARGUMENTS.has_key?(flag)
-          found[flag] = values[index]
+          if ARRAY_FLAGS.include?(flag)
+            found[flag] ||= []
+            found[flag] << values[index]
+          else
+            found[flag] = values[index]
+          end
           index += 1
 
         elsif FLAGS_NO_ARGUMENTS.has_key?(flag)

@@ -15,7 +15,7 @@ require 'tempfile'
 
 load File.join(File.dirname(__FILE__), 'sem-config')
 
-args = SchemaEvolutionManager::Args.from_stdin(:optional => %w(url host port name user dry_run password))
+args = SchemaEvolutionManager::Args.from_stdin(:optional => %w(url host port name user dry_run password set))
 
 password = if args.password
              SchemaEvolutionManager::Ask.for_password("Please enter your password: ")
