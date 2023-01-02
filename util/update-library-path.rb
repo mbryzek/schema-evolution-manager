@@ -12,12 +12,12 @@ if lib.empty?
   exit(1)
 end
 
-if !File.exists?(path)
+if !File.exist?(path)
   puts "ERROR: File '#{path}' does not exist"
   exit(1)
 end
 
-if !File.exists?(lib)
+if !File.exist?(lib)
   puts "ERROR: Library file '#{lib}' does not exist"
   exit(1)
 end

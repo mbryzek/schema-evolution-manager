@@ -22,7 +22,7 @@ describe "Dist" do
         SchemaEvolutionManager::Library.system_or_error("tar xfz ../#{tarballs.first}")
         release_dir = Dir.glob("*tmp*").first
         changes = File.join(release_dir, "CHANGES")
-        if !File.exists?(changes)
+        if !File.exist?(changes)
           fail("changes file[%s] not found" % [changes])
         end
         scripts = SchemaEvolutionManager::Scripts.all(File.join(release_dir, "scripts"))
