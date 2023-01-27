@@ -133,7 +133,7 @@ There are three ways to install schema evolution manager:
 
         git clone git@github.com:mbryzek/schema-evolution-manager.git
         cd schema-evolution-manager
-        git checkout 0.9.46
+        git checkout 0.9.47
         ruby ./configure.rb
         sudo ./install.rb
 
