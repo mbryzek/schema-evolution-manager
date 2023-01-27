@@ -47,7 +47,7 @@ SchemaEvolutionManager::Library.ensure_dir!(version_dir)
 SchemaEvolutionManager::Library.ensure_dir!(bin_dir)
 
 Dir.chdir(lib_dir) do
-  if File.exists?("schema-evolution-manager")
+  if File.exist?("schema-evolution-manager")
     if File.symlink?("schema-evolution-manager")
       SchemaEvolutionManager::Library.system_or_error("rm schema-evolution-manager")
       SchemaEvolutionManager::Library.system_or_error("ln -s %s %s" % [version_name, 'schema-evolution-manager'])
@@ -89,7 +89,7 @@ end
 
 # Overrwrite bin/sem-config with proper location of lib dir
 init_file = File.join(version_dir, "bin/sem-config")
-SchemaEvolutionManager::Preconditions.check_state(File.exists?(init_file), "Init file[%s] not found" % init_file)
+SchemaEvolutionManager::Preconditions.check_state(File.exist?(init_file), "Init file[%s] not found" % init_file)
 File.open(init_file, "w") do |out|
   out << "load File.join('%s')\n" % File.join(version_dir, 'lib/schema-evolution-manager.rb')
 end

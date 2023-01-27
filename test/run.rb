@@ -9,7 +9,7 @@ end
 
 gem_home = SchemaEvolutionManager::Library.normalize_path(File.join(File.dirname(__FILE__), '../gems'))
 rspec = File.join(gem_home, 'bin/rspec')
-if !File.exists?(rspec)
+if !File.exist?(rspec)
   run("export GEM_HOME=%s && gem install rspec --version 3.9 --install-dir %s" % [gem_home, gem_home])
 end
 

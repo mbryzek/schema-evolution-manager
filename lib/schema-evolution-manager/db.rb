@@ -67,7 +67,7 @@ module SchemaEvolutionManager
     # executes sql commands from a file in a single transaction
     def psql_file(filename, path)
       Preconditions.assert_class(path, String)
-      Preconditions.check_state(File.exists?(path), "File[%s] not found" % path)
+      Preconditions.check_state(File.exist?(path), "File[%s] not found" % path)
 
       options = Db.attribute_values(path).join(" ")
 
@@ -83,7 +83,7 @@ module SchemaEvolutionManager
           result = `#{command} > #{output} 2>&1`.strip
           status = $?
           if status.to_i > 0
-            errors = File.exists?(output) ? IO.read(output) : result
+            errors = File.exist?(output) ? IO.read(output) : result
             raise ScriptError.new(self, filename, path, errors)
           end
         end
