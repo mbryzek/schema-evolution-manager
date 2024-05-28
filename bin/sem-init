@@ -54,7 +54,7 @@ Dir.chdir(args.dir) do
   wrappers = []
   Dir.glob("#{template_dir}/*").each do |path|
     wrapper = File.basename(path)
-    if !File.exists?(wrapper)
+    if !File.exist?(wrapper)
       puts "Creating wrapper script #{wrapper}"
       copy_file(path, wrapper, subs)
       SchemaEvolutionManager::Library.system_or_error("chmod +x #{wrapper}")
@@ -67,14 +67,14 @@ Dir.chdir(args.dir) do
   end
 
   readme = "README.md"
-  if !File.exists?(readme)
+  if !File.exist?(readme)
     puts "Creating #{readme}"
     copy_file("schema-evolution-manager/template/README.md", "README.md", subs)
     SchemaEvolutionManager::Library.system_or_error("git add #{readme}")
     SchemaEvolutionManager::Library.system_or_error("git commit -m 'Adding README.md' README.md")
   end
 
-  if !File.exists?("scripts")
+  if !File.exist?("scripts")
     SchemaEvolutionManager::Library.system_or_error("mkdir scripts")
     SchemaEvolutionManager::Library.system_or_error("touch scripts/.exists")
     SchemaEvolutionManager::Library.system_or_error("git add scripts/.exists")

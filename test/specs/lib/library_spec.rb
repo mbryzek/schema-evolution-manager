@@ -91,10 +91,10 @@ describe SchemaEvolutionManager::Library do
       file = nil
       SchemaEvolutionManager::Library.with_temp_file do |tmp|
         SchemaEvolutionManager::Library.system_or_error("touch #{tmp}")
-        File.exists?(tmp).should be_true
+        File.exist?(tmp).should be_true
         file = tmp
       end
-      File.exists?(file).should be_false
+      File.exist?(file).should be_false
     end
 
     it "respects prefix" do
@@ -107,13 +107,13 @@ describe SchemaEvolutionManager::Library do
 
   it "SchemaEvolutionManager::Library.delete_file_if_exists" do
     SchemaEvolutionManager::Library.with_temp_file do |tmp|
-      File.exists?(tmp).should be_false
+      File.exist?(tmp).should be_false
       SchemaEvolutionManager::Library.delete_file_if_exists(tmp)
 
       File.open(tmp, "w") { |out| out << "touch" }
-      File.exists?(tmp).should be_true
+      File.exist?(tmp).should be_true
       SchemaEvolutionManager::Library.delete_file_if_exists(tmp)
-      File.exists?(tmp).should be_false
+      File.exist?(tmp).should be_false
     end
   end
 

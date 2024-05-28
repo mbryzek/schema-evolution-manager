@@ -16,7 +16,7 @@ if file.to_s.strip == ""
   SchemaEvolutionManager::RdocUsage.printAndExit(1)
 end
 
-SchemaEvolutionManager::Preconditions.check_state(File.exists?(file), "File[#{file}] could not be found")
+SchemaEvolutionManager::Preconditions.check_state(File.exist?(file), "File[#{file}] could not be found")
 SchemaEvolutionManager::Preconditions.check_state(file.match(/\.sql/i), "File[#{file}] must end with .sql")
 
 scripts_dir = File.join(`pwd`.strip, "scripts")
@@ -28,7 +28,7 @@ target = File.join(scripts_dir, "#{now}.sql")
 
 padding = 1000
 counter = 0
-while File.exists?(target)
+while File.exist?(target)
   counter += 1
   if counter >= padding * 10
     raise "ERROR: Cannot add more than #{padding * 10} files / second. Doing so would break the implementation of lexicographically sorted filenames"

@@ -88,7 +88,7 @@ module SchemaEvolutionManager
     end
 
     def Library.delete_file_if_exists(path)
-      if File.exists?(path)
+      if File.exist?(path)
         FileUtils.rm_r(path)
       end
     end

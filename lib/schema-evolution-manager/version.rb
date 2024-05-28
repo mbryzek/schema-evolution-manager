@@ -49,7 +49,7 @@ module SchemaEvolutionManager
     # Reads the current version (from the VERSION FILE), returning an
     # instance of the Version class
     def Version.read
-      Preconditions.check_state(File.exists?(VERSION_FILE), "Version file at path[%s] not found" % VERSION_FILE)
+      Preconditions.check_state(File.exist?(VERSION_FILE), "Version file at path[%s] not found" % VERSION_FILE)
       version = IO.read(VERSION_FILE).strip
       Version.new(version)
     end

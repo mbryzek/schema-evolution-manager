@@ -78,7 +78,7 @@ SchemaEvolutionManager::Library.with_temp_file do |tmp|
 end
 
 gzip_file = "#{tarball}.gz"
-if File.exists?(gzip_file)
+if File.exist?(gzip_file)
   puts "Removing old gzip file at #{gzip_file}"
   FileUtils.rm(gzip_file)
 end

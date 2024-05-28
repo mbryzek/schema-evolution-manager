@@ -48,7 +48,7 @@ module SchemaEvolutionManager
 
     def initialize(path)
       @path = path
-      Preconditions.check_state(File.exists?(@path), "File[#{@path}] does not exist")
+      Preconditions.check_state(File.exist?(@path), "File[#{@path}] does not exist")
       @attribute_values = parse_attribute_values
     end
 
