@@ -84,7 +84,7 @@ CREATE OR REPLACE FUNCTION set_updated_at_trigger_function() RETURNS trigger
     AS $$
 begin
   if (new.updated_at = old.updated_at) then
-    new.updated_at = timezone('utc', now())::timestamptz;
+    new.updated_at = now();;
   end if;
   return new;
 end;
