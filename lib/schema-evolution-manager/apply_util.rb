@@ -21,9 +21,24 @@ module SchemaEvolutionManager
       Preconditions.check_state(File.directory?(dir),
                                 "Dir[%s] does not exist" % dir)
 
-      count = 0
+      pending_scripts = []
       @scripts.each_pending(dir) do |filename, path|
-        count += 1
+        pending_scripts << [filename, path]
+      end
+
+      if pending_scripts.size > 1
+        puts "WARNING: You are about to apply more than 1 script:"
+        pending_scripts.each do |filename, path|
+          puts "  #{filename}"
+        end
+        continue = SchemaEvolutionManager::Ask.for_boolean("Are you sure?")
+        if !continue
+          puts "Wise choice."
+          return 0
+        end
+      end
+
+      pending_scripts.each do |filename, path|
         if @dry_run
           puts "[DRY RUN] Applying #{filename}"
           puts path
@@ -35,7 +50,7 @@ module SchemaEvolutionManager
           puts " Done"
         end
       end
-      count
+      pending_scripts.size
     end
 
   end

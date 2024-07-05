@@ -32,7 +32,7 @@ begin
   puts "Upgrading schema for #{db.url}"
   count = util.apply!("./scripts")
   if count == 0
-    puts "  All scripts have been previously applied"
+    puts "  No scripts to apply"
   end
 rescue SchemaEvolutionManager::ScriptError => e
   puts ""
