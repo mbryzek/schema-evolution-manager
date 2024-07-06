@@ -26,14 +26,13 @@ module SchemaEvolutionManager
         pending_scripts << [filename, path]
       end
 
-      if pending_scripts.size > 1
-        puts "WARNING: You are about to apply more than 1 script:"
+      if pending_scripts.size > 1 && !@dry_run
+        puts "Please confirm that you would like to apply all (#{pending_scripts.size}) of the pending scripts:"
         pending_scripts.each do |filename, path|
           puts "  #{filename}"
         end
-        continue = SchemaEvolutionManager::Ask.for_boolean("Are you sure?")
+        continue = SchemaEvolutionManager::Ask.for_boolean("Continue?")
         if !continue
-          puts "Wise choice."
           return 0
         end
       end
