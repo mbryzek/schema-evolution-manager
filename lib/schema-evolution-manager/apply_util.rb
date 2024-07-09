@@ -21,9 +21,23 @@ module SchemaEvolutionManager
       Preconditions.check_state(File.directory?(dir),
                                 "Dir[%s] does not exist" % dir)
 
-      count = 0
+      pending_scripts = []
       @scripts.each_pending(dir) do |filename, path|
-        count += 1
+        pending_scripts << [filename, path]
+      end
+
+      if pending_scripts.size > 1 && !@dry_run
+        puts "Please confirm that you would like to apply all (#{pending_scripts.size}) of the pending scripts:"
+        pending_scripts.each do |filename, path|
+          puts "  #{filename}"
+        end
+        continue = SchemaEvolutionManager::Ask.for_boolean("Continue?")
+        if !continue
+          return 0
+        end
+      end
+
+      pending_scripts.each do |filename, path|
         if @dry_run
           puts "[DRY RUN] Applying #{filename}"
           puts path
@@ -35,7 +49,7 @@ module SchemaEvolutionManager
           puts " Done"
         end
       end
-      count
+      pending_scripts.size
     end
 
   end
