@@ -24,12 +24,13 @@ module SchemaEvolutionManager
       FLAGS_NO_ARGUMENTS = {
         :password => "Prompt user to enter password for the database user. Password is stored for the duration of the process",
         :dry_run => "Include flag to echo commands that will run without actually executing them",
+        :non_interactive => "Avoid all prompts and use defaults for any option that requires user input",
         :help => "Display help",
         :verbose => "Enable verbose logging of all system calls",
       }
     end
 
-    attr_reader :artifact_name, :host, :port, :name, :prefix, :url, :user, :dir, :dry_run, :tag, :password, :set
+    attr_reader :artifact_name, :host, :port, :name, :prefix, :url, :user, :dir, :dry_run, :non_interactive, :tag, :password, :set
 
     # args: Actual string arguments
     # :required => list of parameters that are required
@@ -66,6 +67,7 @@ module SchemaEvolutionManager
       @set = found_arguments.delete(:set) || []
 
       @dry_run = found_arguments.delete(:dry_run)
+      @non_interactice = found_arguments.delete(:non_interactive)
       @password = found_arguments.delete(:password)
       @help = found_arguments.delete(:help)
       @verbose = found_arguments.delete(:verbose)
