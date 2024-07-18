@@ -67,7 +67,7 @@ module SchemaEvolutionManager
       @set = found_arguments.delete(:set) || []
 
       @dry_run = found_arguments.delete(:dry_run)
-      @non_interactive = found_arguments.delete(:non_interactive)
+      @non_interactice = found_arguments.delete(:non_interactive)
       @password = found_arguments.delete(:password)
       @help = found_arguments.delete(:help)
       @verbose = found_arguments.delete(:verbose)

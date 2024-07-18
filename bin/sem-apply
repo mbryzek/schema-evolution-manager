@@ -15,7 +15,7 @@ require 'tempfile'
 
 load File.join(File.dirname(__FILE__), 'sem-config')
 
-args = SchemaEvolutionManager::Args.from_stdin(:optional => %w(url host port name user dry_run non_interactive password set))
+args = SchemaEvolutionManager::Args.from_stdin(:optional => %w(url host port name user dry_run password set))
 
 password = if args.password
              SchemaEvolutionManager::Ask.for_password("Please enter your password: ")
@@ -24,11 +24,11 @@ password = if args.password
            end
 
 db = SchemaEvolutionManager::Db.from_args(args, :password => password)
-util = SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => args.dry_run || false, :non_interactive => args.non_interactive || false)
+util = SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => args.dry_run || false)
 
 begin
   db.bootstrap!
-
+    
   puts "Upgrading schema for #{db.url}"
   count = util.apply!("./scripts")
   if count == 0
