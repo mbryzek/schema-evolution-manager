@@ -17,4 +17,13 @@ describe SchemaEvolutionManager::ScriptError do
     e.dml.empty?.should be false
   end
 
+  it "dml does not expose passwords in URL" do
+    # Test with password in URL
+    db = SchemaEvolutionManager::Db.new("postgres://user:secret123@localhost:5432/testdb")
+    e = SchemaEvolutionManager::ScriptError.new(db, "20130318-105434.sql", "scripts/20130318-105434.sql", "test")
+    dml_output = e.dml
+    dml_output.should_not include("secret123")
+    dml_output.should include("user@localhost:5432/testdb")
+  end
+
 end
