@@ -13,7 +13,7 @@ module SchemaEvolutionManager
 
     def dml
       sql_command = "insert into %s.%s (filename) values ('%s')" % [Db.schema_name, Scripts::SCRIPTS, @filename]
-      "psql --command \"%s\" %s" % [sql_command, @db.url]
+      "psql --command \"%s\" %s" % [sql_command, @db.sanitized_url]
     end
 
   end

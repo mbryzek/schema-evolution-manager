@@ -34,8 +34,10 @@ module SchemaEvolutionManager
     # executes a simple sql command.
     def psql_command(sql_command)
       Preconditions.assert_class(sql_command, String)
-      command = "#{@psql_executable_with_options} --no-align --tuples-only --no-psqlrc --command \"%s\" %s" % [sql_command, @url]
-      Library.system_or_error(command)
+      template = "#{@psql_executable_with_options} --no-align --tuples-only --no-psqlrc --command \"%s\" %s"
+      command = template % [sql_command, @url]
+      command_to_log = template % [sql_command, sanitized_url]
+      Library.system_or_error(command, command_to_log)
     end
 
     def Db.attribute_values(path)
@@ -130,6 +132,37 @@ module SchemaEvolutionManager
       file.write(contents)
       file.rewind
       file.path
+    end
+
+    # Returns a sanitized version of the URL with the password removed
+    # to prevent passwords from being logged or displayed in error messages
+    def sanitized_url
+      # Parse the URL to extract components
+      if @url.include?("://")
+        protocol, rest = @url.split("://", 2)
+        lead, name = rest.split("/", 2)
+
+        # Check if there's a username:password@ pattern
+        if lead.include?("@")
+          # Take the last element as host_part to handle passwords with @ symbols
+          host_part = lead.split("@").last
+          # Take everything before the last @ as user_part
+          user_part = lead.split("@")[0..-2].join("@")
+
+          if user_part.include?(":")
+            # Remove password, keep only username (everything before the first colon)
+            username = user_part.split(":", 2)[0]
+            sanitized_lead = "#{username}:[REDACTED]@#{host_part}"
+          else
+            sanitized_lead = lead
+          end
+          "#{protocol}://#{sanitized_lead}/#{name}"
+        else
+          @url
+        end
+      else
+        @url
+      end
     end
 
   end
