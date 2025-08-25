@@ -98,7 +98,7 @@ describe SchemaEvolutionManager::Db do
   describe "sanitized_url" do
     it "removes password from URL with username:password format" do
       db = SchemaEvolutionManager::Db.new("postgres://user:secret123@localhost:5432/testdb")
-      db.sanitized_url.should == "postgres://user@localhost:5432/testdb"
+      db.sanitized_url.should == "postgres://user:[REDACTED]@localhost:5432/testdb"
     end
 
     it "preserves URL when no password is present" do
@@ -113,12 +113,12 @@ describe SchemaEvolutionManager::Db do
 
     it "handles complex passwords with special characters" do
       db = SchemaEvolutionManager::Db.new("postgres://user:pa$$w0rd@localhost:5432/testdb")
-      db.sanitized_url.should == "postgres://user@localhost:5432/testdb"
+      db.sanitized_url.should == "postgres://user:[REDACTED]@localhost:5432/testdb"
     end
 
     it "handles URLs with port numbers and complex passwords" do
       db = SchemaEvolutionManager::Db.new("postgres://user:complex:password@localhost:5432/testdb")
-      db.sanitized_url.should == "postgres://user@localhost:5432/testdb"
+      db.sanitized_url.should == "postgres://user:[REDACTED]@localhost:5432/testdb"
     end
   end
 

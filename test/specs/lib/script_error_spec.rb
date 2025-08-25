@@ -23,7 +23,7 @@ describe SchemaEvolutionManager::ScriptError do
     e = SchemaEvolutionManager::ScriptError.new(db, "20130318-105434.sql", "scripts/20130318-105434.sql", "test")
     dml_output = e.dml
     dml_output.should_not include("secret123")
-    dml_output.should include("user@localhost:5432/testdb")
+    dml_output.should include("user:[REDACTED]@localhost:5432/testdb")
   end
 
 end

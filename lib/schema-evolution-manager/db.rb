@@ -34,9 +34,10 @@ module SchemaEvolutionManager
     # executes a simple sql command.
     def psql_command(sql_command)
       Preconditions.assert_class(sql_command, String)
-      command = "#{@psql_executable_with_options} --no-align --tuples-only --no-psqlrc --command \"%s\" %s" % [sql_command, @url]
-      command_to_print = "#{@psql_executable_with_options} --no-align --tuples-only --no-psqlrc --command \"%s\" %s" % [sql_command, sanitized_url]
-      Library.system_or_error(command, command_to_print)
+      template = "#{@psql_executable_with_options} --no-align --tuples-only --no-psqlrc --command \"%s\" %s"
+      command = template % [sql_command, @url]
+      command_to_log = template % [sql_command, sanitized_url]
+      Library.system_or_error(command, command_to_log)
     end
 
     def Db.attribute_values(path)

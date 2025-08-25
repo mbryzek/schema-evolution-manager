@@ -121,9 +121,9 @@ module SchemaEvolutionManager
     # Runs the specified command, raising an error if there is a problem
     # (based on status code of the process executed). Otherwise returns
     # all the output from the script invoked.
-    def Library.system_or_error(command, cmd_to_print=nil)
+    def Library.system_or_error(command, cmd_to_log=nil)
       if Library.is_verbose?
-        puts cmd_to_print || command
+        puts cmd_to_log || command
       end
 
       begin
