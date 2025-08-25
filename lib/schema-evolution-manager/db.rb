@@ -35,7 +35,8 @@ module SchemaEvolutionManager
     def psql_command(sql_command)
       Preconditions.assert_class(sql_command, String)
       command = "#{@psql_executable_with_options} --no-align --tuples-only --no-psqlrc --command \"%s\" %s" % [sql_command, @url]
-      Library.system_or_error(command)
+      command_to_print = "#{@psql_executable_with_options} --no-align --tuples-only --no-psqlrc --command \"%s\" %s" % [sql_command, sanitized_url]
+      Library.system_or_error(command, command_to_print)
     end
 
     def Db.attribute_values(path)
@@ -139,18 +140,18 @@ module SchemaEvolutionManager
       if @url.include?("://")
         protocol, rest = @url.split("://", 2)
         lead, name = rest.split("/", 2)
-        
+
         # Check if there's a username:password@ pattern
         if lead.include?("@")
           # Take the last element as host_part to handle passwords with @ symbols
           host_part = lead.split("@").last
           # Take everything before the last @ as user_part
           user_part = lead.split("@")[0..-2].join("@")
-          
+
           if user_part.include?(":")
             # Remove password, keep only username (everything before the first colon)
             username = user_part.split(":", 2)[0]
-            sanitized_lead = "#{username}@#{host_part}"
+            sanitized_lead = "#{username}:[REDACTED]@#{host_part}"
           else
             sanitized_lead = lead
           end

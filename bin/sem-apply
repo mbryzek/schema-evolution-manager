@@ -28,8 +28,8 @@ util = SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => args.dry_run || fal
 
 begin
   db.bootstrap!
-    
-  puts "Upgrading schema for #{db.url}"
+
+  puts "Upgrading schema for #{db.sanitized_url}"
   count = util.apply!("./scripts")
   if count == 0
     puts "  All scripts have been previously applied"
