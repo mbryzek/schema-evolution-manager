@@ -35,7 +35,7 @@ module SchemaEvolutionManager
     def psql_command(sql_command)
       Preconditions.assert_class(sql_command, String)
       template = "#{@psql_executable_with_options} --no-align --tuples-only --no-psqlrc --command \"%s\" %s"
-      command = template % [sql_command, @url]
+      command = template % [sql_command, Shellwords.escape(@url)]
       command_to_log = template % [sql_command, sanitized_url]
       Library.system_or_error(command, command_to_log)
     end
@@ -79,7 +79,7 @@ module SchemaEvolutionManager
           out << IO.read(path)
         end
 
-        command = "#{@psql_executable_with_options} --file \"%s\" #{options} %s" % [tmp, @url]
+        command = "#{@psql_executable_with_options} --file \"%s\" #{options} %s" % [tmp, Shellwords.escape(@url)]
 
         Library.with_temp_file do |output|
           result = `#{command} > #{output} 2>&1`.strip
