@@ -28,11 +28,16 @@ SchemaEvolutionManager::Library.set_verbose(true)
 
 args = SchemaEvolutionManager::Args.from_stdin(:optional => ['artifact_name', 'tag'])
 
-# On MAC OS X, use gnutar to avoid warnings like
-#   Ignoring unknown extended header keyword `SCHILY.ino'
+# On MAC OS X, use gnutar if available, otherwise use tar with --no-xattrs
 tar_cmd = `which gnutar 2> /dev/null`.strip
+tar_opts = ""
 if tar_cmd == ""
   tar_cmd = "tar"
+  # Use --no-xattrs to prevent extended attributes from being archived (works in create mode)
+  # Also use --no-mac-metadata to prevent AppleDouble files
+  if system("tar --no-xattrs -cf /dev/null /dev/null 2>/dev/null")
+    tar_opts = "--no-xattrs --no-mac-metadata"
+  end
 end
 
 if args.tag
@@ -73,8 +78,12 @@ SchemaEvolutionManager::Library.with_temp_file do |tmp|
   SchemaEvolutionManager::Library.system_or_error("cp -R %s %s" % [File.join(repo_path, "scripts"), File.join(tmpdir, "scripts")])
   File.open(File.join(tmpdir, "CHANGES"), "w") { |out| out << changes }
 
+  # Clear extended attributes to avoid tar warnings on Linux
+  SchemaEvolutionManager::Library.system_or_error("xattr -cr #{tmpdir} 2>/dev/null || true")
+
   Dir.chdir(tmp) do
-    SchemaEvolutionManager::Library.system_or_error("#{tar_cmd} cf #{filename}.tar #{filename}")
+    # COPYFILE_DISABLE prevents AppleDouble ._ files from being created
+    SchemaEvolutionManager::Library.system_or_error("COPYFILE_DISABLE=1 #{tar_cmd} #{tar_opts} -cf #{filename}.tar #{filename}")
     FileUtils.cp("#{filename}.tar", tarball)
   end
 end
