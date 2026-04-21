@@ -96,4 +96,32 @@ select 1
     end
   end
 
+  # Regression for https://github.com/mbryzek/schema-evolution-manager/issues/39
+  # UTF-8 characters in a migration must not blow up attribute parsing even
+  # when the shell locale tags file bytes as US-ASCII (e.g. LANG=C in Docker).
+  it "parses attributes when file contains UTF-8 and locale is ASCII" do
+    command = <<-eos
+-- sem.attribute.transaction=none
+INSERT INTO currency VALUES ('ISK', 'Icelandic króna');
+INSERT INTO currency VALUES ('STD', 'São Tomé and Príncipe dobra');
+INSERT INTO currency VALUES ('TOP', 'Tongan paʻanga');
+    eos
+    TestUtils.in_test_repo_with_script(:sql_command => command) do |path|
+      original_external = Encoding.default_external
+      begin
+        Encoding.default_external = Encoding::US_ASCII
+        verify_transaction_value(SchemaEvolutionManager::MigrationFile.new(path).attribute_values, "none")
+      ensure
+        Encoding.default_external = original_external
+      end
+    end
+  end
+
+  it "parses attributes when file contains genuinely invalid UTF-8 bytes" do
+    command = "-- sem.attribute.transaction=none\nINSERT INTO t VALUES ('\xFF\xFE garbage');\n"
+    TestUtils.in_test_repo_with_script(:sql_command => command) do |path|
+      verify_transaction_value(SchemaEvolutionManager::MigrationFile.new(path).attribute_values, "none")
+    end
+  end
+
 end

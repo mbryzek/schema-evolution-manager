@@ -77,21 +77,22 @@ module SchemaEvolutionManager
     # -- sem.attribute.name = value
     #
     # and yields each matching row with |name, value|
+    #
+    # Read in binary mode so the shell locale (e.g. LANG=C in a minimal
+    # Docker image) cannot tag UTF-8 bytes as US-ASCII and cause String#strip
+    # to raise Encoding::CompatibilityError. Attribute lines are strict ASCII;
+    # scrubbing invalid bytes on non-attribute lines is harmless.
     def each_property
-      IO.readlines(path).each do |l|
-        begin
-          stripped = l.strip.encode("UTF-8")
-          if stripped.match(/^\-\-\s+sem\.attribute\./)
-            stripped.sub!(/^\-\-\s+sem\.attribute\./, '')
-            name, value = stripped.split(/\=/, 2).map(&:strip)
-            yield name, value
-          end
-        rescue Encoding::InvalidByteSequenceError
-          # Ignore - attributes must be in ascii
+      File.foreach(path, mode: "rb") do |raw|
+        line = raw.force_encoding("UTF-8")
+        line = line.scrub unless line.valid_encoding?
+        stripped = line.strip
+        if stripped.match(/^\-\-\s+sem\.attribute\./)
+          stripped.sub!(/^\-\-\s+sem\.attribute\./, '')
+          name, value = stripped.split(/\=/, 2).map(&:strip)
+          yield name, value
         end
       end
-    rescue Encoding::InvalidByteSequenceError
-      # Ignore - file must be in ascii in order to parse attributes
     end
 
   end
