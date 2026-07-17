@@ -55,6 +55,7 @@ else
   end
 end
 SchemaEvolutionManager::Library.git_assert_tag_exists(tag)
+SchemaEvolutionManager::Versions.validate_version!(tag)
 
 changes = SchemaEvolutionManager::Library.git_changes(:tag => tag)
 repo_path = SchemaEvolutionManager::Library.normalize_path(`pwd`.strip)
@@ -77,6 +78,7 @@ SchemaEvolutionManager::Library.with_temp_file do |tmp|
 
   SchemaEvolutionManager::Library.system_or_error("cp -R %s %s" % [File.join(repo_path, "scripts"), File.join(tmpdir, "scripts")])
   File.open(File.join(tmpdir, "CHANGES"), "w") { |out| out << changes }
+  File.open(File.join(tmpdir, "VERSION"), "w") { |out| out << tag }
 
   # Clear extended attributes to avoid tar warnings on Linux
   SchemaEvolutionManager::Library.system_or_error("xattr -cr #{tmpdir} 2>/dev/null || true")
