@@ -56,9 +56,11 @@ describe SchemaEvolutionManager::Db do
 
   it "psql_file" do
     TestUtils.with_db do |db|
-      SchemaEvolutionManager::Library.write_to_temp_file("select 10") do |path|
-        db.psql_file(path).should == "10"
+      sql = "create table psql_file_test (id integer); insert into psql_file_test (id) values (10);"
+      SchemaEvolutionManager::Library.write_to_temp_file(sql) do |path|
+        db.psql_file("20130318-105434.sql", path)
       end
+      db.psql_command("select id from psql_file_test").should == "10"
     end
   end
 
