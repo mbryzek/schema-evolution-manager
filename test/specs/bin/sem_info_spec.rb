@@ -46,13 +46,34 @@ describe "sem-info" do
     output.should == "3.1.4"
   end
 
-  it "db version is blank when nothing recorded" do
+  it "db version reports clearly when nothing is recorded" do
     info_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-info")
-    output = nil
+    stdout = nil
+    combined = nil
     TestUtils.with_bootstrapped_db do |db|
-      output = `#{info_path} db version --url #{db.url}`.strip
+      stdout = `#{info_path} db version --url #{db.url}`.strip
+      combined = `#{info_path} db version --url #{db.url} 2>&1`.strip
     end
-    output.should == ""
+    stdout.should == ""                                 # stdout stays clean for scripting
+    combined.should == "No deployed version recorded"   # but the user sees a message
+  end
+
+  it "db version errors clearly when no connection is provided" do
+    info_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-info")
+    output = `#{info_path} db version 2>&1`
+    status = $?.exitstatus
+    status.should_not == 0
+    output.should match(/Missing database connection/)
+    output.should_not match(/\.rb:\d+/)   # no ruby backtrace
+  end
+
+  it "db version gives a friendly, actionable error for a bare-name --url" do
+    info_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-info")
+    output = `#{info_path} db version --url platformdb 2>&1`
+    status = $?.exitstatus
+    status.should_not == 0
+    output.should match(/--name platformdb/)                        # actionable hint
+    output.should_not match(/RuntimeError|parse_url|\.rb:\d+/)      # no ruby backtrace
   end
 
   it "db scripts lists applied script filenames" do
