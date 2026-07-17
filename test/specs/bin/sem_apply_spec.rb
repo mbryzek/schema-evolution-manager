@@ -35,4 +35,37 @@ describe "Apply" do
       db.psql_command("select count(*) from tmp").to_i.should == 1
     end
   end
+
+  it "records the version from a VERSION file on apply" do
+    recorded_version = nil
+    with_script_setup do |db|
+      apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
+      File.open("VERSION", "w") { |out| out << "2.0.0" }
+      SchemaEvolutionManager::Library.system_or_error("#{apply_path} --url #{db.url}")
+      recorded_version = db.psql_command("select version from schema_evolution_manager.versions order by id desc limit 1").strip
+    end
+    recorded_version.should == "2.0.0"
+  end
+
+  it "records nothing when no VERSION file is present" do
+    version_count = nil
+    with_script_setup do |db|
+      apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
+      SchemaEvolutionManager::Library.system_or_error("#{apply_path} --url #{db.url}")
+      version_count = db.psql_command("select count(*) from schema_evolution_manager.versions").to_i
+    end
+    version_count.should == 0
+  end
+
+  it "does not duplicate a version across re-applies" do
+    version_count = nil
+    with_script_setup do |db|
+      apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
+      File.open("VERSION", "w") { |out| out << "2.0.0" }
+      SchemaEvolutionManager::Library.system_or_error("#{apply_path} --url #{db.url}")
+      SchemaEvolutionManager::Library.system_or_error("#{apply_path} --url #{db.url}")
+      version_count = db.psql_command("select count(*) from schema_evolution_manager.versions").to_i
+    end
+    version_count.should == 1
+  end
 end

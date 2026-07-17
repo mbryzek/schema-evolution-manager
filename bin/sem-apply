@@ -34,6 +34,16 @@ begin
   if count == 0
     puts "  All scripts have been previously applied"
   end
+
+  version_file = "./VERSION"
+  if !util.dry_run? && File.exist?(version_file)
+    version = IO.read(version_file).strip
+    if !version.empty?
+      if SchemaEvolutionManager::Versions.new(db).record!(version)
+        puts "  Recorded schema version #{version}"
+      end
+    end
+  end
 rescue SchemaEvolutionManager::ScriptError => e
   puts ""
   puts "ERROR applying script: %s" % e.path
