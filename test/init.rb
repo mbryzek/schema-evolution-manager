@@ -26,9 +26,6 @@ module TestUtils
     begin
       superdb.psql_command("create database #{name}")
       yield db
-    rescue Exception => e
-      puts e.message
-      puts e.backtrace.inspect
     ensure
       superdb.psql_command("drop database #{name}")
     end
