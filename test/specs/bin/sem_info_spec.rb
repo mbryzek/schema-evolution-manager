@@ -36,4 +36,33 @@ describe "sem-info" do
     end
   end
 
+  it "db version prints the latest recorded version" do
+    info_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-info")
+    output = nil
+    TestUtils.with_bootstrapped_db do |db|
+      SchemaEvolutionManager::Versions.new(db).record!("3.1.4")
+      output = `#{info_path} db version --url #{db.url}`.strip
+    end
+    output.should == "3.1.4"
+  end
+
+  it "db version is blank when nothing recorded" do
+    info_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-info")
+    output = nil
+    TestUtils.with_bootstrapped_db do |db|
+      output = `#{info_path} db version --url #{db.url}`.strip
+    end
+    output.should == ""
+  end
+
+  it "db scripts lists applied script filenames" do
+    info_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-info")
+    output = nil
+    TestUtils.with_bootstrapped_db do |db|
+      db.psql_command("insert into schema_evolution_manager.scripts (filename) values ('20200101-000000.sql')")
+      output = `#{info_path} db scripts --url #{db.url}`.strip
+    end
+    output.split("\n").map(&:strip).should include("20200101-000000.sql")
+  end
+
 end
