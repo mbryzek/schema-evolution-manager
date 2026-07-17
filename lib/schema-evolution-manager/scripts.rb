@@ -79,6 +79,16 @@ module SchemaEvolutionManager
       @db.psql_command(command)
     end
 
+    # Returns the sorted list of filenames already applied to this database.
+    def applied
+      if @db.schema_schema_evolution_manager_exists?
+        sql = "select filename from %s.%s order by filename" % [Db.schema_name, @table_name]
+        @db.psql_command(sql).strip.split
+      else
+        []
+      end
+    end
+
     private
     # Fetch the list of scripts that have already been applied to this
     # database.

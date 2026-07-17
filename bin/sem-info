@@ -17,6 +17,12 @@
 #    Output information on the next tag. Defaults to micro
 #    version increment from latest tag
 #
+#  sem-info db version --url <database url>
+#    Display the latest recorded deployed schema version
+#
+#  sem-info db scripts --url <database url>
+#    Display the applied script filenames
+#
 # Description
 #
 #   Utility script to pull information from the schema-evolution-manager
@@ -30,6 +36,9 @@ command = ARGV.shift.to_s.strip
 
 if command == "tag"
   puts SchemaEvolutionManager::SemInfo.tag(ARGV)
+
+elsif command == "db"
+  SchemaEvolutionManager::SemInfo.db(ARGV)
 
 elsif command == "version"
   puts SchemaEvolutionManager::SemInfo.version(ARGV)

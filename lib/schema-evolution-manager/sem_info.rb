@@ -6,6 +6,32 @@ module SchemaEvolutionManager
       SchemaEvolutionManager::SemVersion::VERSION.dup
     end
 
+    def SemInfo.db(args)
+      valid = ['version', 'scripts']
+      subcommand = args.shift.to_s.strip
+
+      if !valid.include?(subcommand)
+        if subcommand.empty?
+          puts "ERROR: Missing db subcommand. Must be one of: %s" % valid.join(", ")
+        else
+          puts "ERROR: Invalid db subcommand[%s]. Must be one of: %s" % [subcommand, valid.join(", ")]
+        end
+        exit(4)
+      end
+
+      db_args = SchemaEvolutionManager::Args.new(args.join(" "), :optional => ['url', 'host', 'user', 'name', 'port', 'set'])
+      db = SchemaEvolutionManager::Db.from_args(db_args)
+
+      if subcommand == "version"
+        version = SchemaEvolutionManager::Versions.new(db).latest
+        puts version unless version.nil?
+      elsif subcommand == "scripts"
+        SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS).applied.each do |filename|
+          puts filename
+        end
+      end
+    end
+
     def SemInfo.tag(args)
       valid = ['exists', 'latest', 'next']
 

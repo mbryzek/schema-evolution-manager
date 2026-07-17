@@ -24,13 +24,13 @@ describe SchemaEvolutionManager::Scripts do
     dir = File.join(SchemaEvolutionManager::Library.base_dir, "scripts")
     files = SchemaEvolutionManager::Scripts.all(dir)
     names = files.map { |f| File.basename(f) }
-    names.join(" ").should == "20130318-105434.sql 20130318-105456.sql"
+    names.join(" ").should == "20130318-105434.sql 20130318-105456.sql 20260717-000000.sql"
   end
 
   it "creates all scripts table" do
     TestUtils.with_bootstrapped_db do |db|
       tables = db.psql_command("select table_name from information_schema.tables where table_schema ='%s'" % [SchemaEvolutionManager::Db.schema_name])
-      tables.split("\n").map(&:strip).sort.join(" ").should == SchemaEvolutionManager::Scripts::VALID_TABLE_NAMES.sort.join(" ")
+      tables.split("\n").map(&:strip).sort.join(" ").should == (SchemaEvolutionManager::Scripts::VALID_TABLE_NAMES + ["versions"]).sort.join(" ")
     end
   end
 
