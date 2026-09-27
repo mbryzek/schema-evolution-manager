@@ -92,7 +92,25 @@ describe SchemaEvolutionManager::Library do
 
     it "respects prefix" do
       SchemaEvolutionManager::Library.with_temp_file(:prefix => "thisisaprefix") do |tmp|
-        tmp.split(".", 2).first.should == "/tmp/thisisaprefix"
+        File.basename(tmp).split(".", 2).first.should == "thisisaprefix"
+        File.dirname(tmp).should == SchemaEvolutionManager::Library::TMPFILE_DIR
+      end
+    end
+
+    it "is private to this process" do
+      dir = SchemaEvolutionManager::Library::TMPFILE_DIR
+      File.directory?(dir).should be true
+      (File.stat(dir).mode & 0777).should == 0700
+      dir.should_not == "/tmp"
+    end
+
+    it "does not collide with another process using the same prefix" do
+      lib = File.expand_path("../../../lib/schema-evolution-manager.rb", File.dirname(__FILE__))
+      script = "load %s; SchemaEvolutionManager::Library.with_temp_file(:prefix => 'x.sql') { |t| print t }" % lib.inspect
+      other = `ruby -e #{Shellwords.escape(script)}`
+      SchemaEvolutionManager::Library.with_temp_file(:prefix => "x.sql") do |tmp|
+        other.should_not == ""
+        tmp.should_not == other
       end
     end
 
