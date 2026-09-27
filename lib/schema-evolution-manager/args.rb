@@ -26,6 +26,7 @@ module SchemaEvolutionManager
         :dry_run => "Include flag to echo commands that will run without actually executing them",
         :non_interactive => "Avoid all prompts and use defaults for any option that requires user input",
         :help => "Display help",
+        :version => "Display the version of schema-evolution-manager",
         :verbose => "Enable verbose logging of all system calls",
       }
     end
@@ -51,6 +52,9 @@ module SchemaEvolutionManager
       if !optional.include?(:verbose)
         optional << :verbose
       end
+      if !optional.include?(:version)
+        optional << :version
+      end
 
       found_arguments = parse_string_arguments(args)
       missing = required.select { |field| blank?(found_arguments[field]) }
@@ -71,12 +75,18 @@ module SchemaEvolutionManager
       @password = found_arguments.delete(:password)
       @help = found_arguments.delete(:help)
       @verbose = found_arguments.delete(:verbose)
+      @version = found_arguments.delete(:version)
 
       Preconditions.check_state(found_arguments.empty?,
                                 "Did not handle all flags: %s" % found_arguments.keys.join(" "))
 
       if @help
         RdocUsage.printAndExit(0)
+      end
+
+      if @version
+        puts SemVersion::VERSION
+        exit(0)
       end
 
       if @verbose
