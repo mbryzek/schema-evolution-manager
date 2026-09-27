@@ -50,7 +50,7 @@ File.open(sem_version_path, "w") do |out|
   out << "# File automatically created and updated by util/create-release.rb\n"
   out << "module SchemaEvolutionManager\n\n"
   out << "module SemVersion\n\n"
-  out << "VERSION ||= '0.9.43'\n\n"
+  out << "VERSION ||= '%s'\n\n" % new_version.to_version_string
   out << "end\n\n"
   out << "end\n"
 end

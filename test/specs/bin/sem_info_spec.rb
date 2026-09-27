@@ -36,6 +36,19 @@ describe "sem-info" do
     end
   end
 
+  it "version matches the VERSION file the release was cut from" do
+    SchemaEvolutionManager::SemVersion::VERSION.should == IO.read(File.join(SchemaEvolutionManager::Library.base_dir, "VERSION")).strip
+  end
+
+  it "--version on every command prints the version and exits" do
+    %w(sem-apply sem-baseline sem-init sem-dist).each do |cmd|
+      path = File.join(SchemaEvolutionManager::Library.base_dir, "bin", cmd)
+      output = `#{path} --version 2>&1`
+      $?.exitstatus.should == 0
+      output.strip.should == SchemaEvolutionManager::SemVersion::VERSION
+    end
+  end
+
   it "db version prints the latest recorded version" do
     info_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-info")
     output = nil
