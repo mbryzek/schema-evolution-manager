@@ -2,8 +2,15 @@ module SchemaEvolutionManager
   class Library
 
     unless defined?(TMPFILE_DIR)
-      TMPFILE_DIR = "/tmp"
+      # A directory private to this process. Temp file names below are
+      # "<prefix>.<counter>", and sem-apply uses a migration's basename as the
+      # prefix, so two processes applying the same scripts would otherwise
+      # compute the same path and delete each other's copy mid-run. mktmpdir
+      # honours TMPDIR and creates the directory mode 0700 with a random name.
+      TMPFILE_DIR = Dir.mktmpdir("schema-evolution-manager-")
       TMPFILE_PREFIX = "schema-evolution-manager-#{Process.pid}.tmp"
+      tmpfile_dir_owner = Process.pid
+      at_exit { FileUtils.rm_rf(TMPFILE_DIR) if Process.pid == tmpfile_dir_owner }
     end
     @@tmpfile_count = 0
     @@verbose = false
