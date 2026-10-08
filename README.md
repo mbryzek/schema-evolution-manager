@@ -43,6 +43,24 @@ dozens of independent postgresql databases.
 See INSTALLATION and GETTING STARTED for details.
 
 
+## Why sem
+
+sem is deliberately small. A schema change is a plain SQL file, named
+by the timestamp it was added, committed to git next to every other
+change to that database. There is no migration DSL, no down
+migrations, and no runtime dependency beyond ruby, git and psql.
+
+Applying changes is psql running each file in order inside a
+transaction, and recording the filename in one table. Because psql
+does the work, anything that runs in psql runs in sem: plpgsql,
+extensions, data fixes, large backfills.
+
+If you want a tool that generates SQL from a model, or that rolls
+schema changes back for you, sem is the wrong choice. If you want the
+SQL you wrote to be the SQL that runs, and a plain record of what ran
+where, it is a good fit.
+
+
 ## Project Goals
 
   - Absolutely minimal set of dependencies. We found that anything
