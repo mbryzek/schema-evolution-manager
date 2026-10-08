@@ -4,8 +4,15 @@ module SchemaEvolutionManager
 
     attr_reader :url, :psql_executable_with_options
 
+    @@password_files = []
+
+    # A password embedded in the url (postgres://user:pass@host/db) is moved
+    # into a private pgpass file and @url keeps only the password-free form,
+    # so the password never reaches a psql argv, a log line or an error.
+    #
+    # @param password: Optional password; takes precedence over one in the url
     def initialize(url, opts={})
-      @url = Preconditions.check_not_blank(url, "url cannot be blank")
+      Preconditions.check_not_blank(url, "url cannot be blank")
       password = opts.delete(:password)
 
       @psql_executable_with_options = "psql"
@@ -14,8 +21,10 @@ module SchemaEvolutionManager
       end
 
       Preconditions.assert_empty_opts(opts)
-      connection_data = ConnectionData.parse_url(@url)
+      connection_data = ConnectionData.parse_url(url)
+      @url = ConnectionData.strip_password(url)
 
+      password ||= connection_data.password
       if password
         ENV['PGPASSFILE'] = Db.password_to_tempfile(connection_data.pgpass(password))
       end
@@ -127,42 +136,21 @@ module SchemaEvolutionManager
       "schema_evolution_manager"
     end
 
+    # Writes contents to a mode 0600 file in this process's private temp dir
+    # and returns its path. The Tempfile is retained so that garbage
+    # collection cannot unlink the file while psql still needs it.
     def Db.password_to_tempfile(contents)
-      file = Tempfile.new("sem-db")
-      file.write(contents)
-      file.rewind
+      file = Tempfile.new("sem-db", Library::TMPFILE_DIR)
+      file.write(contents + "\n")
+      file.close
+      @@password_files << file
       file.path
     end
 
-    # Returns a sanitized version of the URL with the password removed
-    # to prevent passwords from being logged or displayed in error messages
+    # The url for display. @url never carries a password (see initialize),
+    # so this is @url itself; kept for callers that print the connection.
     def sanitized_url
-      # Parse the URL to extract components
-      if @url.include?("://")
-        protocol, rest = @url.split("://", 2)
-        lead, name = rest.split("/", 2)
-
-        # Check if there's a username:password@ pattern
-        if lead.include?("@")
-          # Take the last element as host_part to handle passwords with @ symbols
-          host_part = lead.split("@").last
-          # Take everything before the last @ as user_part
-          user_part = lead.split("@")[0..-2].join("@")
-
-          if user_part.include?(":")
-            # Remove password, keep only username (everything before the first colon)
-            username = user_part.split(":", 2)[0]
-            sanitized_lead = "#{username}:[REDACTED]@#{host_part}"
-          else
-            sanitized_lead = lead
-          end
-          "#{protocol}://#{sanitized_lead}/#{name}"
-        else
-          @url
-        end
-      else
-        @url
-      end
+      @url
     end
 
   end
