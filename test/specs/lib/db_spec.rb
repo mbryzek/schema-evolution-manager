@@ -124,4 +124,22 @@ describe SchemaEvolutionManager::Db do
     end
   end
 
+  describe "Db.password_to_tempfile" do
+    it "writes a 0600 file in the private temp dir that survives garbage collection" do
+      path = SchemaEvolutionManager::Db.password_to_tempfile("localhost:5432:db:user:secret")
+      GC.start
+      File.exist?(path).should == true
+      IO.read(path).should == "localhost:5432:db:user:secret"
+      (File.stat(path).mode & 0777).should == 0600
+      File.dirname(path).should == SchemaEvolutionManager::Library::TMPFILE_DIR
+    end
+
+    it "gives each call its own file" do
+      a = SchemaEvolutionManager::Db.password_to_tempfile("a")
+      b = SchemaEvolutionManager::Db.password_to_tempfile("b")
+      a.should_not == b
+      IO.read(a).should == "a"
+    end
+  end
+
 end
