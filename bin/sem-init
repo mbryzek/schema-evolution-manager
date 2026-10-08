@@ -43,8 +43,11 @@ template_dir = File.join(SchemaEvolutionManager::Library.base_dir, "template")
 SchemaEvolutionManager::Preconditions.check_state(File.directory?(template_dir),
                                                   "Could not find schema-evolution-manager/template subdir. Expected it at[%s]" % [template_dir])
 
+# The wrapper scripts are committed to the repository, so they carry the url
+# with any password removed; a password is supplied through a pgpass file.
+# dev.rb takes the url as a ruby string literal.
 subs = {
-  "url" => db.url,
+  "url_literal" => SchemaEvolutionManager::ConnectionData.strip_password(db.url).inspect,
   "add_script_path" => File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-add")
 }
 
