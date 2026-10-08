@@ -89,12 +89,17 @@ describe SchemaEvolutionManager::Db do
     def setup(value)
       db = SchemaEvolutionManager::Db.parse_command_line_config("--url postgresql://localhost:5432/testdb #{value}")
       puts "DB: " + db.inspect
-      db.psql_executable_with_options
+      db.psql_args
     end
 
-    setup("").should == "psql"
-    setup("--set foo=bar").should == "psql --set foo=bar"
-    setup("--set foo=bar --set a=b").should == "psql --set foo=bar --set a=b"
+    setup("").should == ["psql"]
+    setup("--set foo=bar").should == ["psql", "--set", "foo=bar"]
+    setup("--set foo=bar --set a=b").should == ["psql", "--set", "foo=bar", "--set", "a=b"]
+  end
+
+  it "set argument keeps a value with shell metacharacters as one argument" do
+    db = SchemaEvolutionManager::Db.new("postgresql://localhost:5432/testdb", :set => ["a=x y;$(id)"])
+    db.psql_args.should == ["psql", "--set", "a=x y;$(id)"]
   end
 
   describe "sanitized_url" do

@@ -3,6 +3,7 @@ require 'pathname'
 require 'tempfile'
 require 'tmpdir'
 require 'shellwords'
+require 'open3'
 
 dir = File.dirname(__FILE__)
 lib_dir = File.join(dir, "schema-evolution-manager")

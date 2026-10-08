@@ -57,40 +57,40 @@ Dir.chdir(args.dir) do
     if !File.exist?(wrapper)
       puts "Creating wrapper script #{wrapper}"
       copy_file(path, wrapper, subs)
-      SchemaEvolutionManager::Library.system_or_error("chmod +x #{wrapper}")
-      SchemaEvolutionManager::Library.system_or_error("git add #{wrapper}")
+      SchemaEvolutionManager::Library.system_or_error(["chmod", "--", "+x", wrapper])
+      SchemaEvolutionManager::Library.system_or_error(["git", "add", "--", wrapper])
       wrappers << wrapper
     end
   end
   if !wrappers.empty?
-    SchemaEvolutionManager::Library.system_or_error("git commit -m 'Add schema-evolution-manager wrapper scripts' #{wrappers.join(" ")}")
+    SchemaEvolutionManager::Library.system_or_error(["git", "commit", "-m", "Add schema-evolution-manager wrapper scripts", "--"] + wrappers)
   end
 
   readme = "README.md"
   if !File.exist?(readme)
     puts "Creating #{readme}"
     copy_file("schema-evolution-manager/template/README.md", "README.md", subs)
-    SchemaEvolutionManager::Library.system_or_error("git add #{readme}")
-    SchemaEvolutionManager::Library.system_or_error("git commit -m 'Adding README.md' README.md")
+    SchemaEvolutionManager::Library.system_or_error(["git", "add", "--", readme])
+    SchemaEvolutionManager::Library.system_or_error(["git", "commit", "-m", "Adding README.md", "--", readme])
   end
 
   if !File.exist?("scripts")
-    SchemaEvolutionManager::Library.system_or_error("mkdir scripts")
-    SchemaEvolutionManager::Library.system_or_error("touch scripts/.exists")
-    SchemaEvolutionManager::Library.system_or_error("git add scripts/.exists")
-    SchemaEvolutionManager::Library.system_or_error("git commit -m 'Adding scripts directory' scripts/.exists")
+    SchemaEvolutionManager::Library.system_or_error(["mkdir", "scripts"])
+    SchemaEvolutionManager::Library.system_or_error(["touch", "scripts/.exists"])
+    SchemaEvolutionManager::Library.system_or_error(["git", "add", "scripts/.exists"])
+    SchemaEvolutionManager::Library.system_or_error(["git", "commit", "-m", "Adding scripts directory", "scripts/.exists"])
   end
 
   # Create the first git tag if necessary
-  tags = SchemaEvolutionManager::Library.system_or_error("git tag -l")
+  tags = SchemaEvolutionManager::Library.system_or_error(["git", "tag", "-l"])
   if tags.nil? || tags == ""
     puts "Creating initial git tag (0.0.1)"
     SchemaEvolutionManager::Library.git_create_tag("0.0.1")
   end
 
   if SchemaEvolutionManager::Library.git_has_remote?
-    branch = SchemaEvolutionManager::Library.system_or_error("git symbolic-ref --short HEAD")
-    SchemaEvolutionManager::Library.system_or_error("git push origin #{branch}")
+    branch = SchemaEvolutionManager::Library.system_or_error(["git", "symbolic-ref", "--short", "HEAD"])
+    SchemaEvolutionManager::Library.system_or_error(["git", "push", "origin", branch])
   end
 
 end

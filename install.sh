@@ -37,12 +37,12 @@ cp -R "$SEM_ROOT"/template/* "$PREFIX"/template
 cp    "$SEM_ROOT"/LICENSE    "$PREFIX"
 cp    "$SEM_ROOT"/VERSION    "$PREFIX"
 
-eval "./util/update-library-path.rb $PREFIX/bin/sem-add ${PREFIX}/src/schema-evolution-manager.rb"
-eval "./util/update-library-path.rb $PREFIX/bin/sem-apply ${PREFIX}/src/schema-evolution-manager.rb"
-eval "./util/update-library-path.rb $PREFIX/bin/sem-baseline ${PREFIX}/src/schema-evolution-manager.rb"
-eval "./util/update-library-path.rb $PREFIX/bin/sem-dist ${PREFIX}/src/schema-evolution-manager.rb"
-eval "./util/update-library-path.rb $PREFIX/bin/sem-info ${PREFIX}/src/schema-evolution-manager.rb"
-eval "./util/update-library-path.rb $PREFIX/bin/sem-init ${PREFIX}/src/schema-evolution-manager.rb"
+"$SEM_ROOT"/util/update-library-path.rb "$PREFIX/bin/sem-add" "$PREFIX/src/schema-evolution-manager.rb"
+"$SEM_ROOT"/util/update-library-path.rb "$PREFIX/bin/sem-apply" "$PREFIX/src/schema-evolution-manager.rb"
+"$SEM_ROOT"/util/update-library-path.rb "$PREFIX/bin/sem-baseline" "$PREFIX/src/schema-evolution-manager.rb"
+"$SEM_ROOT"/util/update-library-path.rb "$PREFIX/bin/sem-dist" "$PREFIX/src/schema-evolution-manager.rb"
+"$SEM_ROOT"/util/update-library-path.rb "$PREFIX/bin/sem-info" "$PREFIX/src/schema-evolution-manager.rb"
+"$SEM_ROOT"/util/update-library-path.rb "$PREFIX/bin/sem-init" "$PREFIX/src/schema-evolution-manager.rb"
 
 rm "$PREFIX/bin/sem-config"
 

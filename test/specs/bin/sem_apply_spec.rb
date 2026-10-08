@@ -12,7 +12,7 @@ describe "Apply" do
           out << "create table tmp (id integer);\n"
           out << "insert into tmp (id) values (%s);\n" % [random_number]
         end
-        SchemaEvolutionManager::Library.system_or_error("#{add_path} ./new.sql")
+        TestUtils.sh("#{add_path} ./new.sql")
         yield db
       end
     end
@@ -21,7 +21,7 @@ describe "Apply" do
   it "does not apply sql scripts with dry_run" do
     with_script_setup do |db|
       apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
-      SchemaEvolutionManager::Library.system_or_error("#{apply_path} --url #{db.url} --dry_run")
+      TestUtils.sh("#{apply_path} --url #{db.url} --dry_run")
       lambda {
         db.psql_command("select count(*) from tmp")
       }.should raise_error(RuntimeError)
@@ -31,7 +31,7 @@ describe "Apply" do
   it "applies sql scripts without dry_run" do
     with_script_setup do |db|
       apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
-      SchemaEvolutionManager::Library.system_or_error("#{apply_path} --url #{db.url}")
+      TestUtils.sh("#{apply_path} --url #{db.url}")
       db.psql_command("select count(*) from tmp").to_i.should == 1
     end
   end
@@ -41,7 +41,7 @@ describe "Apply" do
     with_script_setup do |db|
       apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
       File.open("VERSION", "w") { |out| out << "2.0.0" }
-      SchemaEvolutionManager::Library.system_or_error("#{apply_path} --url #{db.url}")
+      TestUtils.sh("#{apply_path} --url #{db.url}")
       recorded_version = db.psql_command("select version from schema_evolution_manager.versions order by id desc limit 1").strip
     end
     recorded_version.should == "2.0.0"
@@ -51,7 +51,7 @@ describe "Apply" do
     version_count = nil
     with_script_setup do |db|
       apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
-      SchemaEvolutionManager::Library.system_or_error("#{apply_path} --url #{db.url}")
+      TestUtils.sh("#{apply_path} --url #{db.url}")
       version_count = db.psql_command("select count(*) from schema_evolution_manager.versions").to_i
     end
     version_count.should == 0
@@ -62,8 +62,8 @@ describe "Apply" do
     with_script_setup do |db|
       apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
       File.open("VERSION", "w") { |out| out << "2.0.0" }
-      SchemaEvolutionManager::Library.system_or_error("#{apply_path} --url #{db.url}")
-      SchemaEvolutionManager::Library.system_or_error("#{apply_path} --url #{db.url}")
+      TestUtils.sh("#{apply_path} --url #{db.url}")
+      TestUtils.sh("#{apply_path} --url #{db.url}")
       version_count = db.psql_command("select count(*) from schema_evolution_manager.versions").to_i
     end
     version_count.should == 1
