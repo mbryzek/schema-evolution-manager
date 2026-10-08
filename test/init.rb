@@ -19,10 +19,22 @@ module TestUtils
     SchemaEvolutionManager::Db.parse_command_line_config("--url postgresql://localhost:5432/#{name}")
   end
 
+  # The server the specs create their databases on. localhost:5432 unless
+  # SEM_TEST_PGHOST / SEM_TEST_PGPORT say otherwise; ci/build.sh points them at
+  # a container it starts for the run.
+  def TestUtils.db_host
+    ENV['SEM_TEST_PGHOST'].to_s.empty? ? "localhost" : ENV['SEM_TEST_PGHOST']
+  end
+
+  def TestUtils.db_port
+    ENV['SEM_TEST_PGPORT'].to_s.empty? ? SchemaEvolutionManager::ConnectionData::DEFAULT_PORT : ENV['SEM_TEST_PGPORT'].to_i
+  end
+
+
   def TestUtils.with_db
-    superdb = SchemaEvolutionManager::Db.new("postgresql://localhost:5432/postgres")
+    superdb = SchemaEvolutionManager::Db.new("postgresql://postgres@#{TestUtils.db_host}:#{TestUtils.db_port}/postgres")
     name = "schema_evolution_manager_test_db_%s" % [rand(100000)]
-    db = SchemaEvolutionManager::Db.parse_command_line_config("--host localhost --name #{name} --user postgres")
+    db = SchemaEvolutionManager::Db.parse_command_line_config("--host #{TestUtils.db_host} --port #{TestUtils.db_port} --name #{name} --user postgres")
     begin
       superdb.psql_command("create database #{name}")
       yield db
