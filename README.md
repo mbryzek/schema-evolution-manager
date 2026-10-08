@@ -236,6 +236,18 @@ There are two recommended ways in which to pass user passwords to psql:
 
         sem-apply --url postgresql://postgres@localhost/sample --password
 
+### Running inside the postgres Docker image
+
+The official postgres image runs the scripts in
+docker-entrypoint-initdb.d before the server listens on TCP. During
+that phase postgres accepts connections only on its unix socket, so a
+URL naming localhost is refused. Leave the host out of the URL and
+libpq connects over the socket:
+
+    sem-apply --url postgresql://$POSTGRES_USER@/$POSTGRES_DB
+
+No password is needed on the socket during initialization.
+
 ### Apply the changes
 
     sem-apply --url postgresql://postgres@localhost/sample
