@@ -64,6 +64,34 @@ describe SchemaEvolutionManager::Db do
     end
   end
 
+  describe "psql isolation options" do
+
+    it "psql_command passes --no-psqlrc and --no-password" do
+      db = SchemaEvolutionManager::Db.new("postgres://localhost:5432/testdb")
+      commands = []
+      SchemaEvolutionManager::Library.should_receive(:system_or_error) { |command, _| commands << command; "" }
+      db.psql_command("select 1")
+      commands.size.should == 1
+      commands.first.split.should include("--no-psqlrc", "--no-password")
+    end
+
+    it "psql_file passes --no-psqlrc and --no-password" do
+      db = SchemaEvolutionManager::Db.new("postgres://localhost:5432/testdb")
+      commands = []
+      db.define_singleton_method(:`) do |command|
+        commands << command
+        system("true")
+        ""
+      end
+      SchemaEvolutionManager::Library.write_to_temp_file("select 1;") do |path|
+        db.psql_file("20130318-105434.sql", path)
+      end
+      commands.size.should == 1
+      commands.first.split.should include("--no-psqlrc", "--no-password")
+    end
+
+  end
+
   describe "schema_schema_evolution_manager_exists?" do
 
     it "new db" do

@@ -4,6 +4,12 @@ module SchemaEvolutionManager
 
     attr_reader :url, :psql_executable_with_options
 
+    # Options every psql invocation carries. --no-psqlrc keeps the applying
+    # user's ~/.psqlrc (and the system psqlrc) out of every command and
+    # migration; --no-password makes a missing credential fail rather than
+    # prompt, so an unattended apply can never hang.
+    PSQL_ISOLATION_OPTIONS = "--no-psqlrc --no-password"
+
     def initialize(url, opts={})
       @url = Preconditions.check_not_blank(url, "url cannot be blank")
       password = opts.delete(:password)
@@ -34,7 +40,7 @@ module SchemaEvolutionManager
     # executes a simple sql command.
     def psql_command(sql_command)
       Preconditions.assert_class(sql_command, String)
-      template = "#{@psql_executable_with_options} --no-align --tuples-only --no-psqlrc --command \"%s\" %s"
+      template = "#{@psql_executable_with_options} #{PSQL_ISOLATION_OPTIONS} --no-align --tuples-only --command \"%s\" %s"
       command = template % [sql_command, Shellwords.escape(@url)]
       command_to_log = template % [sql_command, sanitized_url]
       Library.system_or_error(command, command_to_log)
@@ -79,7 +85,7 @@ module SchemaEvolutionManager
           out << IO.read(path)
         end
 
-        command = "#{@psql_executable_with_options} --file \"%s\" #{options} %s" % [tmp, Shellwords.escape(@url)]
+        command = "#{@psql_executable_with_options} #{PSQL_ISOLATION_OPTIONS} --file \"%s\" #{options} %s" % [tmp, Shellwords.escape(@url)]
 
         Library.with_temp_file do |output|
           result = `#{command} > #{output} 2>&1`.strip
