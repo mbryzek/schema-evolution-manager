@@ -19,10 +19,21 @@ module TestUtils
     SchemaEvolutionManager::Db.parse_command_line_config("--url postgresql://localhost:5432/#{name}")
   end
 
+  # The postgresql server the specs create their databases on, as a url
+  # with no database name. Override with SEM_TEST_SERVER_URL, e.g.
+  #   SEM_TEST_SERVER_URL=postgresql://postgres@localhost:5433 ./run.rb
+  def TestUtils.server_url
+    (ENV["SEM_TEST_SERVER_URL"] || "postgresql://localhost:5432").sub(/\/+$/, '')
+  end
+
   def TestUtils.with_db
-    superdb = SchemaEvolutionManager::Db.new("postgresql://localhost:5432/postgres")
+    superdb = SchemaEvolutionManager::Db.new("#{TestUtils.server_url}/postgres")
     name = "schema_evolution_manager_test_db_%s" % [rand(100000)]
-    db = SchemaEvolutionManager::Db.parse_command_line_config("--host localhost --name #{name} --user postgres")
+    db = if ENV["SEM_TEST_SERVER_URL"]
+           SchemaEvolutionManager::Db.new("#{TestUtils.server_url}/#{name}")
+         else
+           SchemaEvolutionManager::Db.parse_command_line_config("--host localhost --name #{name} --user postgres")
+         end
     begin
       superdb.psql_command("create database #{name}")
       yield db

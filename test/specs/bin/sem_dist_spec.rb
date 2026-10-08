@@ -55,6 +55,30 @@ describe "Dist" do
     end
   end
 
+  it "packs the scripts_dir named by .sem as scripts/ and never packs .sem" do
+    add_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-add")
+    dist_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-dist")
+
+    TestUtils.in_test_repo do
+      File.open(".sem", "w") { |out| out << "sem.config.scripts_dir = schema/scripts\n" }
+      File.open("new.sql", "w") { |out| out << "select 1" }
+      SchemaEvolutionManager::Library.system_or_error("#{add_path} ./new.sql")
+      SchemaEvolutionManager::Library.system_or_error("git add .sem")
+      SchemaEvolutionManager::Library.system_or_error("git commit -m 'Testing'")
+      SchemaEvolutionManager::Library.git_create_tag("1.0.0")
+      SchemaEvolutionManager::Library.system_or_error("rm -rf dist")
+      SchemaEvolutionManager::Library.system_or_error("#{dist_path} --tag '1.0.0'")
+      tarball = Dir.glob("dist/*.tar.gz").first
+      entries = SchemaEvolutionManager::Library.system_or_error("tar tzf #{tarball}").split("\n").map { |e|
+        e.sub(/^[^\/]+\//, '')
+      }
+      entries.should include("scripts/")
+      entries.select { |e| e.match(/^scripts\/.+\.sql$/) }.size.should == 1
+      entries.select { |e| File.basename(e) == ".sem" }.should == []
+      entries.select { |e| e.start_with?("schema") }.should == []
+    end
+  end
+
   it "fails when the tag exceeds the max version length" do
     dist_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-dist")
     # 3-segment (valid for git_create_tag's x.x.x check) but > MAX_VERSION_LENGTH

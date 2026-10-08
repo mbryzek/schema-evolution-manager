@@ -122,7 +122,26 @@ module SchemaEvolutionManager
 
     def Library.set_base_dir(value)
       Preconditions.check_state(File.directory?(value), "Dir[%s] not found" % value)
-      @@base_dir = Library.normalize_path(value)
+      # Parses one property line of the form "<prefix><name> = <value>",
+    # stripping whitespace from both the name and the value. Returns
+    # [name, value] when the stripped line matches prefix (a Regexp
+    # anchored at the start of the line), otherwise nil. value is nil
+    # when the line has no equals sign. Shared by migration file
+    # attributes (-- sem.attribute.) and the .sem config file
+    # (sem.config.).
+    def Library.parse_property(line, prefix)
+      Preconditions.assert_class(line, String)
+      Preconditions.assert_class(prefix, Regexp)
+
+      stripped = line.strip
+      if stripped.match(prefix)
+        stripped.sub(prefix, '').split(/\=/, 2).map(&:strip)
+      else
+        nil
+      end
+    end
+
+    @@base_dir = Library.normalize_path(value)
     end
 
     # Runs the specified command, raising an error if there is a problem

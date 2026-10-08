@@ -157,6 +157,23 @@ version.
     git init /tmp/sample
     sem-init --dir /tmp/sample --url postgresql://postgres@localhost/sample
 
+### Configuring the scripts directory (.sem)
+
+By default sem keeps scripts in ./scripts. To keep them elsewhere, commit
+a file named .sem at the root of the repository:
+
+    sem.config.scripts_dir = schema/scripts
+
+Every command walks up from the current directory to the first .sem and
+resolves paths relative to the directory that holds it. Blank lines and
+lines starting with # are ignored. sem-init writes the file for you when
+given --scripts_dir:
+
+    sem-init --dir /tmp/sample --url postgresql://postgres@localhost/sample --scripts_dir schema/scripts
+
+sem-dist always packs the scripts under the name scripts/ and never packs
+.sem, so a tarball applies on a server with no .sem.
+
 ### Writing your first sql script
 
     cd /tmp/sample

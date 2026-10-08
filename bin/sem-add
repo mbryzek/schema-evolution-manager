@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
-# == Adds a database upgrade script to this repository.
+# == Adds a database upgrade script to this repository. The script is
+#    written to the scripts directory named by .sem (default ./scripts)
 #
 # == Usage
 #  sem-add <path>
@@ -19,7 +20,7 @@ end
 SchemaEvolutionManager::Preconditions.check_state(File.exist?(file), "File[#{file}] could not be found")
 SchemaEvolutionManager::Preconditions.check_state(file.match(/\.sql/i), "File[#{file}] must end with .sql")
 
-scripts_dir = File.join(`pwd`.strip, "scripts")
+scripts_dir = SchemaEvolutionManager::Config.load.scripts_dir
 SchemaEvolutionManager::Library.ensure_dir!(scripts_dir)
 
 contents = IO.read(file)

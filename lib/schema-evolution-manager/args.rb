@@ -16,6 +16,7 @@ module SchemaEvolutionManager
         :name => "Specifies the name of the database to which to connect",
         :url => "The connection string for the psql database",
         :dir => "Path to a directory",
+        :scripts_dir => "Path to the scripts directory, relative to --dir. Recorded in .sem",
         :tag => "A git tag (e.g. 0.0.1)",
         :prefix => "Configure installer to use this prefix",
         :set => "Passthrough for postgresql --set argument. Returns an array of the options set"
@@ -31,7 +32,7 @@ module SchemaEvolutionManager
       }
     end
 
-    attr_reader :artifact_name, :host, :port, :name, :prefix, :url, :user, :dir, :dry_run, :non_interactive, :tag, :password, :set
+    attr_reader :artifact_name, :host, :port, :name, :prefix, :url, :user, :dir, :dry_run, :non_interactive, :tag, :password, :set, :scripts_dir
 
     # args: Actual string arguments
     # :required => list of parameters that are required
@@ -67,6 +68,7 @@ module SchemaEvolutionManager
       @url = found_arguments.delete(:url)
       @user = found_arguments.delete(:user)
       @dir = found_arguments.delete(:dir)
+      @scripts_dir = found_arguments.delete(:scripts_dir)
       @tag = found_arguments.delete(:tag)
       @set = found_arguments.delete(:set) || []
 

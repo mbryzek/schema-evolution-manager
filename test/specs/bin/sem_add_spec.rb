@@ -29,4 +29,18 @@ describe "Add" do
     end
   end
 
+  it "adds into the scripts_dir named by .sem, from a subdirectory" do
+    path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-add")
+    TestUtils.in_test_repo do
+      File.open(".sem", "w") { |out| out << "sem.config.scripts_dir = schema/scripts\n" }
+      FileUtils.mkdir_p("app/sub")
+      Dir.chdir("app/sub") do
+        File.open("new.sql", "w") { |out| out << "select 1" }
+        SchemaEvolutionManager::Library.system_or_error("#{path} ./new.sql")
+      end
+      File.exist?("scripts").should be false
+      SchemaEvolutionManager::Scripts.all("schema/scripts").size.should == 1
+    end
+  end
+
 end

@@ -17,6 +17,7 @@ load File.join(File.dirname(__FILE__), 'sem-config')
 
 args = SchemaEvolutionManager::Args.from_stdin(:optional => %w(url host port name user dry_run))
 
+config = SchemaEvolutionManager::Config.load
 db = SchemaEvolutionManager::Db.from_args(args)
 db.bootstrap!
 
@@ -27,7 +28,7 @@ util = SchemaEvolutionManager::BaselineUtil.new(db, :dry_run => dry_run)
 puts "Baselining schema for #{db.url}"
 
 begin
-  count = util.apply!("./scripts")
+  count = util.apply!(config.scripts_dir)
   if count == 0
     puts "  All scripts have been previously applied"
   end
