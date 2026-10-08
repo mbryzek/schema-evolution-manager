@@ -48,6 +48,22 @@ describe SchemaEvolutionManager::Db do
     end
   end
 
+  it "SchemaEvolutionManager::Db.quote_literal" do
+    SchemaEvolutionManager::Db.quote_literal("abc").should == "'abc'"
+    SchemaEvolutionManager::Db.quote_literal("a'b''c").should == "'a''b''''c'"
+  end
+
+  it "psql_command passes the sql to psql as one argument, never through the shell" do
+    db = SchemaEvolutionManager::Db.new("postgresql://localhost:5432/unused")
+    commands = []
+    SchemaEvolutionManager::Library.stub(:system_or_error) { |command, _| commands << command; "" }
+    sql = %q{select '"$(touch sem-pwned)"', `id`, $HOME, "quoted"}
+    db.psql_command(sql)
+    commands.size.should == 1
+    argv = Shellwords.split(commands.first)
+    argv[argv.index("--command") + 1].should == sql
+  end
+
   it "psql_command" do
     TestUtils.with_db do |db|
       db.psql_command("select 10").should == "10"

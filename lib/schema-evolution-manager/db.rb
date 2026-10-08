@@ -34,9 +34,9 @@ module SchemaEvolutionManager
     # executes a simple sql command.
     def psql_command(sql_command)
       Preconditions.assert_class(sql_command, String)
-      template = "#{@psql_executable_with_options} --no-align --tuples-only --no-psqlrc --command \"%s\" %s"
-      command = template % [sql_command, Shellwords.escape(@url)]
-      command_to_log = template % [sql_command, sanitized_url]
+      template = "#{@psql_executable_with_options} --no-align --tuples-only --no-psqlrc --command %s %s"
+      command = template % [Shellwords.escape(sql_command), Shellwords.escape(@url)]
+      command_to_log = template % [Shellwords.escape(sql_command), sanitized_url]
       Library.system_or_error(command, command_to_log)
     end
 
@@ -120,6 +120,12 @@ module SchemaEvolutionManager
         url = args.user ? "%s@%s" % [args.user, base] : base
         Db.new("postgres://" + url, options)
       end
+    end
+
+    # Returns value as a SQL string literal, doubling any single quote.
+    def Db.quote_literal(value)
+      Preconditions.assert_class(value, String)
+      "'" + value.gsub("'", "''") + "'"
     end
 
     # Returns the name of the schema_evolution_manager schema
