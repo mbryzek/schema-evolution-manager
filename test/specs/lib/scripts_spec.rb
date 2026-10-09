@@ -20,6 +20,55 @@ describe SchemaEvolutionManager::Scripts do
     end
   end
 
+  describe "hostile script basenames" do
+
+    let(:db) { SchemaEvolutionManager::Db.new("postgresql://localhost:5432/unused") }
+    let(:scripts) { SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS) }
+
+    [
+      '20240101-000000"$(touch sem-pwned)".sql',
+      "20240101-000000') or ('1'='1.sql",
+      '20240101-000000".sql',
+      "20240101-000000.sql\n20240101-000001.sql",
+      "notes.sql"
+    ].each do |name|
+      it "each_pending raises naming #{name.inspect} before any psql call" do
+        db.should_not_receive(:psql_command)
+        db.should_not_receive(:psql_file)
+        SchemaEvolutionManager::Library.with_temp_file do |tmp|
+          SchemaEvolutionManager::Library.ensure_dir!(tmp)
+          File.open(File.join(tmp, "20121113-150902.sql"), "w") { |out| out << "select 1" }
+          File.open(File.join(tmp, name), "w") { |out| out << "select 1" }
+          lambda {
+            scripts.each_pending(tmp) { |_, _| raise "must not yield" }
+          }.should raise_error(RuntimeError, "Invalid filename[#{name}]. Must be like: 20120503-173242.sql")
+        end
+      end
+
+      it "has_run? and record_as_run! refuse #{name.inspect} before any psql call" do
+        db.should_not_receive(:psql_command)
+        lambda { scripts.has_run?(name) }.should raise_error(RuntimeError)
+        lambda { scripts.record_as_run!(name) }.should raise_error(RuntimeError)
+      end
+    end
+
+    it "queries with every valid basename as a quoted literal" do
+      sql = []
+      db.stub(:schema_schema_evolution_manager_exists?).and_return(true)
+      db.stub(:psql_command) { |command| sql << command; "0" }
+      SchemaEvolutionManager::Library.with_temp_file do |tmp|
+        SchemaEvolutionManager::Library.ensure_dir!(tmp)
+        File.open(File.join(tmp, "20121113-150902.sql"), "w") { |out| out << "select 1" }
+        File.open(File.join(tmp, "20121114-150902.sql"), "w") { |out| out << "select 1" }
+        found = []
+        scripts.each_pending(tmp) { |name, _| found << name }
+        found.should == ["20121113-150902.sql", "20121114-150902.sql"]
+      end
+      sql.first.should == "select filename from schema_evolution_manager.scripts where filename in ('20121113-150902.sql', '20121114-150902.sql')"
+    end
+
+  end
+
   it "SchemaEvolutionManager::Scripts.all(dir)" do
     dir = File.join(SchemaEvolutionManager::Library.base_dir, "scripts")
     files = SchemaEvolutionManager::Scripts.all(dir)
