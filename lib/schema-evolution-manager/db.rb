@@ -4,7 +4,11 @@ module SchemaEvolutionManager
 
     attr_reader :url, :psql_executable_with_options
 
-    @@password_files = []
+    # Options every psql invocation carries. --no-psqlrc keeps the applying
+    # user's ~/.psqlrc (and the system psqlrc) out of every command and
+    # migration; --no-password makes a missing credential fail rather than
+    # prompt, so an unattended apply can never hang.
+    PSQL_ISOLATION_OPTIONS = "--no-psqlrc --no-password"
 
     # A password embedded in the url (postgres://user:pass@host/db) is moved
     # into a private pgpass file and @url keeps only the password-free form,
@@ -43,7 +47,7 @@ module SchemaEvolutionManager
     # executes a simple sql command.
     def psql_command(sql_command)
       Preconditions.assert_class(sql_command, String)
-      template = "#{@psql_executable_with_options} --no-align --tuples-only --no-psqlrc --command \"%s\" %s"
+      template = "#{@psql_executable_with_options} #{PSQL_ISOLATION_OPTIONS} --no-align --tuples-only --command \"%s\" %s"
       command = template % [sql_command, Shellwords.escape(@url)]
       command_to_log = template % [sql_command, sanitized_url]
       Library.system_or_error(command, command_to_log)
@@ -88,7 +92,7 @@ module SchemaEvolutionManager
           out << IO.read(path)
         end
 
-        command = "#{@psql_executable_with_options} --file \"%s\" #{options} %s" % [tmp, Shellwords.escape(@url)]
+        command = "#{@psql_executable_with_options} #{PSQL_ISOLATION_OPTIONS} --file \"%s\" #{options} %s" % [tmp, Shellwords.escape(@url)]
 
         Library.with_temp_file do |output|
           result = `#{command} > #{output} 2>&1`.strip
@@ -136,15 +140,17 @@ module SchemaEvolutionManager
       "schema_evolution_manager"
     end
 
-    # Writes contents to a mode 0600 file in this process's private temp dir
-    # and returns its path. The Tempfile is retained so that garbage
-    # collection cannot unlink the file while psql still needs it.
+    # Writes the pgpass contents to a file in Library::TMPFILE_DIR,
+    # returning its path. The file is a plain file rather than a Tempfile so
+    # that no finalizer can unlink it while psql still needs it; the
+    # TMPFILE_DIR at_exit hook removes it. libpq ignores a pgpass file that
+    # is group or world readable, so it is created mode 0600.
     def Db.password_to_tempfile(contents)
-      file = Tempfile.new("sem-db", Library::TMPFILE_DIR)
-      file.write(contents + "\n")
-      file.close
-      @@password_files << file
-      file.path
+      path = File.join(Library::TMPFILE_DIR, "pgpass.%s" % SecureRandom.hex(8))
+      File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0600) do |out|
+        out.write(contents)
+      end
+      path
     end
 
     # The url for display. @url never carries a password (see initialize),
