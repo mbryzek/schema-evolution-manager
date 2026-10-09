@@ -11,7 +11,7 @@ names none. There is no default server; with neither set, the DB-backed specs fa
 # Run all specs:
 ./run.rb
 
-This will also install rspec into ../gems directory
+This will also install rspec into ../gems directory.
 
 # Run a specific spec
 rspec specs/library_spec.rb

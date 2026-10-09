@@ -6,7 +6,7 @@
 #
 
 Dir.chdir(File.dirname($0)) {
-  command = "sem-apply --url %%url%%"
-  puts command
-  exec(command)
+  command = ["sem-apply", "--url", %%url_literal%%]
+  puts command.join(" ")
+  exec(*command)
 }

@@ -122,25 +122,48 @@ module SchemaEvolutionManager
 
     def Library.set_base_dir(value)
       Preconditions.check_state(File.directory?(value), "Dir[%s] not found" % value)
-      @@base_dir = Library.normalize_path(value)
+      # Parses one property line of the form "<prefix><name> = <value>",
+    # stripping whitespace from both the name and the value. Returns
+    # [name, value] when the stripped line matches prefix (a Regexp
+    # anchored at the start of the line), otherwise nil. value is nil
+    # when the line has no equals sign. Shared by migration file
+    # attributes (-- sem.attribute.) and the .sem config file
+    # (sem.config.).
+    def Library.parse_property(line, prefix)
+      Preconditions.assert_class(line, String)
+      Preconditions.assert_class(prefix, Regexp)
+
+      stripped = line.strip
+      if stripped.match(prefix)
+        stripped.sub(prefix, '').split(/\=/, 2).map(&:strip)
+      else
+        nil
+      end
+    end
+
+    @@base_dir = Library.normalize_path(value)
     end
 
     # Runs the specified command, raising an error if there is a problem
     # (based on status code of the process executed). Otherwise returns
     # all the output from the script invoked.
+    #
+    # @param cmd_to_log: when given, the form of the command that is printed
+    # and that appears in any raised error, in place of command itself
     def Library.system_or_error(command, cmd_to_log=nil)
+      display = cmd_to_log || command
       if Library.is_verbose?
-        puts cmd_to_log || command
+        puts display
       end
 
       begin
         result = `#{command}`.strip
         status = $?
         if status.to_i > 0
-          raise "Non zero exit code[%s] running command[%s]" % [status, command]
+          raise "Non zero exit code[%s] running command[%s]" % [status, display]
         end
       rescue Exception => e
-        raise "Error running command[%s]: %s" % [command, e.to_s]
+        raise "Error running command[%s]: %s" % [display, e.to_s]
       end
       result
     end

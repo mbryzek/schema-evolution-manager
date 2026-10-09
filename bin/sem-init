@@ -9,16 +9,19 @@
 #
 #   dir: The directory containing a git repository that will contain the schema evolution files
 #   url: The connection string for the psql database
+#   scripts_dir: Optional path to the scripts directory, relative to dir. When given,
+#                it is recorded in dir/.sem so every sem command finds it. Defaults to scripts
 #
 # == Example
 #  git init /tmp/example_repo
 #  bin/sem-init --dir /tmp/example_repo --url postgresql://username@localhost/sample
+#  bin/sem-init --dir /tmp/example_repo --url postgresql://username@localhost/sample --scripts_dir schema/scripts
 #
 
 load File.join(File.dirname(__FILE__), 'sem-config')
 SchemaEvolutionManager::Library.set_verbose(true)
 
-args = SchemaEvolutionManager::Args.from_stdin(:required => %w(dir), :optional => %w(url host port name user))
+args = SchemaEvolutionManager::Args.from_stdin(:required => %w(dir), :optional => %w(url host port name user scripts_dir))
 SchemaEvolutionManager::Preconditions.check_state(File.directory?(args.dir), "Dir[%s] does not exist" % args.dir)
 
 if args.url.nil? && args.name.nil?
@@ -43,8 +46,11 @@ template_dir = File.join(SchemaEvolutionManager::Library.base_dir, "template")
 SchemaEvolutionManager::Preconditions.check_state(File.directory?(template_dir),
                                                   "Could not find schema-evolution-manager/template subdir. Expected it at[%s]" % [template_dir])
 
+# The wrapper scripts are committed to the repository, so they carry the url
+# with any password removed; a password is supplied through a pgpass file.
+# dev.rb takes the url as a ruby string literal.
 subs = {
-  "url" => db.url,
+  "url_literal" => SchemaEvolutionManager::ConnectionData.strip_password(db.url).inspect,
   "add_script_path" => File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-add")
 }
 
@@ -74,11 +80,27 @@ Dir.chdir(args.dir) do
     SchemaEvolutionManager::Library.system_or_error("git commit -m 'Adding README.md' README.md")
   end
 
-  if !File.exist?("scripts")
-    SchemaEvolutionManager::Library.system_or_error("mkdir scripts")
-    SchemaEvolutionManager::Library.system_or_error("touch scripts/.exists")
-    SchemaEvolutionManager::Library.system_or_error("git add scripts/.exists")
-    SchemaEvolutionManager::Library.system_or_error("git commit -m 'Adding scripts directory' scripts/.exists")
+  if args.scripts_dir
+    config_file = SchemaEvolutionManager::Config::FILENAME
+    if File.exist?(config_file)
+      existing = SchemaEvolutionManager::Config.parse(File.expand_path(config_file))
+      SchemaEvolutionManager::Preconditions.check_state(existing.scripts_dir == File.expand_path(args.scripts_dir),
+                                                        "%s already sets scripts_dir[%s] - not overwriting with[%s]" % [config_file, existing.scripts_dir, args.scripts_dir])
+    else
+      puts "Creating #{config_file}"
+      File.open(config_file, "w") { |out| out << "sem.config.scripts_dir = #{args.scripts_dir}\n" }
+      SchemaEvolutionManager::Library.system_or_error("git add #{config_file}")
+      SchemaEvolutionManager::Library.system_or_error("git commit -m 'Adding #{config_file}' #{config_file}")
+    end
+  end
+
+  scripts_dir = args.scripts_dir || "scripts"
+  if !File.exist?(scripts_dir)
+    exists_marker = File.join(scripts_dir, ".exists")
+    SchemaEvolutionManager::Library.ensure_dir!(scripts_dir)
+    SchemaEvolutionManager::Library.system_or_error("touch #{exists_marker}")
+    SchemaEvolutionManager::Library.system_or_error("git add #{exists_marker}")
+    SchemaEvolutionManager::Library.system_or_error("git commit -m 'Adding scripts directory' #{exists_marker}")
   end
 
   # Create the first git tag if necessary

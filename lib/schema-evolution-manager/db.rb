@@ -4,8 +4,19 @@ module SchemaEvolutionManager
 
     attr_reader :url, :psql_executable_with_options
 
+    # Options every psql invocation carries. --no-psqlrc keeps the applying
+    # user's ~/.psqlrc (and the system psqlrc) out of every command and
+    # migration; --no-password makes a missing credential fail rather than
+    # prompt, so an unattended apply can never hang.
+    PSQL_ISOLATION_OPTIONS = "--no-psqlrc --no-password"
+
+    # A password embedded in the url (postgres://user:pass@host/db) is moved
+    # into a private pgpass file and @url keeps only the password-free form,
+    # so the password never reaches a psql argv, a log line or an error.
+    #
+    # @param password: Optional password; takes precedence over one in the url
     def initialize(url, opts={})
-      @url = Preconditions.check_not_blank(url, "url cannot be blank")
+      Preconditions.check_not_blank(url, "url cannot be blank")
       password = opts.delete(:password)
 
       @psql_executable_with_options = "psql"
@@ -14,8 +25,10 @@ module SchemaEvolutionManager
       end
 
       Preconditions.assert_empty_opts(opts)
-      connection_data = ConnectionData.parse_url(@url)
+      connection_data = ConnectionData.parse_url(url)
+      @url = ConnectionData.strip_password(url)
 
+      password ||= connection_data.password
       if password
         ENV['PGPASSFILE'] = Db.password_to_tempfile(connection_data.pgpass(password))
       end
@@ -34,9 +47,9 @@ module SchemaEvolutionManager
     # executes a simple sql command.
     def psql_command(sql_command)
       Preconditions.assert_class(sql_command, String)
-      template = "#{@psql_executable_with_options} --no-align --tuples-only --no-psqlrc --command \"%s\" %s"
-      command = template % [sql_command, Shellwords.escape(@url)]
-      command_to_log = template % [sql_command, sanitized_url]
+      template = "#{@psql_executable_with_options} #{PSQL_ISOLATION_OPTIONS} --no-align --tuples-only --command %s %s"
+      command = template % [Shellwords.escape(sql_command), Shellwords.escape(@url)]
+      command_to_log = template % [Shellwords.escape(sql_command), sanitized_url]
       Library.system_or_error(command, command_to_log)
     end
 
@@ -79,7 +92,7 @@ module SchemaEvolutionManager
           out << IO.read(path)
         end
 
-        command = "#{@psql_executable_with_options} --file \"%s\" #{options} %s" % [tmp, Shellwords.escape(@url)]
+        command = "#{@psql_executable_with_options} #{PSQL_ISOLATION_OPTIONS} --file \"%s\" #{options} %s" % [tmp, Shellwords.escape(@url)]
 
         Library.with_temp_file do |output|
           result = `#{command} > #{output} 2>&1`.strip
@@ -122,47 +135,34 @@ module SchemaEvolutionManager
       end
     end
 
+    # Returns value as a SQL string literal, doubling any single quote.
+    def Db.quote_literal(value)
+      Preconditions.assert_class(value, String)
+      "'" + value.gsub("'", "''") + "'"
+    end
+
     # Returns the name of the schema_evolution_manager schema
     def Db.schema_name
       "schema_evolution_manager"
     end
 
+    # Writes the pgpass contents to a file in Library::TMPFILE_DIR,
+    # returning its path. The file is a plain file rather than a Tempfile so
+    # that no finalizer can unlink it while psql still needs it; the
+    # TMPFILE_DIR at_exit hook removes it. libpq ignores a pgpass file that
+    # is group or world readable, so it is created mode 0600.
     def Db.password_to_tempfile(contents)
-      file = Tempfile.new("sem-db")
-      file.write(contents)
-      file.rewind
-      file.path
+      path = File.join(Library::TMPFILE_DIR, "pgpass.%s" % SecureRandom.hex(8))
+      File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0600) do |out|
+        out.write(contents)
+      end
+      path
     end
 
-    # Returns a sanitized version of the URL with the password removed
-    # to prevent passwords from being logged or displayed in error messages
+    # The url for display. @url never carries a password (see initialize),
+    # so this is @url itself; kept for callers that print the connection.
     def sanitized_url
-      # Parse the URL to extract components
-      if @url.include?("://")
-        protocol, rest = @url.split("://", 2)
-        lead, name = rest.split("/", 2)
-
-        # Check if there's a username:password@ pattern
-        if lead.include?("@")
-          # Take the last element as host_part to handle passwords with @ symbols
-          host_part = lead.split("@").last
-          # Take everything before the last @ as user_part
-          user_part = lead.split("@")[0..-2].join("@")
-
-          if user_part.include?(":")
-            # Remove password, keep only username (everything before the first colon)
-            username = user_part.split(":", 2)[0]
-            sanitized_lead = "#{username}:[REDACTED]@#{host_part}"
-          else
-            sanitized_lead = lead
-          end
-          "#{protocol}://#{sanitized_lead}/#{name}"
-        else
-          @url
-        end
-      else
-        @url
-      end
+      @url
     end
 
   end
