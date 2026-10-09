@@ -255,6 +255,33 @@ describe SchemaEvolutionManager::Library do
 
   end
 
+  describe "SchemaEvolutionManager::Library.tag_exists?" do
+
+    it "returns false if no tags" do
+      TestUtils.in_test_repo do
+        SchemaEvolutionManager::Library.tag_exists?("1.0.1").should be false
+      end
+    end
+
+    it "matches an exact tag" do
+      create_repo_with_commit do
+        SchemaEvolutionManager::Library.git_create_tag("1.0.1")
+        SchemaEvolutionManager::Library.tag_exists?("1.0.1").should be true
+      end
+    end
+
+    it "does not match a tag that only contains the name" do
+      create_repo_with_commit do
+        SchemaEvolutionManager::Library.git_create_tag("1.0.10")
+        SchemaEvolutionManager::Library.system_or_error("git tag -a -m 'test' v2.0.0")
+        SchemaEvolutionManager::Library.tag_exists?("1.0.10").should be true
+        SchemaEvolutionManager::Library.tag_exists?("1.0.1").should be false
+        SchemaEvolutionManager::Library.tag_exists?("2.0.0").should be false
+      end
+    end
+
+  end
+
   describe "SchemaEvolutionManager::Library.latest_tag" do
 
     it "returns nil if no tags" do
