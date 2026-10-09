@@ -1,6 +1,15 @@
 #!/usr/bin/env ruby
 
-load File.join(File.dirname(__FILE__), '..', 'lib', 'schema-evolution-manager.rb')
+require File.expand_path('init.rb', __dir__)
+
+# Most specs create and drop databases, so the run needs a server before it
+# starts; a missing one is one message here rather than a failure per spec.
+begin
+  TestUtils.server_url("postgres")
+rescue RuntimeError => e
+  $stderr.puts e.message
+  exit(1)
+end
 
 def run(command)
   puts command
