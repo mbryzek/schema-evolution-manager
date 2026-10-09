@@ -2,6 +2,9 @@ load File.join(File.dirname(__FILE__), '../lib/schema-evolution-manager.rb')
 
 module TestUtils
 
+  # Port of the postgres server the database specs run against.
+  PORT = ENV.fetch("SEM_TEST_DB_PORT", "5432")
+
   def TestUtils.with_bootstrapped_db
     TestUtils.with_db do |db|
       db.bootstrap!
@@ -16,13 +19,13 @@ module TestUtils
   def TestUtils.create_db_config(opts={})
     name = opts.delete(:name) || TestUtils.random_db_name
     SchemaEvolutionManager::Preconditions.check_state(opts.empty?)
-    SchemaEvolutionManager::Db.parse_command_line_config("--url postgresql://localhost:5432/#{name}")
+    SchemaEvolutionManager::Db.parse_command_line_config("--url postgresql://localhost:#{PORT}/#{name}")
   end
 
   def TestUtils.with_db
-    superdb = SchemaEvolutionManager::Db.new("postgresql://localhost:5432/postgres")
+    superdb = SchemaEvolutionManager::Db.new("postgresql://localhost:#{PORT}/postgres")
     name = "schema_evolution_manager_test_db_%s" % [rand(100000)]
-    db = SchemaEvolutionManager::Db.parse_command_line_config("--host localhost --name #{name} --user postgres")
+    db = SchemaEvolutionManager::Db.parse_command_line_config("--host localhost --port #{PORT} --name #{name} --user postgres")
     begin
       superdb.psql_command("create database #{name}")
       yield db

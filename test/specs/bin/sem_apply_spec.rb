@@ -90,7 +90,7 @@ describe "Apply" do
 
     status.exitstatus.should == 1
     output.should include("ERROR applying script: ./scripts/#{File.basename(script)}")
-    output.should include("psql:./scripts/#{File.basename(script)}:3: ERROR")
+    output.should include("psql:#{script}:3: ERROR")
     output.should include("no_such_table")
   end
 end
