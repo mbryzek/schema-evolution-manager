@@ -26,7 +26,13 @@ module SchemaEvolutionManager
     #
     # @param password: Optional password to include in the connection string
     def pgpass(password=nil)
-      [@host, @port, @name, @user, password.to_s].join(":")
+      [@host, @port, @name, @user, password].map { |v| ConnectionData.pgpass_escape(v) }.join(":")
+    end
+
+    # libpq reads ':' as the pgpass field separator and '\' as its escape,
+    # so both must be backslash-escaped within a field.
+    def ConnectionData.pgpass_escape(value)
+      value.to_s.gsub(/[\\:]/) { |c| "\\#{c}" }
     end
 
     # Parses a connection string into a ConnectionData instance. You

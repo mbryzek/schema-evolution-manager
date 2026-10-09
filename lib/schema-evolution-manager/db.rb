@@ -133,11 +133,17 @@ module SchemaEvolutionManager
       "schema_evolution_manager"
     end
 
+    # Writes the pgpass contents to a file in Library::TMPFILE_DIR,
+    # returning its path. The file is a plain file rather than a Tempfile so
+    # that no finalizer can unlink it while psql still needs it; the
+    # TMPFILE_DIR at_exit hook removes it. libpq ignores a pgpass file that
+    # is group or world readable, so it is created mode 0600.
     def Db.password_to_tempfile(contents)
-      file = Tempfile.new("sem-db")
-      file.write(contents)
-      file.rewind
-      file.path
+      path = File.join(Library::TMPFILE_DIR, "pgpass.%s" % SecureRandom.hex(8))
+      File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0600) do |out|
+        out.write(contents)
+      end
+      path
     end
 
     # Returns a sanitized version of the URL with the password removed
