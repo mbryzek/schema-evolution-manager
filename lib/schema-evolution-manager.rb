@@ -1,7 +1,7 @@
 require 'fileutils'
 require 'pathname'
-require 'tempfile'
 require 'tmpdir'
+require 'securerandom'
 require 'shellwords'
 require 'open3'
 
@@ -30,3 +30,4 @@ load File.join(lib_dir, 'install_template.rb')
 load File.join(lib_dir, 'script_error.rb')
 load File.join(lib_dir, 'sem_info.rb')
 load File.join(lib_dir, 'migration_file.rb')
+load File.join(lib_dir, 'config.rb')

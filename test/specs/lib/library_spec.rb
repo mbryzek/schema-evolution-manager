@@ -199,6 +199,22 @@ describe SchemaEvolutionManager::Library do
     SchemaEvolutionManager::Library.normalize_path("././tmp").should == "tmp"
   end
 
+  describe "SchemaEvolutionManager::Library.parse_property" do
+
+    it "splits name and value, stripping whitespace" do
+      SchemaEvolutionManager::Library.parse_property("  sem.config.scripts_dir  =  a = b  ", /^sem\.config\./).should == ["scripts_dir", "a = b"]
+    end
+
+    it "returns nil when the prefix does not match" do
+      SchemaEvolutionManager::Library.parse_property("scripts_dir = a", /^sem\.config\./).should be_nil
+    end
+
+    it "returns a nil value without an equals sign" do
+      SchemaEvolutionManager::Library.parse_property("-- sem.attribute.transaction", /^\-\-\s+sem\.attribute\./).should == ["transaction"]
+    end
+
+  end
+
   it "SchemaEvolutionManager::Library.is_verbose?" do
     SchemaEvolutionManager::Library.is_verbose?.should be false
     SchemaEvolutionManager::Library.set_verbose(true)

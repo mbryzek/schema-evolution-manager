@@ -58,7 +58,8 @@ SchemaEvolutionManager::Library.git_assert_tag_exists(tag)
 SchemaEvolutionManager::Versions.validate_version!(tag)
 
 changes = SchemaEvolutionManager::Library.git_changes(:tag => tag)
-repo_path = SchemaEvolutionManager::Library.normalize_path(Dir.pwd)
+config = SchemaEvolutionManager::Config.load
+repo_path = config.base_dir
 
 if args.artifact_name
   artifact_name = args.artifact_name
@@ -76,7 +77,9 @@ SchemaEvolutionManager::Library.with_temp_file do |tmp|
   tmpdir = File.join(tmp, filename)
   SchemaEvolutionManager::Library.ensure_dir!(tmpdir)
 
-  SchemaEvolutionManager::Library.system_or_error(["cp", "-R", "--", File.join(repo_path, "scripts"), File.join(tmpdir, "scripts")])
+  # The tarball always holds the scripts under the fixed name scripts/
+  # and never .sem, so a server applies it without any config.
+  SchemaEvolutionManager::Library.system_or_error(["cp", "-R", "--", config.scripts_dir, File.join(tmpdir, "scripts")])
   File.open(File.join(tmpdir, "CHANGES"), "w") { |out| out << changes }
   File.open(File.join(tmpdir, "VERSION"), "w") { |out| out << tag }
 

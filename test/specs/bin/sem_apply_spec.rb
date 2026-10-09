@@ -68,4 +68,22 @@ describe "Apply" do
     end
     version_count.should == 1
   end
+
+  it "applies scripts from the scripts_dir named by .sem" do
+    add_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-add")
+    apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
+    TestUtils.with_bootstrapped_db do |db|
+      TestUtils.in_test_repo do
+        File.open(".sem", "w") { |out| out << "sem.config.scripts_dir = schema/scripts\n" }
+        File.open("new.sql", "w") { |out| out << "create table tmp (id integer);\ninsert into tmp (id) values (1);\n" }
+        SchemaEvolutionManager::Library.system_or_error([add_path, "./new.sql"])
+        SchemaEvolutionManager::Scripts.all("schema/scripts").size.should == 1
+        FileUtils.mkdir_p("nested")
+        Dir.chdir("nested") do
+          SchemaEvolutionManager::Library.system_or_error([apply_path, "--url", db.url])
+        end
+        db.psql_command("select count(*) from tmp").to_i.should == 1
+      end
+    end
+  end
 end
