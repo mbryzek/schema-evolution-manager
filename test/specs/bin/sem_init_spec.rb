@@ -4,11 +4,11 @@ describe "Init" do
 
   # sem-init only writes and commits the wrapper scripts; it never connects
   # to the database, so these run without one.
-  def run_init(url, extra_args="")
+  def run_init(url, extra_args=[])
     init_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-init")
     SchemaEvolutionManager::Library.with_temp_file do |tmp|
-      SchemaEvolutionManager::Library.system_or_error("git init #{tmp}")
-      SchemaEvolutionManager::Library.system_or_error("#{init_path} --dir #{tmp} --url #{Shellwords.escape(url)} #{extra_args}")
+      SchemaEvolutionManager::Library.system_or_error(["git", "init", "--quiet", tmp])
+      SchemaEvolutionManager::Library.system_or_error([init_path, "--dir", tmp, "--url", url] + extra_args)
       yield tmp
     end
   end
@@ -24,13 +24,13 @@ describe "Init" do
   end
 
   it "with --scripts_dir writes .sem and creates the directory" do
-    run_init("postgresql://postgres@localhost:5432/sample", "--scripts_dir schema/scripts") do |tmp|
+    run_init("postgresql://postgres@localhost:5432/sample", ["--scripts_dir", "schema/scripts"]) do |tmp|
       IO.read(File.join(tmp, ".sem")).should == "sem.config.scripts_dir = schema/scripts\n"
       File.exist?(File.join(tmp, "schema/scripts/.exists")).should be true
       File.exist?(File.join(tmp, "scripts")).should be false
       Dir.chdir(tmp) do
-        SchemaEvolutionManager::Library.system_or_error("git status --porcelain -- .sem schema").should == ""
-        SchemaEvolutionManager::Library.system_or_error("git ls-files .sem schema/scripts/.exists").split("\n").should == [".sem", "schema/scripts/.exists"]
+        SchemaEvolutionManager::Library.system_or_error(["git", "status", "--porcelain", "--", ".sem", "schema"]).should == ""
+        SchemaEvolutionManager::Library.system_or_error(["git", "ls-files", ".sem", "schema/scripts/.exists"]).split("\n").should == [".sem", "schema/scripts/.exists"]
         SchemaEvolutionManager::Config.load.scripts_dir.should == File.join(File.realpath(tmp), "schema/scripts")
       end
     end
@@ -42,7 +42,7 @@ describe "Init" do
       dev.should_not include("s3cret")
       dev.should include('"postgres://user1@localhost:5432/sample"')
       Dir.chdir(dir) do
-        SchemaEvolutionManager::Library.system_or_error("git log -p --all").should_not include("s3cret")
+        SchemaEvolutionManager::Library.system_or_error(["git", "log", "-p", "--all"]).should_not include("s3cret")
       end
     end
   end

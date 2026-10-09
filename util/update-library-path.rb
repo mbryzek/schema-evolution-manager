@@ -25,7 +25,7 @@ end
 tmp = []
 IO.readlines(path).each do |l|
   if l.strip == "load File.join(File.dirname(__FILE__), 'sem-config')"
-    tmp << "load File.join('#{lib}')\n"
+    tmp << "load #{lib.inspect}\n"
   else
     tmp << l
   end

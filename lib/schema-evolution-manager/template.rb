@@ -29,7 +29,8 @@ module SchemaEvolutionManager
       Preconditions.check_not_blank(contents)
       string = contents.dup
       @subs.each do |sub|
-        # block form, so a backslash in the value is copied verbatim
+        # Block form: the value is inserted literally, so a backslash in
+        # it is never read as a backreference
         string = string.gsub(/%%#{sub.pattern}%%/) { sub.value }
       end
       string

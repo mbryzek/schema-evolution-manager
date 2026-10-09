@@ -34,11 +34,14 @@ module SchemaEvolutionManager
 
     attr_reader :artifact_name, :host, :port, :name, :prefix, :url, :user, :dir, :dry_run, :non_interactive, :tag, :password, :set, :scripts_dir
 
-    # args: Actual string arguments
+    # args: The arguments, either an argv array (each element one
+    #       argument, so a value may contain whitespace) or a string
+    #       split on whitespace
     # :required => list of parameters that are required
     # :optional => list of parameters that are optional
     def initialize(args, opts={})
-      Preconditions.assert_class_or_nil(args, String)
+      Preconditions.check_state(args.nil? || args.is_a?(String) || args.is_a?(Array),
+                                "args must be a String or an Array")
       required = (opts.delete(:required) || []).map { |flag| format_flag(flag) }
       optional = (opts.delete(:optional) || []).map { |flag| format_flag(flag) }
       Preconditions.assert_class(required, Array)
@@ -102,8 +105,7 @@ module SchemaEvolutionManager
 
     # Hack to minimize bleeding from STDIN. Returns an instance of Args class
     def Args.from_stdin(opts)
-      values = ARGV.join(" ")
-      Args.new(values, opts)
+      Args.new(ARGV.dup, opts)
     end
 
     private
@@ -145,10 +147,9 @@ module SchemaEvolutionManager
 
 
     def parse_string_arguments(args)
-      Preconditions.assert_class_or_nil(args, String)
       found = {}
       index = 0
-      values = args.to_s.strip.split(/\s+/)
+      values = args.is_a?(Array) ? args : args.to_s.strip.split(/\s+/)
       while index < values.length do
         flag = format_flag(values[index])
         index += 1

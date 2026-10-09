@@ -4,8 +4,8 @@ describe SchemaEvolutionManager::Library do
 
   def create_repo_with_commit
     TestUtils.in_test_repo do
-      SchemaEvolutionManager::Library.system_or_error('echo "Test" > README.md')
-      SchemaEvolutionManager::Library.system_or_error("git add README.md && git commit -m 'testlogmessage' README.md")
+      TestUtils.sh('echo "Test" > README.md')
+      TestUtils.sh("git add README.md && git commit -m 'testlogmessage' README.md")
       yield
     end
   end
@@ -19,11 +19,11 @@ describe SchemaEvolutionManager::Library do
 
   it "SchemaEvolutionManager::Library.assert_dir_exists" do
     SchemaEvolutionManager::Library.with_temp_file do |tmpdir|
-      SchemaEvolutionManager::Library.system_or_error("rm -rf #{tmpdir}")
+      TestUtils.sh("rm -rf #{tmpdir}")
       lambda {
         SchemaEvolutionManager::Library.assert_dir_exists(tmpdir)
       }.should raise_error(RuntimeError)
-      SchemaEvolutionManager::Library.system_or_error("mkdir #{tmpdir}")
+      TestUtils.sh("mkdir #{tmpdir}")
       SchemaEvolutionManager::Library.assert_dir_exists(tmpdir)
     end
   end
@@ -35,7 +35,7 @@ describe SchemaEvolutionManager::Library do
   it "SchemaEvolutionManager::Library.git_has_remote?" do
     SchemaEvolutionManager::Library.git_has_remote?.should be true
     SchemaEvolutionManager::Library.with_temp_file do |tmp|
-      SchemaEvolutionManager::Library.system_or_error("git init #{tmp}")
+      TestUtils.sh("git init #{tmp}")
       Dir.chdir(tmp) do
         SchemaEvolutionManager::Library.git_has_remote?.should be false
       end
@@ -83,7 +83,7 @@ describe SchemaEvolutionManager::Library do
     it "no args" do
       file = nil
       SchemaEvolutionManager::Library.with_temp_file do |tmp|
-        SchemaEvolutionManager::Library.system_or_error("touch #{tmp}")
+        TestUtils.sh("touch #{tmp}")
         File.exist?(tmp).should be true
         file = tmp
       end
@@ -142,27 +142,55 @@ describe SchemaEvolutionManager::Library do
 
   describe "SchemaEvolutionManager::Library.system_or_error" do
 
-    it "success" do
-      SchemaEvolutionManager::Library.system_or_error("echo 'hey'")
+    it "returns stripped standard output" do
+      SchemaEvolutionManager::Library.system_or_error(["echo", "hey"]).should == "hey"
     end
 
-    it "failure" do
+    it "raises on a missing executable" do
       lambda {
-        SchemaEvolutionManager::Library.system_or_error('/adfadfds')
+        SchemaEvolutionManager::Library.system_or_error(["/adfadfds"])
       }.should raise_error(RuntimeError)
+    end
+
+    it "raises on a non zero exit code" do
+      lambda {
+        SchemaEvolutionManager::Library.system_or_error(["false"])
+      }.should raise_error(RuntimeError, /Non zero exit code/)
+    end
+
+    it "refuses a shell command line" do
+      lambda {
+        SchemaEvolutionManager::Library.system_or_error("echo hey")
+      }.should raise_error(RuntimeError)
+    end
+
+    it "passes each argument through without a shell" do
+      value = "a b'c\"$HOME;`id`*"
+      SchemaEvolutionManager::Library.system_or_error(["printf", "%s", value]).should == value
+    end
+
+    it "sets env" do
+      SchemaEvolutionManager::Library.system_or_error(["/bin/sh", "-c", "echo $SEM_TEST"], :env => { "SEM_TEST" => "x y" }).should == "x y"
+    end
+
+    it "names the log form in an error, not the command" do
+      lambda {
+        SchemaEvolutionManager::Library.system_or_error(["false", "secret"], :log => ["false", "[REDACTED]"])
+      }.should raise_error(RuntimeError, /REDACTED/) { |e| e.message.should_not include("secret") }
     end
 
   end
 
-  describe "SchemaEvolutionManager::Library.system_or_error" do
-    it "success" do
-      SchemaEvolutionManager::Library.system_or_error("echo 'hey'")
-    end
+  it "SchemaEvolutionManager::Library.command_to_s" do
+    SchemaEvolutionManager::Library.command_to_s(["mv", "a b", "it's"]).should == "mv a\\ b it\\'s"
+    SchemaEvolutionManager::Library.command_to_s(["tar"], "A" => "1").should == "A=1 tar"
+  end
 
-    it "failure" do
-      lambda {
-        SchemaEvolutionManager::Library.system_or_error('/adfadfds')
-      }.should raise_error(RuntimeError)
+  it "SchemaEvolutionManager::Library.ensure_dir! with an awkward path" do
+    SchemaEvolutionManager::Library.with_temp_file do |tmp|
+      dir = File.join(tmp, TestUtils::AWKWARD_DIRNAME, "nested")
+      SchemaEvolutionManager::Library.ensure_dir!(dir)
+      File.directory?(dir).should be true
     end
   end
 
@@ -211,7 +239,7 @@ describe SchemaEvolutionManager::Library do
         1.upto(5) do |i|
           file = "%s.txt" % [i]
           File.open(file, "w") { |out| out << "test" }
-          SchemaEvolutionManager::Library.system_or_error("git add %s && git commit -m 'commit%s' %s" % [file, i, file])
+          TestUtils.sh("git add %s && git commit -m 'commit%s' %s" % [file, i, file])
         end
         SchemaEvolutionManager::Library.git_create_tag(tag)
         history = SchemaEvolutionManager::Library.git_changes(:tag => tag, :number_changes => 2)
@@ -237,7 +265,7 @@ describe SchemaEvolutionManager::Library do
 
     it "returns nil if invalid tags only" do
       create_repo_with_commit do
-        SchemaEvolutionManager::Library.system_or_error("git tag -a -m 'test' test")
+        TestUtils.sh("git tag -a -m 'test' test")
         SchemaEvolutionManager::Library.latest_tag.should be_nil
       end
     end

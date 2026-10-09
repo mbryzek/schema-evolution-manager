@@ -20,7 +20,7 @@ module SchemaEvolutionManager
       Preconditions.assert_class(dir, String)
 
       if !File.directory?(dir)
-        Library.system_or_error("mkdir -p #{dir}")
+        Library.system_or_error(["mkdir", "-p", "--", dir])
       end
       Library.assert_dir_exists(dir)
     end
@@ -38,14 +38,14 @@ module SchemaEvolutionManager
     end
 
     def Library.git_assert_tag_exists(tag)
-      command = "git tag -l"
+      command = ["git", "tag", "-l"]
       results = Library.system_or_error(command)
       if results.nil?
         raise "No git tags found"
       end
 
       if !Library.tag_exists?(tag)
-        raise "Tag[#{tag}] not found. Check #{command}"
+        raise "Tag[#{tag}] not found. Check #{Shellwords.join(command)}"
       end
     end
 
@@ -73,11 +73,11 @@ module SchemaEvolutionManager
       Library.assert_valid_tag(tag)
       has_remote = Library.git_has_remote?
       if has_remote
-        Library.system_or_error("git fetch --tags origin")
+        Library.system_or_error(["git", "fetch", "--tags", "origin"])
       end
-      Library.system_or_error("git tag -a -m #{tag} #{tag}")
+      Library.system_or_error(["git", "tag", "-a", "-m", tag, tag])
       if has_remote
-        Library.system_or_error("git push --tags origin")
+        Library.system_or_error(["git", "push", "--tags", "origin"])
       end
     end
 
@@ -122,7 +122,10 @@ module SchemaEvolutionManager
 
     def Library.set_base_dir(value)
       Preconditions.check_state(File.directory?(value), "Dir[%s] not found" % value)
-      # Parses one property line of the form "<prefix><name> = <value>",
+      @@base_dir = Library.normalize_path(value)
+    end
+
+    # Parses one property line of the form "<prefix><name> = <value>",
     # stripping whitespace from both the name and the value. Returns
     # [name, value] when the stripped line matches prefix (a Regexp
     # anchored at the start of the line), otherwise nil. value is nil
@@ -141,31 +144,46 @@ module SchemaEvolutionManager
       end
     end
 
-    @@base_dir = Library.normalize_path(value)
-    end
-
-    # Runs the specified command, raising an error if there is a problem
-    # (based on status code of the process executed). Otherwise returns
-    # all the output from the script invoked.
+    # Runs the command, raising an error if it exits non-zero, and
+    # returns its standard output, stripped. Standard error passes
+    # through to ours.
     #
-    # @param cmd_to_log: when given, the form of the command that is printed
-    # and that appears in any raised error, in place of command itself
-    def Library.system_or_error(command, cmd_to_log=nil)
-      display = cmd_to_log || command
+    # The command is an argv array, executed directly and never through a
+    # shell, so a path or value holding a space, a quote or a dollar sign
+    # reaches the program as exactly one argument:
+    #
+    #   Library.system_or_error(["mv", "--", file, target])
+    #
+    # @param env: Optional hash of environment variables set for the command
+    # @param log: Optional array shown in place of the command when
+    #        logging or raising, for a command carrying a secret
+    def Library.system_or_error(command, opts={})
+      env = opts.delete(:env) || {}
+      log = opts.delete(:log) || command
+      Preconditions.assert_empty_opts(opts)
+      Preconditions.assert_class(command, Array)
+      Preconditions.check_state(!command.empty?, "command cannot be empty")
+      Preconditions.check_state(command.all? { |arg| arg.is_a?(String) }, "every argument must be a String: %s" % command.inspect)
+
+      display = Library.command_to_s(log, env)
       if Library.is_verbose?
         puts display
       end
 
       begin
-        result = `#{command}`.strip
-        status = $?
-        if status.to_i > 0
-          raise "Non zero exit code[%s] running command[%s]" % [status, display]
-        end
-      rescue Exception => e
+        result, status = Open3.capture2(env, *command)
+      rescue SystemCallError => e
         raise "Error running command[%s]: %s" % [display, e.to_s]
       end
-      result
+      if !status.success?
+        raise "Non zero exit code[%s] running command[%s]" % [status, display]
+      end
+      result.strip
+    end
+
+    # A shell-quoted rendering of an argv, for logs and error messages
+    def Library.command_to_s(command, env={})
+      (env.map { |k, v| "%s=%s" % [k, Shellwords.escape(v)] } + [Shellwords.join(command)]).join(" ")
     end
 
     def Library.normalize_path(path)
@@ -187,7 +205,7 @@ module SchemaEvolutionManager
       Preconditions.check_state(number_changes > 0)
       Preconditions.assert_empty_opts(opts)
 
-      git_log_command = "git log --pretty=format:\"%h %ad | %s%d [%an]\" --date=short -#{number_changes}"
+      git_log_command = ["git", "log", "--pretty=format:%h %ad | %s%d [%an]", "--date=short", "-#{number_changes}"]
       git_log = Library.system_or_error(git_log_command)
       out = ""
       out << "Created: %s\n" % Library.format_time
@@ -195,7 +213,7 @@ module SchemaEvolutionManager
         out << "Git Tag: %s\n" % tag
       end
       out << "\n"
-      out << "%s:\n" % git_log_command
+      out << "%s:\n" % Library.command_to_s(git_log_command)
       out << "  " << git_log.split("\n").join("\n  ") << "\n"
       out
     end

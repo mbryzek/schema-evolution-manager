@@ -34,7 +34,7 @@ while File.exist?(target)
 end
 
 puts "Adding #{target}"
-SchemaEvolutionManager::Library.system_or_error("mv #{file} #{target}")
-SchemaEvolutionManager::Library.system_or_error("git add #{target}")
+SchemaEvolutionManager::Library.system_or_error(["mv", "--", file, target])
+SchemaEvolutionManager::Library.system_or_error(["git", "add", "--", target])
 
 puts "File staged in git. You need to commit and push"

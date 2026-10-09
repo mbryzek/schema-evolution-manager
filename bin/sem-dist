@@ -30,13 +30,13 @@ args = SchemaEvolutionManager::Args.from_stdin(:optional => ['artifact_name', 't
 
 # On MAC OS X, use gnutar if available, otherwise use tar with --no-xattrs
 tar_cmd = `which gnutar 2> /dev/null`.strip
-tar_opts = ""
+tar_opts = []
 if tar_cmd == ""
   tar_cmd = "tar"
   # Use --no-xattrs to prevent extended attributes from being archived (works in create mode)
   # Also use --no-mac-metadata to prevent AppleDouble files
-  if system("tar --no-xattrs -cf /dev/null /dev/null 2>/dev/null")
-    tar_opts = "--no-xattrs --no-mac-metadata"
+  if system("tar", "--no-xattrs", "-cf", "/dev/null", "/dev/null", :err => File::NULL)
+    tar_opts = ["--no-xattrs", "--no-mac-metadata"]
   end
 end
 
@@ -79,16 +79,17 @@ SchemaEvolutionManager::Library.with_temp_file do |tmp|
 
   # The tarball always holds the scripts under the fixed name scripts/
   # and never .sem, so a server applies it without any config.
-  SchemaEvolutionManager::Library.system_or_error("cp -R %s %s" % [config.scripts_dir, File.join(tmpdir, "scripts")])
+  SchemaEvolutionManager::Library.system_or_error(["cp", "-R", "--", config.scripts_dir, File.join(tmpdir, "scripts")])
   File.open(File.join(tmpdir, "CHANGES"), "w") { |out| out << changes }
   File.open(File.join(tmpdir, "VERSION"), "w") { |out| out << tag }
 
-  # Clear extended attributes to avoid tar warnings on Linux
-  SchemaEvolutionManager::Library.system_or_error("xattr -cr #{tmpdir} 2>/dev/null || true")
+  # Clear extended attributes to avoid tar warnings on Linux. Best
+  # effort: xattr is absent on most Linux hosts.
+  system("xattr", "-cr", "--", tmpdir, [:out, :err] => File::NULL)
 
   Dir.chdir(tmp) do
     # COPYFILE_DISABLE prevents AppleDouble ._ files from being created
-    SchemaEvolutionManager::Library.system_or_error("COPYFILE_DISABLE=1 #{tar_cmd} #{tar_opts} -cf #{filename}.tar #{filename}")
+    SchemaEvolutionManager::Library.system_or_error([tar_cmd] + tar_opts + ["-cf", "#{filename}.tar", "--", filename], :env => { "COPYFILE_DISABLE" => "1" })
     FileUtils.cp("#{filename}.tar", tarball)
   end
 end
@@ -99,8 +100,7 @@ if File.exist?(gzip_file)
   FileUtils.rm(gzip_file)
 end
 
-command = "gzip #{tarball}"
-SchemaEvolutionManager::Library.system_or_error(command)
+SchemaEvolutionManager::Library.system_or_error(["gzip", "--", tarball])
 
 puts ""
 puts "Created distribution file at #{gzip_file}"

@@ -2,13 +2,14 @@ module SchemaEvolutionManager
 
   class Db
 
-    attr_reader :url, :psql_executable_with_options
+    # psql_args: the psql executable and its global options, as an argv
+    attr_reader :url, :psql_args
 
     # Options every psql invocation carries. --no-psqlrc keeps the applying
     # user's ~/.psqlrc (and the system psqlrc) out of every command and
     # migration; --no-password makes a missing credential fail rather than
     # prompt, so an unattended apply can never hang.
-    PSQL_ISOLATION_OPTIONS = "--no-psqlrc --no-password"
+    PSQL_ISOLATION_OPTIONS = ["--no-psqlrc", "--no-password"]
 
     # A password embedded in the url (postgres://user:pass@host/db) is moved
     # into a private pgpass file and @url keeps only the password-free form,
@@ -19,9 +20,9 @@ module SchemaEvolutionManager
       Preconditions.check_not_blank(url, "url cannot be blank")
       password = opts.delete(:password)
 
-      @psql_executable_with_options = "psql"
+      @psql_args = ["psql"]
       (opts.delete(:set) || []).each do |arg|
-        @psql_executable_with_options << " --set #{arg}"
+        @psql_args += ["--set", arg]
       end
 
       Preconditions.assert_empty_opts(opts)
@@ -47,10 +48,8 @@ module SchemaEvolutionManager
     # executes a simple sql command.
     def psql_command(sql_command)
       Preconditions.assert_class(sql_command, String)
-      template = "#{@psql_executable_with_options} #{PSQL_ISOLATION_OPTIONS} --no-align --tuples-only --command %s %s"
-      command = template % [Shellwords.escape(sql_command), Shellwords.escape(@url)]
-      command_to_log = template % [Shellwords.escape(sql_command), sanitized_url]
-      Library.system_or_error(command, command_to_log)
+      command = @psql_args + PSQL_ISOLATION_OPTIONS + ["--no-align", "--tuples-only", "--command", sql_command]
+      Library.system_or_error(command + [@url], :log => command + [sanitized_url])
     end
 
     def Db.attribute_values(path)
@@ -84,7 +83,7 @@ module SchemaEvolutionManager
       Preconditions.assert_class(path, String)
       Preconditions.check_state(File.exist?(path), "File[%s] not found" % path)
 
-      options = Db.attribute_values(path).join(" ")
+      options = Db.attribute_values(path)
 
       Library.with_temp_file(:prefix => File.basename(path)) do |tmp|
         File.open(tmp, "w") do |out|
@@ -92,15 +91,11 @@ module SchemaEvolutionManager
           out << IO.read(path)
         end
 
-        command = "#{@psql_executable_with_options} #{PSQL_ISOLATION_OPTIONS} --file \"%s\" #{options} %s" % [tmp, Shellwords.escape(@url)]
+        command = @psql_args + PSQL_ISOLATION_OPTIONS + ["--file", tmp] + options + [@url]
 
-        Library.with_temp_file do |output|
-          result = `#{command} > #{output} 2>&1`.strip
-          status = $?
-          if status.to_i > 0
-            errors = File.exist?(output) ? IO.read(output) : result
-            raise ScriptError.new(self, filename, path, errors)
-          end
+        output, status = Open3.capture2e(*command)
+        if !status.success?
+          raise ScriptError.new(self, filename, path, output)
         end
       end
     end

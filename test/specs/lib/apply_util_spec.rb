@@ -7,7 +7,7 @@ describe SchemaEvolutionManager::ApplyUtil do
     TestUtils.with_bootstrapped_db do |db|
       TestUtils.in_test_repo do
         File.open("new.sql", "w") { |out| out << sql }
-        SchemaEvolutionManager::Library.system_or_error("#{add} ./new.sql")
+        TestUtils.sh("#{add} ./new.sql")
         yield db
       end
     end
