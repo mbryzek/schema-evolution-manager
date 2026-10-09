@@ -25,7 +25,7 @@ dry_run = args.dry_run.nil? ? false : args.dry_run
 
 util = SchemaEvolutionManager::BaselineUtil.new(db, :dry_run => dry_run)
 
-puts "Baselining schema for #{db.url}"
+puts "Baselining schema for #{db.sanitized_url}"
 
 begin
   count = util.apply!(config.scripts_dir)

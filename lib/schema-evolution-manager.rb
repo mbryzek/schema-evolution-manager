@@ -1,7 +1,7 @@
 require 'fileutils'
 require 'pathname'
-require 'tempfile'
 require 'tmpdir'
+require 'securerandom'
 require 'shellwords'
 
 dir = File.dirname(__FILE__)
