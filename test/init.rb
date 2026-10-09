@@ -1,4 +1,5 @@
 load File.join(File.dirname(__FILE__), '../lib/schema-evolution-manager.rb')
+require 'uri'
 
 module TestUtils
 
@@ -24,45 +25,62 @@ module TestUtils
     "schema_evolution_manager_test_db_%s" % [rand(100000)]
   end
 
+  # Builds a config that is never connected to; the host cannot resolve, so
+  # an accidental connection fails rather than reaching a local server.
   def TestUtils.create_db_config(opts={})
     name = opts.delete(:name) || TestUtils.random_db_name
     SchemaEvolutionManager::Preconditions.check_state(opts.empty?)
-    SchemaEvolutionManager::Db.parse_command_line_config("--url postgresql://localhost:5432/#{name}")
+    SchemaEvolutionManager::Db.parse_command_line_config("--url postgresql://sem-test.invalid/#{name}")
   end
 
-  # The server the specs create their databases on. localhost:5432 unless
-  # SEM_TEST_PGHOST / SEM_TEST_PGPORT say otherwise; ci/build.sh points them at
+  # Variables holding a full server url, in order of precedence.
+  SERVER_URL_VARS = %w(SEM_TEST_DB_URL SEM_TEST_SERVER_URL CONF_DB_DEV_URL)
+
+  # Variables naming the server by host and port; ci/build.sh points them at
   # a container it starts for the run.
-  def TestUtils.db_host
-    ENV['SEM_TEST_PGHOST'].to_s.empty? ? "localhost" : ENV['SEM_TEST_PGHOST']
+  SERVER_HOST_VARS = %w(SEM_TEST_PGHOST SEM_TEST_PGPORT)
+
+  # URL of the server the DB-backed specs create throwaway databases on, with
+  # the database name replaced by +name+. Read from SEM_TEST_DB_URL, else
+  # SEM_TEST_SERVER_URL, else CONF_DB_DEV_URL (the jdbc form `dev db session
+  # start` prints is accepted), else SEM_TEST_PGHOST / SEM_TEST_PGPORT (port
+  # defaults to 5432). The role must be able to create databases; it defaults
+  # to postgres when the URL names none. There is deliberately no default server.
+  def TestUtils.server_url(name)
+    var = SERVER_URL_VARS.find { |v| !ENV[v].to_s.strip.empty? }
+    if var
+      TestUtils.parse_server_url(ENV[var].strip, name)
+    elsif !ENV["SEM_TEST_PGHOST"].to_s.strip.empty?
+      port = ENV["SEM_TEST_PGPORT"].to_s.strip.empty? ? SchemaEvolutionManager::ConnectionData::DEFAULT_PORT : ENV["SEM_TEST_PGPORT"].strip
+      TestUtils.parse_server_url("postgresql://postgres@#{ENV["SEM_TEST_PGHOST"].strip}:#{port}", name)
+    else
+      raise "DB-backed specs need a database server: set SEM_TEST_DB_URL (e.g. postgresql://postgres@localhost:<port>/postgres) " +
+            "or CONF_DB_DEV_URL (as printed by `dev db session start --app platform`)"
+    end
   end
 
-  def TestUtils.db_port
-    ENV['SEM_TEST_PGPORT'].to_s.empty? ? SchemaEvolutionManager::ConnectionData::DEFAULT_PORT : ENV['SEM_TEST_PGPORT'].to_i
-  end
-
-  # The postgresql server the specs create their databases on, as a url
-  # with no database name. SEM_TEST_SERVER_URL, when set, takes precedence
-  # over SEM_TEST_PGHOST / SEM_TEST_PGPORT, e.g.
-  #   SEM_TEST_SERVER_URL=postgresql://postgres@localhost:5433 ./run.rb
-  def TestUtils.server_url
-    url = ENV["SEM_TEST_SERVER_URL"].to_s.empty? ? "postgresql://postgres@#{TestUtils.db_host}:#{TestUtils.db_port}" : ENV["SEM_TEST_SERVER_URL"]
-    url.sub(/\/+$/, '')
+  def TestUtils.parse_server_url(raw, name)
+    uri = URI.parse(raw.sub(/\Ajdbc:/, ""))
+    unless %w(postgres postgresql).include?(uri.scheme.to_s.downcase) && uri.host
+      raise "Invalid database server url[%s]: expected postgresql://[user[:password]@]host[:port]/db" % raw.sub(/:[^:@\/]*@/, ":[REDACTED]@")
+    end
+    params = uri.query ? URI.decode_www_form(uri.query).to_h : {}
+    user = uri.user || params["user"] || "postgres"
+    password = uri.password || params["password"]
+    userinfo = password ? "#{user}:#{password}" : user
+    port = uri.port ? ":#{uri.port}" : ""
+    "postgresql://#{userinfo}@#{uri.host}#{port}/#{name}"
   end
 
   def TestUtils.with_db
-    superdb = SchemaEvolutionManager::Db.new("#{TestUtils.server_url}/postgres")
-    name = "schema_evolution_manager_test_db_%s" % [rand(100000)]
-    db = if !ENV["SEM_TEST_SERVER_URL"].to_s.empty?
-           SchemaEvolutionManager::Db.new("#{TestUtils.server_url}/#{name}")
-         else
-           SchemaEvolutionManager::Db.parse_command_line_config("--host #{TestUtils.db_host} --port #{TestUtils.db_port} --name #{name} --user postgres")
-         end
+    superdb = SchemaEvolutionManager::Db.new(TestUtils.server_url("postgres"))
+    name = TestUtils.random_db_name
+    db = SchemaEvolutionManager::Db.new(TestUtils.server_url(name))
     begin
       superdb.psql_command("create database #{name}")
       yield db
     ensure
-      superdb.psql_command("drop database #{name}")
+      superdb.psql_command("drop database if exists #{name}")
     end
   end
 

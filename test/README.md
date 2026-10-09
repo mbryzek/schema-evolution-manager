@@ -1,16 +1,20 @@
+# Database
+
+The DB-backed specs create and drop a throwaway database on a server you name:
+
+    export SEM_TEST_DB_URL=postgresql://postgres@localhost:<port>/postgres
+
+or `SEM_TEST_SERVER_URL` (same, database name optional), or `CONF_DB_DEV_URL`, which
+accepts the jdbc url `dev db session start --app platform` prints. Failing those,
+`SEM_TEST_PGHOST` / `SEM_TEST_PGPORT` name the host and port (ci/build.sh uses these).
+The role must be able to create databases and defaults to `postgres` when the url
+names none. There is no default server; with none set, the DB-backed specs fail and say so.
+
 # Run all specs:
 ./run.rb
 
-This will also install rspec into ../gems directory. Specs create their
-databases on postgresql://localhost:5432 unless SEM_TEST_SERVER_URL names
-another server (no database name), e.g.
-
-    SEM_TEST_SERVER_URL=postgresql://postgres@localhost:5433 ./run.rb
-
-Without SEM_TEST_SERVER_URL, SEM_TEST_PGHOST / SEM_TEST_PGPORT pick the host
-and port instead (ci/build.sh uses these).
+This will also install rspec into ../gems directory
 
 # Run a specific spec
 rspec specs/library_spec.rb
 rspec specs/library_spec.rb:12
-
