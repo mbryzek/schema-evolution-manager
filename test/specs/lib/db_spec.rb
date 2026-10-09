@@ -80,6 +80,34 @@ describe SchemaEvolutionManager::Db do
     end
   end
 
+  describe "psql_file_command" do
+
+    it "reads the original file with ON_ERROR_STOP set on the command line" do
+      TestUtils.in_test_repo_with_script do |path|
+        db = SchemaEvolutionManager::Db.new("postgres://localhost:5432/testdb")
+        args = db.psql_file_command(path)
+        args.should include("--set", "ON_ERROR_STOP=1", "--no-psqlrc")
+        args[args.index("--file") + 1].should == path
+      end
+    end
+
+    it "names no temp path" do
+      TestUtils.in_test_repo_with_script do |path|
+        db = SchemaEvolutionManager::Db.new("postgres://localhost:5432/testdb")
+        db.psql_file_command(path).join(" ").should_not include(SchemaEvolutionManager::Library::TMPFILE_DIR)
+      end
+    end
+
+    it "sets ON_ERROR_STOP after any caller --set so it cannot be overridden" do
+      TestUtils.in_test_repo_with_script do |path|
+        db = SchemaEvolutionManager::Db.new("postgres://localhost:5432/testdb", :set => ["ON_ERROR_STOP=0"])
+        command = db.psql_file_command(path)
+        command.index("ON_ERROR_STOP=1").should be > command.index("ON_ERROR_STOP=0")
+      end
+    end
+
+  end
+
   describe "psql isolation options" do
 
     it "psql_command passes --no-psqlrc and --no-password" do
@@ -106,6 +134,21 @@ describe SchemaEvolutionManager::Db do
       commands.first.split.should include("--no-psqlrc", "--no-password")
     end
 
+  end
+
+  it "psql_file reports the line number of an error as it is in the source file" do
+    TestUtils.with_db do |db|
+      sql = "select 1;\n\nselect * from psql_file_no_such_table;\n"
+      SchemaEvolutionManager::Library.write_to_temp_file(sql) do |path|
+        lambda {
+          db.psql_file("20130318-105434.sql", path)
+        }.should raise_error(SchemaEvolutionManager::ScriptError) { |e|
+          e.path.should == path
+          e.output.should include("psql:#{path}:3: ERROR")
+          e.output.should include("psql_file_no_such_table")
+        }
+      end
+    end
   end
 
   describe "schema_schema_evolution_manager_exists?" do

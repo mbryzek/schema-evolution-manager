@@ -78,26 +78,26 @@ module SchemaEvolutionManager
       options
     end
 
-    # executes sql commands from a file in a single transaction
+    # executes sql commands from a file in a single transaction.
+    # psql reads the original file, so the line numbers and path in
+    # any psql error match the file in git.
     def psql_file(filename, path)
       Preconditions.assert_class(path, String)
       Preconditions.check_state(File.exist?(path), "File[%s] not found" % path)
 
-      options = Db.attribute_values(path)
+      command = psql_file_command(path)
 
-      Library.with_temp_file(:prefix => File.basename(path)) do |tmp|
-        File.open(tmp, "w") do |out|
-          out << "\\set ON_ERROR_STOP true\n\n"
-          out << IO.read(path)
-        end
-
-        command = @psql_args + PSQL_ISOLATION_OPTIONS + ["--file", tmp] + options + [@url]
-
-        output, status = Open3.capture2e(*command)
-        if !status.success?
-          raise ScriptError.new(self, filename, path, output)
-        end
+      output, status = Open3.capture2e(*command)
+      if !status.success?
+        raise ScriptError.new(self, filename, path, output)
       end
+    end
+
+    # The psql argv psql_file runs. ON_ERROR_STOP is set on the
+    # command line, after any --set the caller passed, so it is in
+    # effect before the first line of the file is read.
+    def psql_file_command(path)
+      @psql_args + PSQL_ISOLATION_OPTIONS + ["--set", "ON_ERROR_STOP=1", "--file", path] + Db.attribute_values(path) + [@url]
     end
 
     # True if the specific schema exists; false otherwise

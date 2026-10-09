@@ -86,4 +86,28 @@ describe "Apply" do
       end
     end
   end
+
+  it "reports a failing script with psql's error at the line in the source file" do
+    add_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-add")
+    apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
+    output = status = script = nil
+
+    TestUtils.with_bootstrapped_db do |db|
+      TestUtils.in_test_repo do
+        File.open("broken.sql", "w") do |out|
+          out << "create table tmp (id integer);\n"
+          out << "\n"
+          out << "insert into no_such_table (id) values (1);\n"
+        end
+        SchemaEvolutionManager::Library.system_or_error([add_path, "./broken.sql"])
+        script = File.join(SchemaEvolutionManager::Config.load.scripts_dir, File.basename(Dir.glob("scripts/*.sql").first))
+        output, status = Open3.capture2e(apply_path, "--url", db.url)
+      end
+    end
+
+    status.exitstatus.should == 1
+    output.should include("ERROR applying script: #{script}")
+    output.should include("psql:#{script}:3: ERROR")
+    output.should include("no_such_table")
+  end
 end
