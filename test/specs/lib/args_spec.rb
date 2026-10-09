@@ -22,6 +22,12 @@ describe SchemaEvolutionManager::Args do
     args.dry_run.should be true
   end
 
+  it "keeps each element of an argv array as one value" do
+    args = SchemaEvolutionManager::Args.new(["--dir", "/tmp/a b's", "--artifact_name", "my db"], { :required => ['dir'], :optional => ['artifact_name'] })
+    args.dir.should == "/tmp/a b's"
+    args.artifact_name.should == "my db"
+  end
+
   it "handles full db config" do
     args = SchemaEvolutionManager::Args.new("--host localhost --port 5433 --name test --user mbryzek", { :required => %w(host port name user) })
     args.host.should == "localhost"

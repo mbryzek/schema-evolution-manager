@@ -12,8 +12,10 @@ module SchemaEvolutionManager
     def generate
       template = Template.new
       template.add('timestamp', Time.now.to_s)
-      template.add('lib_dir', @lib_dir)
-      template.add('bin_dir', @bin_dir)
+      # Inserted as Ruby string literals: the generated script runs under
+      # sudo, so a quote in the prefix must not end the literal
+      template.add('lib_dir', @lib_dir.inspect)
+      template.add('bin_dir', @bin_dir.inspect)
       template.parse(TEMPLATE)
     end
 
@@ -22,7 +24,7 @@ module SchemaEvolutionManager
       File.open(path, "w") do |out|
         out << generate
       end
-      Library.system_or_error("chmod +x %s" % path)
+      Library.system_or_error(["chmod", "--", "+x", path])
     end
 
     if !defined?(TEMPLATE)
@@ -35,8 +37,8 @@ module SchemaEvolutionManager
 load File.join(File.dirname(__FILE__), 'lib/schema-evolution-manager.rb')
 SchemaEvolutionManager::Library.set_verbose(true)
 
-lib_dir = '%%lib_dir%%'
-bin_dir = '%%bin_dir%%'
+lib_dir = %%lib_dir%%
+bin_dir = %%bin_dir%%
 version = SchemaEvolutionManager::Version.read
 
 version_name = "schema-evolution-manager-%s" % version.to_version_string
@@ -49,18 +51,18 @@ SchemaEvolutionManager::Library.ensure_dir!(bin_dir)
 Dir.chdir(lib_dir) do
   if File.exist?("schema-evolution-manager")
     if File.symlink?("schema-evolution-manager")
-      SchemaEvolutionManager::Library.system_or_error("rm schema-evolution-manager")
-      SchemaEvolutionManager::Library.system_or_error("ln -s %s %s" % [version_name, 'schema-evolution-manager'])
+      SchemaEvolutionManager::Library.system_or_error(["rm", "schema-evolution-manager"])
+      SchemaEvolutionManager::Library.system_or_error(["ln", "-s", version_name, "schema-evolution-manager"])
     else
       puts "*** WARNING: File[%s] already exists. Not creating symlink" % File.join(lib_dir, "schema-evolution-manager")
     end
   else
-    SchemaEvolutionManager::Library.system_or_error("ln -s %s %s" % [version_name, 'schema-evolution-manager'])
+    SchemaEvolutionManager::Library.system_or_error(["ln", "-s", version_name, "schema-evolution-manager"])
   end
 end
 
 ['CONVENTIONS.md', 'LICENSE', 'README.md', 'VERSION', 'install.sh'].each do |filename|
-  SchemaEvolutionManager::Library.system_or_error("cp %s %s" % [filename, version_dir])
+  SchemaEvolutionManager::Library.system_or_error(["cp", "--", filename, version_dir])
 end
 
 ['bin', 'lib', 'lib/schema-evolution-manager', 'template', 'scripts'].each do |dir|
@@ -69,9 +71,9 @@ end
   Dir.foreach(dir) do |filename|
     path = File.join(dir, filename)
     if File.file?(path)
-      SchemaEvolutionManager::Library.system_or_error("cp %s %s" % [path, this_dir])
+      SchemaEvolutionManager::Library.system_or_error(["cp", "--", path, this_dir])
       if dir == "bin" && filename != "sem-config"
-        SchemaEvolutionManager::Library.system_or_error("chmod +x %s/%s" % [this_dir, filename])
+        SchemaEvolutionManager::Library.system_or_error(["chmod", "--", "+x", File.join(this_dir, filename)])
       end
     end
   end
@@ -82,7 +84,8 @@ Dir.chdir(bin_dir) do
   Dir.foreach(aliased_bin_dir) do |filename|
     path = File.join(aliased_bin_dir, filename)
     if File.file?(path)
-      SchemaEvolutionManager::Library.system_or_error("rm -f %s && ln -s %s" % [filename, path])
+      SchemaEvolutionManager::Library.system_or_error(["rm", "-f", "--", filename])
+      SchemaEvolutionManager::Library.system_or_error(["ln", "-s", "--", path])
     end
   end
 end
@@ -91,7 +94,7 @@ end
 init_file = File.join(version_dir, "bin/sem-config")
 SchemaEvolutionManager::Preconditions.check_state(File.exist?(init_file), "Init file[%s] not found" % init_file)
 File.open(init_file, "w") do |out|
-  out << "load File.join('%s')\n" % File.join(version_dir, 'lib/schema-evolution-manager.rb')
+  out << "load %s\n" % File.join(version_dir, 'lib/schema-evolution-manager.rb').inspect
 end
 
 puts ""

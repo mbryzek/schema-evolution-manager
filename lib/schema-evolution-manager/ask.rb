@@ -54,7 +54,7 @@ module SchemaEvolutionManager
           input = STDIN.gets
           puts ""
         ensure
-          `stty #{settings}`
+          system("stty", settings)
         end
         input
       end

@@ -3,6 +3,17 @@ require 'uri'
 
 module TestUtils
 
+  # A directory name a shell would split or unquote: commands built
+  # from a path under it work only if every argument reaches its
+  # program intact
+  AWKWARD_DIRNAME = "sem repo's $HOME" unless defined?(AWKWARD_DIRNAME)
+
+  # Runs a shell command line. Test-only: library code passes an argv
+  # to Library.system_or_error and never reaches a shell
+  def TestUtils.sh(command)
+    SchemaEvolutionManager::Library.system_or_error(["/bin/sh", "-c", command])
+  end
+
   def TestUtils.with_bootstrapped_db
     TestUtils.with_db do |db|
       db.bootstrap!
@@ -22,20 +33,30 @@ module TestUtils
     SchemaEvolutionManager::Db.parse_command_line_config("--url postgresql://sem-test.invalid/#{name}")
   end
 
-  SERVER_URL_VARS = %w(SEM_TEST_DB_URL CONF_DB_DEV_URL)
+  # Variables holding a full server url, in order of precedence.
+  SERVER_URL_VARS = %w(SEM_TEST_DB_URL SEM_TEST_SERVER_URL CONF_DB_DEV_URL)
+
+  # Variables naming the server by host and port; ci/build.sh points them at
+  # a container it starts for the run.
+  SERVER_HOST_VARS = %w(SEM_TEST_PGHOST SEM_TEST_PGPORT)
 
   # URL of the server the DB-backed specs create throwaway databases on, with
   # the database name replaced by +name+. Read from SEM_TEST_DB_URL, else
-  # CONF_DB_DEV_URL (the jdbc form `dev db session start` prints is accepted).
-  # The role must be able to create databases; it defaults to postgres when
-  # the URL names none. There is deliberately no default server.
+  # SEM_TEST_SERVER_URL, else CONF_DB_DEV_URL (the jdbc form `dev db session
+  # start` prints is accepted), else SEM_TEST_PGHOST / SEM_TEST_PGPORT (port
+  # defaults to 5432). The role must be able to create databases; it defaults
+  # to postgres when the URL names none. There is deliberately no default server.
   def TestUtils.server_url(name)
     var = SERVER_URL_VARS.find { |v| !ENV[v].to_s.strip.empty? }
-    if var.nil?
+    if var
+      TestUtils.parse_server_url(ENV[var].strip, name)
+    elsif !ENV["SEM_TEST_PGHOST"].to_s.strip.empty?
+      port = ENV["SEM_TEST_PGPORT"].to_s.strip.empty? ? SchemaEvolutionManager::ConnectionData::DEFAULT_PORT : ENV["SEM_TEST_PGPORT"].strip
+      TestUtils.parse_server_url("postgresql://postgres@#{ENV["SEM_TEST_PGHOST"].strip}:#{port}", name)
+    else
       raise "DB-backed specs need a database server: set SEM_TEST_DB_URL (e.g. postgresql://postgres@localhost:<port>/postgres) " +
             "or CONF_DB_DEV_URL (as printed by `dev db session start --app platform`)"
     end
-    TestUtils.parse_server_url(ENV[var].strip, name)
   end
 
   def TestUtils.parse_server_url(raw, name)
@@ -65,10 +86,18 @@ module TestUtils
 
   # Creates a test repository for schema script
   # management. Initialized with a git repo.
-  def TestUtils.in_test_repo(&block)
+  #
+  # @param dirname: Optional name for the repository directory (see
+  #        AWKWARD_DIRNAME)
+  def TestUtils.in_test_repo(opts={}, &block)
+    dirname = opts.delete(:dirname)
+    SchemaEvolutionManager::Preconditions.assert_empty_opts(opts)
+
     SchemaEvolutionManager::Library.with_temp_file do |tmp|
-      SchemaEvolutionManager::Library.system_or_error("git init #{tmp}")
-      Dir.chdir(tmp) do
+      repo = dirname ? File.join(tmp, dirname) : tmp
+      FileUtils.mkdir_p(repo)
+      SchemaEvolutionManager::Library.system_or_error(["git", "init", "--quiet", repo])
+      Dir.chdir(repo) do
         yield
       end
     end
@@ -76,9 +105,9 @@ module TestUtils
 
   def TestUtils.in_test_repo_with_commit(&block)
     TestUtils.in_test_repo do
-      SchemaEvolutionManager::Library.system_or_error("echo 'test' > README.md")
-      SchemaEvolutionManager::Library.system_or_error("git add README.md")
-      SchemaEvolutionManager::Library.system_or_error("git commit -m 'test' README.md")
+      File.open("README.md", "w") { |out| out << "test\n" }
+      SchemaEvolutionManager::Library.system_or_error(["git", "add", "README.md"])
+      SchemaEvolutionManager::Library.system_or_error(["git", "commit", "-m", "test", "README.md"])
       yield
     end
   end

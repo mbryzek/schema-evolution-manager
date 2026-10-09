@@ -26,8 +26,9 @@ describe TestUtils do
   describe "server_url" do
 
     def with_env(values)
-      saved = TestUtils::SERVER_URL_VARS.map { |v| [v, ENV[v]] }.to_h
-      TestUtils::SERVER_URL_VARS.each { |v| ENV.delete(v) }
+      vars = TestUtils::SERVER_URL_VARS + TestUtils::SERVER_HOST_VARS
+      saved = vars.map { |v| [v, ENV[v]] }.to_h
+      vars.each { |v| ENV.delete(v) }
       values.each { |k, v| ENV[k] = v }
       yield
     ensure
@@ -49,6 +50,18 @@ describe TestUtils do
     it "falls back to CONF_DB_DEV_URL" do
       with_env("CONF_DB_DEV_URL" => "jdbc:postgresql://h2:2/d") do
         TestUtils.server_url("x").should == "postgresql://postgres@h2:2/x"
+      end
+    end
+
+    it "accepts SEM_TEST_SERVER_URL without a database name" do
+      with_env("SEM_TEST_SERVER_URL" => "postgresql://postgres@h3:5433/", "CONF_DB_DEV_URL" => "jdbc:postgresql://h2:2/d") do
+        TestUtils.server_url("x").should == "postgresql://postgres@h3:5433/x"
+      end
+    end
+
+    it "falls back to SEM_TEST_PGHOST / SEM_TEST_PGPORT" do
+      with_env("SEM_TEST_PGHOST" => "127.0.0.1", "SEM_TEST_PGPORT" => "55001") do
+        TestUtils.server_url("x").should == "postgresql://postgres@127.0.0.1:55001/x"
       end
     end
   end

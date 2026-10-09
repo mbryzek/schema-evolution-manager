@@ -10,12 +10,12 @@
 load File.join(File.dirname(__FILE__), '../lib/schema-evolution-manager.rb')
 SchemaEvolutionManager::Library.set_verbose(true)
 
-dirty_files = SchemaEvolutionManager::Library.system_or_error("git status --porcelain").strip
+dirty_files = SchemaEvolutionManager::Library.system_or_error(["git", "status", "--porcelain"]).strip
 SchemaEvolutionManager::Preconditions.check_state(dirty_files == "", "Local checkout is dirty:\n%s" % dirty_files)
 
 puts "Running Tests"
 Dir.chdir("test") do
-  SchemaEvolutionManager::Library.system_or_error("./run.rb")
+  SchemaEvolutionManager::Library.system_or_error(["./run.rb"])
 end
 puts "All tests passed"
 
@@ -58,12 +58,12 @@ end
 puts "Writing new_version[%s] to %s" % [new_version.to_version_string, SchemaEvolutionManager::Version::VERSION_FILE]
 SchemaEvolutionManager::Version.write(new_version)
 
-SchemaEvolutionManager::Library.system_or_error("git commit --allow-empty -m 'autocommit: Update version to %s' VERSION README.md %s" % [new_version.to_version_string, sem_version_path])
+SchemaEvolutionManager::Library.system_or_error(["git", "commit", "--allow-empty", "-m", "autocommit: Update version to %s" % new_version.to_version_string, "VERSION", "README.md", sem_version_path])
 
 puts "Creating git tag[%s]" % new_version.to_version_string
-SchemaEvolutionManager::Library.system_or_error("git tag -a -m '%s' %s" % [new_version.to_version_string, new_version.to_version_string])
+SchemaEvolutionManager::Library.system_or_error(["git", "tag", "-a", "-m", new_version.to_version_string, new_version.to_version_string])
 
-SchemaEvolutionManager::Library.system_or_error("gem build schema-evolution-manager.gemspec")
+SchemaEvolutionManager::Library.system_or_error(["gem", "build", "schema-evolution-manager.gemspec"])
 
 puts "Release tag[%s] created. Need to:" % new_version.to_version_string
 puts "  git push origin"
