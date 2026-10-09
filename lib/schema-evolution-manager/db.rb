@@ -66,30 +66,31 @@ module SchemaEvolutionManager
       options
     end
 
-    # executes sql commands from a file in a single transaction
+    # executes sql commands from a file in a single transaction.
+    # psql reads the original file, so the line numbers and path in
+    # any psql error match the file in git.
     def psql_file(filename, path)
       Preconditions.assert_class(path, String)
       Preconditions.check_state(File.exist?(path), "File[%s] not found" % path)
 
-      options = Db.attribute_values(path).join(" ")
+      command = psql_file_command(path)
 
-      Library.with_temp_file(:prefix => File.basename(path)) do |tmp|
-        File.open(tmp, "w") do |out|
-          out << "\\set ON_ERROR_STOP true\n\n"
-          out << IO.read(path)
-        end
-
-        command = "#{@psql_executable_with_options} --file \"%s\" #{options} %s" % [tmp, Shellwords.escape(@url)]
-
-        Library.with_temp_file do |output|
-          result = `#{command} > #{output} 2>&1`.strip
-          status = $?
-          if status.to_i > 0
-            errors = File.exist?(output) ? IO.read(output) : result
-            raise ScriptError.new(self, filename, path, errors)
-          end
+      Library.with_temp_file do |output|
+        result = `#{command} > #{output} 2>&1`.strip
+        status = $?
+        if status.to_i > 0
+          errors = File.exist?(output) ? IO.read(output) : result
+          raise ScriptError.new(self, filename, path, errors)
         end
       end
+    end
+
+    # The psql command psql_file runs. ON_ERROR_STOP is set on the
+    # command line, after any --set the caller passed, so it is in
+    # effect before the first line of the file is read.
+    def psql_file_command(path)
+      options = Db.attribute_values(path).join(" ")
+      "#{@psql_executable_with_options} --set ON_ERROR_STOP=1 --no-psqlrc --file %s #{options} %s" % [Shellwords.escape(path), Shellwords.escape(@url)]
     end
 
     # True if the specific schema exists; false otherwise
