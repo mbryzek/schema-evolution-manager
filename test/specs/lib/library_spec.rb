@@ -273,7 +273,7 @@ describe SchemaEvolutionManager::Library do
     it "does not match a tag that only contains the name" do
       create_repo_with_commit do
         SchemaEvolutionManager::Library.git_create_tag("1.0.10")
-        SchemaEvolutionManager::Library.system_or_error("git tag -a -m 'test' v2.0.0")
+        SchemaEvolutionManager::Library.system_or_error(["git", "tag", "-a", "-m", "test", "v2.0.0"])
         SchemaEvolutionManager::Library.tag_exists?("1.0.10").should be true
         SchemaEvolutionManager::Library.tag_exists?("1.0.1").should be false
         SchemaEvolutionManager::Library.tag_exists?("2.0.0").should be false
