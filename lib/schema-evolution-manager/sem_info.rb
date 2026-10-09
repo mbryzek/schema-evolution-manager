@@ -19,7 +19,7 @@ module SchemaEvolutionManager
         exit(4)
       end
 
-      db_args = SchemaEvolutionManager::Args.new(args.join(" "), :optional => ['url', 'host', 'user', 'name', 'port', 'set'])
+      db_args = SchemaEvolutionManager::Args.new(args, :optional => ['url', 'host', 'user', 'name', 'port', 'set'])
 
       if db_args.url.to_s.strip.empty? && db_args.name.to_s.strip.empty?
         $stderr.puts "ERROR: Missing database connection. Provide --url <postgres url> or --host/--name."

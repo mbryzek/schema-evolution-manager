@@ -30,6 +30,35 @@ describe SchemaEvolutionManager::Library do
     end
   end
 
+  it "generates string literals a quote in the prefix cannot end" do
+    lib_dir = "/tmp/a b's \"x\" \#{exit}"
+    contents = SchemaEvolutionManager::InstallTemplate.new(:lib_dir => lib_dir, :bin_dir => "/tmp/bin").generate
+    contents.should include("lib_dir = %s\n" % lib_dir.inspect)
+    eval(lib_dir.inspect).should == lib_dir
+  end
+
+  it "written file installs into a prefix whose path a shell would split" do
+    Dir.chdir(SchemaEvolutionManager::Library.base_dir) do
+      install_file = "unit_test_install_awkward.#{Process.pid}.rb"
+      SchemaEvolutionManager::Library.with_temp_file do |tmp|
+        dir = File.join(tmp, TestUtils::AWKWARD_DIRNAME)
+        bin_dir = File.join(dir, "bin")
+        template = SchemaEvolutionManager::InstallTemplate.new(:lib_dir => dir, :bin_dir => bin_dir)
+        begin
+          template.write_to_file(install_file)
+          SchemaEvolutionManager::Library.system_or_error(["./%s" % install_file])
+          version_dir = "schema-evolution-manager-%s" % [SchemaEvolutionManager::Version.read.to_version_string]
+          File.readlink(File.join(dir, "schema-evolution-manager")).should == version_dir
+          File.symlink?(File.join(bin_dir, "sem-add")).should be true
+          File.executable?(File.join(dir, version_dir, "bin", "sem-add")).should be true
+          IO.read(File.join(dir, version_dir, "bin", "sem-config")).should include(File.join(dir, version_dir).inspect[0..-2])
+        ensure
+          File.delete(install_file) if File.exist?(install_file)
+        end
+      end
+    end
+  end
+
   it "written file installs correctly" do
     Dir.chdir(SchemaEvolutionManager::Library.base_dir) do
       install_file = "unit_test_install.#{Process.pid}.rb"
@@ -44,7 +73,7 @@ describe SchemaEvolutionManager::Library do
         begin
           template.write_to_file(install_file)
           File.exist?(install_file).should be true
-          SchemaEvolutionManager::Library.system_or_error("./%s" % install_file)
+          TestUtils.sh("./%s" % install_file)
           File.directory?(dir).should be true
           version_dir = "schema-evolution-manager-%s" % [SchemaEvolutionManager::Version.read.to_version_string]
           File.symlink?(File.join(dir, "schema-evolution-manager")).should be true

@@ -6,6 +6,18 @@ module SchemaEvolutionManager
       SCRIPTS = "scripts"
       BOOTSTRAP_SCRIPTS = "bootstrap_scripts"
       VALID_TABLE_NAMES = [BOOTSTRAP_SCRIPTS, SCRIPTS]
+      # A script basename is interpolated into SQL and passed to psql, so
+      # nothing outside this pattern may reach a query or be applied.
+      VALID_FILENAME = /\A\d{6,}-\d{6}\.sql\z/
+    end
+
+    # Raises unless filename follows the naming convention
+    # (e.g. 20120503-173242.sql). Returns the filename.
+    def Scripts.assert_valid_filename!(filename)
+      Preconditions.assert_class(filename, String)
+      Preconditions.check_state(VALID_FILENAME.match?(filename),
+                                "Invalid filename[#{filename}]. Must be like: 20120503-173242.sql")
+      filename
     end
 
     # @param db Instance of Db class
@@ -41,7 +53,7 @@ module SchemaEvolutionManager
     def each_pending(dir)
       files = {}
       Scripts.all(dir).each do |path|
-        name = File.basename(path)
+        name = Scripts.assert_valid_filename!(File.basename(path))
         files[name] = path
       end
 
@@ -63,8 +75,9 @@ module SchemaEvolutionManager
     # True if this script has already been applied to the db. False
     # otherwise.
     def has_run?(filename)
+      Scripts.assert_valid_filename!(filename)
       if @db.schema_schema_evolution_manager_exists?
-        query = "select count(*) from %s.%s where filename = '%s'" % [Db.schema_name, @table_name, filename]
+        query = "select count(*) from %s.%s where filename = %s" % [Db.schema_name, @table_name, Db.quote_literal(filename)]
         @db.psql_command(query).to_i > 0
       else
         false
@@ -73,9 +86,8 @@ module SchemaEvolutionManager
 
     # Inserts a record to indiciate that we have loaded the specified file.
     def record_as_run!(filename)
-      Preconditions.check_state(filename.match(/^\d\d\d\d\d\d+\-\d\d\d\d\d\d\.sql$/),
-                                "Invalid filename[#{filename}]. Must be like: 20120503-173242.sql")
-      command = "insert into %s.%s (filename) select '%s' where not exists (select 1 from %s.%s where filename = '%s')" % [Db.schema_name, @table_name, filename, Db.schema_name, @table_name, filename]
+      literal = Db.quote_literal(Scripts.assert_valid_filename!(filename))
+      command = "insert into %s.%s (filename) select %s where not exists (select 1 from %s.%s where filename = %s)" % [Db.schema_name, @table_name, literal, Db.schema_name, @table_name, literal]
       @db.psql_command(command)
     end
 
@@ -96,7 +108,8 @@ module SchemaEvolutionManager
       if scripts.empty? || !@db.schema_schema_evolution_manager_exists?
         []
       else
-        sql = "select filename from %s.%s where filename in (%s)" % [Db.schema_name, @table_name, "'" + scripts.join("', '") + "'"]
+        literals = scripts.map { |name| Db.quote_literal(Scripts.assert_valid_filename!(name)) }
+        sql = "select filename from %s.%s where filename in (%s)" % [Db.schema_name, @table_name, literals.join(", ")]
         @db.psql_command(sql).strip.split
       end
     end

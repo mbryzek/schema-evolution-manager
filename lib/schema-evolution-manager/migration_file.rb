@@ -42,6 +42,7 @@ module SchemaEvolutionManager
 
     unless defined?(DEFAULTS)
       DEFAULTS = [AttributeValue.new("transaction", "single")]
+      PROPERTY_PREFIX = /^\-\-\s+sem\.attribute\./
     end
 
     attr_reader :path, :attribute_values
@@ -86,11 +87,8 @@ module SchemaEvolutionManager
       File.foreach(path, mode: "rb") do |raw|
         line = raw.force_encoding("UTF-8")
         line = line.scrub unless line.valid_encoding?
-        stripped = line.strip
-        if stripped.match(/^\-\-\s+sem\.attribute\./)
-          stripped.sub!(/^\-\-\s+sem\.attribute\./, '')
-          name, value = stripped.split(/\=/, 2).map(&:strip)
-          yield name, value
+        if property = Library.parse_property(line, PROPERTY_PREFIX)
+          yield property[0], property[1]
         end
       end
     end

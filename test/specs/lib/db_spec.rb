@@ -4,7 +4,7 @@ describe SchemaEvolutionManager::Db do
 
   it "SchemaEvolutionManager::Db.parse_command_line_config" do
     db = TestUtils.create_db_config(:name => "test")
-    db.url.should == "postgresql://localhost:#{TestUtils::PORT}/test"
+    db.url.should == "postgresql://sem-test.invalid/test"
   end
 
   it "SchemaEvolutionManager::Db.schema_name" do
@@ -48,6 +48,22 @@ describe SchemaEvolutionManager::Db do
     end
   end
 
+  it "SchemaEvolutionManager::Db.quote_literal" do
+    SchemaEvolutionManager::Db.quote_literal("abc").should == "'abc'"
+    SchemaEvolutionManager::Db.quote_literal("a'b''c").should == "'a''b''''c'"
+  end
+
+  it "psql_command passes the sql to psql as one argument, never through the shell" do
+    db = SchemaEvolutionManager::Db.new("postgresql://localhost:5432/unused")
+    commands = []
+    SchemaEvolutionManager::Library.stub(:system_or_error) { |command, _| commands << command; "" }
+    sql = %q{select '"$(touch sem-pwned)"', `id`, $HOME, "quoted"}
+    db.psql_command(sql)
+    commands.size.should == 1
+    argv = Shellwords.split(commands.first)
+    argv[argv.index("--command") + 1].should == sql
+  end
+
   it "psql_command" do
     TestUtils.with_db do |db|
       db.psql_command("select 10").should == "10"
@@ -69,7 +85,7 @@ describe SchemaEvolutionManager::Db do
     it "reads the original file with ON_ERROR_STOP set on the command line" do
       TestUtils.in_test_repo_with_script do |path|
         db = SchemaEvolutionManager::Db.new("postgres://localhost:5432/testdb")
-        args = db.psql_file_command(path).split
+        args = db.psql_file_command(path)
         args.should include("--set", "ON_ERROR_STOP=1", "--no-psqlrc")
         args[args.index("--file") + 1].should == path
       end
@@ -78,7 +94,7 @@ describe SchemaEvolutionManager::Db do
     it "names no temp path" do
       TestUtils.in_test_repo_with_script do |path|
         db = SchemaEvolutionManager::Db.new("postgres://localhost:5432/testdb")
-        db.psql_file_command(path).should_not include(SchemaEvolutionManager::Library::TMPFILE_DIR)
+        db.psql_file_command(path).join(" ").should_not include(SchemaEvolutionManager::Library::TMPFILE_DIR)
       end
     end
 
@@ -160,18 +176,23 @@ describe SchemaEvolutionManager::Db do
     def setup(value)
       db = SchemaEvolutionManager::Db.parse_command_line_config("--url postgresql://localhost:5432/testdb #{value}")
       puts "DB: " + db.inspect
-      db.psql_executable_with_options
+      db.psql_args
     end
 
-    setup("").should == "psql"
-    setup("--set foo=bar").should == "psql --set foo=bar"
-    setup("--set foo=bar --set a=b").should == "psql --set foo=bar --set a=b"
+    setup("").should == ["psql"]
+    setup("--set foo=bar").should == ["psql", "--set", "foo=bar"]
+    setup("--set foo=bar --set a=b").should == ["psql", "--set", "foo=bar", "--set", "a=b"]
+  end
+
+  it "set argument keeps a value with shell metacharacters as one argument" do
+    db = SchemaEvolutionManager::Db.new("postgresql://localhost:5432/testdb", :set => ["a=x y;$(id)"])
+    db.psql_args.should == ["psql", "--set", "a=x y;$(id)"]
   end
 
   describe "sanitized_url" do
     it "removes password from URL with username:password format" do
       db = SchemaEvolutionManager::Db.new("postgres://user:secret123@localhost:5432/testdb")
-      db.sanitized_url.should == "postgres://user:[REDACTED]@localhost:5432/testdb"
+      db.sanitized_url.should == "postgres://user@localhost:5432/testdb"
     end
 
     it "preserves URL when no password is present" do
@@ -186,12 +207,99 @@ describe SchemaEvolutionManager::Db do
 
     it "handles complex passwords with special characters" do
       db = SchemaEvolutionManager::Db.new("postgres://user:pa$$w0rd@localhost:5432/testdb")
-      db.sanitized_url.should == "postgres://user:[REDACTED]@localhost:5432/testdb"
+      db.sanitized_url.should == "postgres://user@localhost:5432/testdb"
     end
 
     it "handles URLs with port numbers and complex passwords" do
       db = SchemaEvolutionManager::Db.new("postgres://user:complex:password@localhost:5432/testdb")
-      db.sanitized_url.should == "postgres://user:[REDACTED]@localhost:5432/testdb"
+      db.sanitized_url.should == "postgres://user@localhost:5432/testdb"
+    end
+  end
+
+  describe "password in the url" do
+    url = "postgres://user:s3cret@localhost:1/db"
+
+    it "is removed from url" do
+      SchemaEvolutionManager::Db.new(url).url.should == "postgres://user@localhost:1/db"
+    end
+
+    it "is written to the pgpass file" do
+      SchemaEvolutionManager::Db.new(url)
+      IO.read(ENV['PGPASSFILE']).should == "localhost:1:db:user:s3cret"
+      (File.stat(ENV['PGPASSFILE']).mode & 0777).should == 0600
+    end
+
+    it "is percent-decoded and escaped in the pgpass file" do
+      SchemaEvolutionManager::Db.new("postgres://user:p%40ss:w@localhost:1/db?sslmode=require")
+      IO.read(ENV['PGPASSFILE']).should == "localhost:1:db:user:p@ss\\:w"
+    end
+
+    it "is overridden by an explicit password" do
+      SchemaEvolutionManager::Db.new(url, :password => "other")
+      IO.read(ENV['PGPASSFILE']).should == "localhost:1:db:user:other"
+    end
+
+    it "never reaches the psql command line, a log line or an error" do
+      db = SchemaEvolutionManager::Db.new(url)
+      commands = []
+      backtick = SchemaEvolutionManager::Library.method(:`)
+      SchemaEvolutionManager::Library.define_singleton_method(:`) do |cmd|
+        commands << cmd
+        backtick.call(cmd)
+      end
+      SchemaEvolutionManager::Library.set_verbose(true)
+      begin
+        error = nil
+        output = capture_stdout do
+          begin
+            db.psql_command("select 1")
+          rescue => e
+            error = e
+          end
+        end
+        error.should_not be_nil
+        error.message.should include("postgres://user@localhost:1/db")
+        error.message.should_not include("s3cret")
+        output.should_not include("s3cret")
+        commands.size.should == 1
+        commands.first.should_not include("s3cret")
+      ensure
+        SchemaEvolutionManager::Library.set_verbose(false)
+        SchemaEvolutionManager::Library.singleton_class.send(:remove_method, :`)
+      end
+    end
+
+    it "is not in an invalid url error" do
+      lambda {
+        SchemaEvolutionManager::Db.new("postgres://user:s3cret@localhost")
+      }.should raise_error(RuntimeError, "Invalid url[postgres://user:[REDACTED]@localhost]. Missing database name")
+    end
+  end
+
+  def capture_stdout
+    original = $stdout
+    $stdout = StringIO.new
+    yield
+    $stdout.string
+  ensure
+    $stdout = original
+  end
+
+  describe "Db.password_to_tempfile" do
+    it "writes a 0600 file in the private temp dir that survives garbage collection" do
+      path = SchemaEvolutionManager::Db.password_to_tempfile("localhost:5432:db:user:secret")
+      GC.start
+      File.exist?(path).should == true
+      IO.read(path).should == "localhost:5432:db:user:secret"
+      (File.stat(path).mode & 0777).should == 0600
+      File.dirname(path).should == SchemaEvolutionManager::Library::TMPFILE_DIR
+    end
+
+    it "gives each call its own file" do
+      a = SchemaEvolutionManager::Db.password_to_tempfile("a")
+      b = SchemaEvolutionManager::Db.password_to_tempfile("b")
+      a.should_not == b
+      IO.read(a).should == "a"
     end
   end
 
