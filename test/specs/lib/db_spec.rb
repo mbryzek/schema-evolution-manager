@@ -48,6 +48,22 @@ describe SchemaEvolutionManager::Db do
     end
   end
 
+  it "SchemaEvolutionManager::Db.quote_literal" do
+    SchemaEvolutionManager::Db.quote_literal("abc").should == "'abc'"
+    SchemaEvolutionManager::Db.quote_literal("a'b''c").should == "'a''b''''c'"
+  end
+
+  it "psql_command passes the sql to psql as one argument, never through the shell" do
+    db = SchemaEvolutionManager::Db.new("postgresql://localhost:5432/unused")
+    commands = []
+    SchemaEvolutionManager::Library.stub(:system_or_error) { |command, _| commands << command; "" }
+    sql = %q{select '"$(touch sem-pwned)"', `id`, $HOME, "quoted"}
+    db.psql_command(sql)
+    commands.size.should == 1
+    argv = Shellwords.split(commands.first)
+    argv[argv.index("--command") + 1].should == sql
+  end
+
   it "psql_command" do
     TestUtils.with_db do |db|
       db.psql_command("select 10").should == "10"
@@ -62,6 +78,34 @@ describe SchemaEvolutionManager::Db do
       end
       db.psql_command("select id from psql_file_test").should == "10"
     end
+  end
+
+  describe "psql isolation options" do
+
+    it "psql_command passes --no-psqlrc and --no-password" do
+      db = SchemaEvolutionManager::Db.new("postgres://localhost:5432/testdb")
+      commands = []
+      SchemaEvolutionManager::Library.should_receive(:system_or_error) { |command, _| commands << command; "" }
+      db.psql_command("select 1")
+      commands.size.should == 1
+      commands.first.split.should include("--no-psqlrc", "--no-password")
+    end
+
+    it "psql_file passes --no-psqlrc and --no-password" do
+      db = SchemaEvolutionManager::Db.new("postgres://localhost:5432/testdb")
+      commands = []
+      db.define_singleton_method(:`) do |command|
+        commands << command
+        system("true")
+        ""
+      end
+      SchemaEvolutionManager::Library.write_to_temp_file("select 1;") do |path|
+        db.psql_file("20130318-105434.sql", path)
+      end
+      commands.size.should == 1
+      commands.first.split.should include("--no-psqlrc", "--no-password")
+    end
+
   end
 
   describe "schema_schema_evolution_manager_exists?" do
@@ -133,18 +177,18 @@ describe SchemaEvolutionManager::Db do
 
     it "is written to the pgpass file" do
       SchemaEvolutionManager::Db.new(url)
-      IO.read(ENV['PGPASSFILE']).should == "localhost:1:db:user:s3cret\n"
+      IO.read(ENV['PGPASSFILE']).should == "localhost:1:db:user:s3cret"
       (File.stat(ENV['PGPASSFILE']).mode & 0777).should == 0600
     end
 
     it "is percent-decoded and escaped in the pgpass file" do
       SchemaEvolutionManager::Db.new("postgres://user:p%40ss:w@localhost:1/db?sslmode=require")
-      IO.read(ENV['PGPASSFILE']).should == "localhost:1:db:user:p@ss\\:w\n"
+      IO.read(ENV['PGPASSFILE']).should == "localhost:1:db:user:p@ss\\:w"
     end
 
     it "is overridden by an explicit password" do
       SchemaEvolutionManager::Db.new(url, :password => "other")
-      IO.read(ENV['PGPASSFILE']).should == "localhost:1:db:user:other\n"
+      IO.read(ENV['PGPASSFILE']).should == "localhost:1:db:user:other"
     end
 
     it "never reaches the psql command line, a log line or an error" do
@@ -191,6 +235,24 @@ describe SchemaEvolutionManager::Db do
     $stdout.string
   ensure
     $stdout = original
+  end
+
+  describe "Db.password_to_tempfile" do
+    it "writes a 0600 file in the private temp dir that survives garbage collection" do
+      path = SchemaEvolutionManager::Db.password_to_tempfile("localhost:5432:db:user:secret")
+      GC.start
+      File.exist?(path).should == true
+      IO.read(path).should == "localhost:5432:db:user:secret"
+      (File.stat(path).mode & 0777).should == 0600
+      File.dirname(path).should == SchemaEvolutionManager::Library::TMPFILE_DIR
+    end
+
+    it "gives each call its own file" do
+      a = SchemaEvolutionManager::Db.password_to_tempfile("a")
+      b = SchemaEvolutionManager::Db.password_to_tempfile("b")
+      a.should_not == b
+      IO.read(a).should == "a"
+    end
   end
 
 end

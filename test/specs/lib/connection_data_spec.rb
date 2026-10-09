@@ -38,5 +38,11 @@ describe SchemaEvolutionManager::ConnectionData do
       SchemaEvolutionManager::ConnectionData.parse_url("postgres://u:secret@db.com:abc/test_db")
     }.should raise_error(RuntimeError, "Invalid url[postgres://u:[REDACTED]@db.com:abc/test_db]. Expected database port[abc] to be an integer")
   end
-    
+
+  it "pgpass escapes colon and backslash in every field" do
+    SchemaEvolutionManager::ConnectionData.parse_url("postgres://user1@db.com:5553/test_db").pgpass("a:b").should == "db.com:5553:test_db:user1:a\\:b"
+    SchemaEvolutionManager::ConnectionData.parse_url("postgres://user1@db.com:5553/test_db").pgpass("a\\b").should == "db.com:5553:test_db:user1:a\\\\b"
+    SchemaEvolutionManager::ConnectionData.parse_url("postgres://user1@db.com:5553/te:st").pgpass("x").should == "db.com:5553:te\\:st:user1:x"
+  end
+
 end

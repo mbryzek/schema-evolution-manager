@@ -23,6 +23,7 @@ password = if args.password
              nil
            end
 
+config = SchemaEvolutionManager::Config.load
 db = SchemaEvolutionManager::Db.from_args(args, :password => password)
 util = SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => args.dry_run || false)
 
@@ -30,12 +31,12 @@ begin
   db.bootstrap!
 
   puts "Upgrading schema for #{db.sanitized_url}"
-  count = util.apply!("./scripts")
+  count = util.apply!(config.scripts_dir)
   if count == 0
     puts "  All scripts have been previously applied"
   end
 
-  version_file = "./VERSION"
+  version_file = File.join(config.base_dir, "VERSION")
   if !util.dry_run? && File.exist?(version_file)
     version = IO.read(version_file).strip
     if !version.empty?
