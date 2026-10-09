@@ -9,7 +9,7 @@ module SchemaEvolutionManager
     # user's ~/.psqlrc (and the system psqlrc) out of every command and
     # migration; --no-password makes a missing credential fail rather than
     # prompt, so an unattended apply can never hang.
-    PSQL_ISOLATION_OPTIONS = ["--no-psqlrc", "--no-password"]
+    PSQL_ISOLATION_OPTIONS = ["--no-psqlrc", "--no-password"].freeze unless defined?(PSQL_ISOLATION_OPTIONS)
 
     # A password embedded in the url (postgres://user:pass@host/db) is moved
     # into a private pgpass file and @url keeps only the password-free form,

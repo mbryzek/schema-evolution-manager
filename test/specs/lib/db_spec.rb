@@ -60,7 +60,7 @@ describe SchemaEvolutionManager::Db do
     sql = %q{select '"$(touch sem-pwned)"', `id`, $HOME, "quoted"}
     db.psql_command(sql)
     commands.size.should == 1
-    argv = Shellwords.split(commands.first)
+    argv = commands.first
     argv[argv.index("--command") + 1].should == sql
   end
 
@@ -88,22 +88,19 @@ describe SchemaEvolutionManager::Db do
       SchemaEvolutionManager::Library.should_receive(:system_or_error) { |command, _| commands << command; "" }
       db.psql_command("select 1")
       commands.size.should == 1
-      commands.first.split.should include("--no-psqlrc", "--no-password")
+      commands.first.should include("--no-psqlrc", "--no-password")
     end
 
     it "psql_file passes --no-psqlrc and --no-password" do
       db = SchemaEvolutionManager::Db.new("postgres://localhost:5432/testdb")
       commands = []
-      db.define_singleton_method(:`) do |command|
-        commands << command
-        system("true")
-        ""
-      end
+      success = Open3.capture2e("true").last
+      allow(Open3).to receive(:capture2e) { |*command| commands << command; ["", success] }
       SchemaEvolutionManager::Library.write_to_temp_file("select 1;") do |path|
         db.psql_file("20130318-105434.sql", path)
       end
       commands.size.should == 1
-      commands.first.split.should include("--no-psqlrc", "--no-password")
+      commands.first.should include("--no-psqlrc", "--no-password")
     end
 
   end
@@ -199,11 +196,7 @@ describe SchemaEvolutionManager::Db do
     it "never reaches the psql command line, a log line or an error" do
       db = SchemaEvolutionManager::Db.new(url)
       commands = []
-      backtick = SchemaEvolutionManager::Library.method(:`)
-      SchemaEvolutionManager::Library.define_singleton_method(:`) do |cmd|
-        commands << cmd
-        backtick.call(cmd)
-      end
+      allow(Open3).to receive(:capture2).and_wrap_original { |original, *args| commands << args; original.call(*args) }
       SchemaEvolutionManager::Library.set_verbose(true)
       begin
         error = nil
@@ -219,10 +212,9 @@ describe SchemaEvolutionManager::Db do
         error.message.should_not include("s3cret")
         output.should_not include("s3cret")
         commands.size.should == 1
-        commands.first.should_not include("s3cret")
+        commands.first.inspect.should_not include("s3cret")
       ensure
         SchemaEvolutionManager::Library.set_verbose(false)
-        SchemaEvolutionManager::Library.singleton_class.send(:remove_method, :`)
       end
     end
 
