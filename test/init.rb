@@ -30,11 +30,23 @@ module TestUtils
     ENV['SEM_TEST_PGPORT'].to_s.empty? ? SchemaEvolutionManager::ConnectionData::DEFAULT_PORT : ENV['SEM_TEST_PGPORT'].to_i
   end
 
+  # The postgresql server the specs create their databases on, as a url
+  # with no database name. SEM_TEST_SERVER_URL, when set, takes precedence
+  # over SEM_TEST_PGHOST / SEM_TEST_PGPORT, e.g.
+  #   SEM_TEST_SERVER_URL=postgresql://postgres@localhost:5433 ./run.rb
+  def TestUtils.server_url
+    url = ENV["SEM_TEST_SERVER_URL"].to_s.empty? ? "postgresql://postgres@#{TestUtils.db_host}:#{TestUtils.db_port}" : ENV["SEM_TEST_SERVER_URL"]
+    url.sub(/\/+$/, '')
+  end
 
   def TestUtils.with_db
-    superdb = SchemaEvolutionManager::Db.new("postgresql://postgres@#{TestUtils.db_host}:#{TestUtils.db_port}/postgres")
+    superdb = SchemaEvolutionManager::Db.new("#{TestUtils.server_url}/postgres")
     name = "schema_evolution_manager_test_db_%s" % [rand(100000)]
-    db = SchemaEvolutionManager::Db.parse_command_line_config("--host #{TestUtils.db_host} --port #{TestUtils.db_port} --name #{name} --user postgres")
+    db = if !ENV["SEM_TEST_SERVER_URL"].to_s.empty?
+           SchemaEvolutionManager::Db.new("#{TestUtils.server_url}/#{name}")
+         else
+           SchemaEvolutionManager::Db.parse_command_line_config("--host #{TestUtils.db_host} --port #{TestUtils.db_port} --name #{name} --user postgres")
+         end
     begin
       superdb.psql_command("create database #{name}")
       yield db
