@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/mbryzek/schema-evolution-manager.svg?branch=main)](https://travis-ci.org/mbryzek/schema-evolution-manager)
-
 # Schema Evolution Manager (sem)
 
 ## Intended Audience
@@ -41,6 +39,24 @@ an increase in the reliability of our production schema deploys across
 dozens of independent postgresql databases.
 
 See INSTALLATION and GETTING STARTED for details.
+
+
+## Why sem
+
+sem is deliberately small. A schema change is a plain SQL file, named
+by the timestamp it was added, committed to git next to every other
+change to that database. There is no migration DSL, no down
+migrations, and no runtime dependency beyond ruby, git and psql.
+
+Applying changes is psql running each file in order inside a
+transaction, and recording the filename in one table. Because psql
+does the work, anything that runs in psql runs in sem: plpgsql,
+extensions, data fixes, large backfills.
+
+If you want a tool that generates SQL from a model, or that rolls
+schema changes back for you, sem is the wrong choice. If you want the
+SQL you wrote to be the SQL that runs, and a plain record of what ran
+where, it is a good fit.
 
 
 ## Project Goals
@@ -235,6 +251,18 @@ There are two recommended ways in which to pass user passwords to psql:
     Example:
 
         sem-apply --url postgresql://postgres@localhost/sample --password
+
+### Running inside the postgres Docker image
+
+The official postgres image runs the scripts in
+docker-entrypoint-initdb.d before the server listens on TCP. During
+that phase postgres accepts connections only on its unix socket, so a
+URL naming localhost is refused. Leave the host out of the URL and
+libpq connects over the socket:
+
+    sem-apply --url postgresql://$POSTGRES_USER@/$POSTGRES_DB
+
+No password is needed on the socket during initialization.
 
 ### Apply the changes
 
