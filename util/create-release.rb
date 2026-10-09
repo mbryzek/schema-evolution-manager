@@ -13,10 +13,10 @@ SchemaEvolutionManager::Library.set_verbose(true)
 dirty_files = SchemaEvolutionManager::Library.system_or_error(["git", "status", "--porcelain"]).strip
 SchemaEvolutionManager::Preconditions.check_state(dirty_files == "", "Local checkout is dirty:\n%s" % dirty_files)
 
+# ci/build.sh starts a throwaway Postgres container for the suite and streams
+# the rspec output here, so a failing spec is readable rather than captured.
 puts "Running Tests"
-Dir.chdir("test") do
-  SchemaEvolutionManager::Library.system_or_error(["./run.rb"])
-end
+system("./ci/build.sh") || SchemaEvolutionManager::Preconditions.check_state(false, "Tests failed (exit %s)" % $?.exitstatus)
 puts "All tests passed"
 
 version = SchemaEvolutionManager::Version.read

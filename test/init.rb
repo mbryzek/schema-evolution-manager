@@ -1,4 +1,4 @@
-load File.join(File.dirname(__FILE__), '../lib/schema-evolution-manager.rb')
+require File.expand_path('../lib/schema-evolution-manager.rb', __dir__)
 require 'uri'
 
 module TestUtils
