@@ -33,11 +33,13 @@ tar_cmd = `which gnutar 2> /dev/null`.strip
 tar_opts = []
 if tar_cmd == ""
   tar_cmd = "tar"
-  # Use --no-xattrs to prevent extended attributes from being archived (works in create mode)
-  # Also use --no-mac-metadata to prevent AppleDouble files
-  if system("tar", "--no-xattrs", "-cf", "/dev/null", "/dev/null", :err => File::NULL)
-    tar_opts = ["--no-xattrs", "--no-mac-metadata"]
-  end
+  # --no-xattrs keeps extended attributes out of the archive and
+  # --no-mac-metadata keeps out AppleDouble files. Each is probed on its
+  # own: GNU tar accepts --no-xattrs but rejects --no-mac-metadata, which
+  # only BSD tar knows.
+  tar_opts = ["--no-xattrs", "--no-mac-metadata"].select { |opt|
+    system("tar", opt, "-cf", "/dev/null", "/dev/null", [:out, :err] => File::NULL)
+  }
 end
 
 if args.tag
