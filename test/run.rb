@@ -22,7 +22,9 @@ if !File.exist?(rspec)
   run("export GEM_HOME=%s && gem install rspec --version 3.9 --install-dir %s" % [gem_home, gem_home])
 end
 
-files = `find specs -type f -name "*spec.rb"`.strip.split
+# Spec files named on the command line run alone (ci/build.sh runs each file as
+# one step); with none, every spec runs.
+files = ARGV.empty? ? `find specs -type f -name "*spec.rb"`.strip.split : ARGV
 
 result = output = nil
 
