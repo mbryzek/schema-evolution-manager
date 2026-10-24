@@ -2,3 +2,4 @@ gems
 install.rb
 *.gem
 .idea
+target
