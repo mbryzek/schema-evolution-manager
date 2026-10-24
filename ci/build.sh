@@ -19,6 +19,17 @@
 # infrastructure fault rather than a red on the branch.
 #
 # ci-needs: docker
+#
+# TEST HEALTH (ISS-24445, DES-18577 "Every repository with CI"). Each rspec file
+# under test/specs is one SPEC: `ci_step` from `ci/test-steps.sh` — devops'
+# `templates/ci/test-steps.sh`, byte for byte, which says how — runs it, writes
+# its JUnit report where the line below names, leaves out a file the lists hold
+# as quarantined or slow, and reruns a failed file once. A failed file does not
+# stop the build: every file runs and `ci_steps_end` fails it. A step's name is
+# the file's path under test/specs with `/` as `.` and `.rb` dropped
+# (`lib.db_spec`), and renaming a file starts its history over.
+# ci-test-reports: target/ci-test-reports/*.xml
+# ci-test-lists: required
 set -euo pipefail
 
 echo "building ${CI_REPO:-?} @ ${CI_SHA:-?} (${CI_EVENT:-?}, clean=${CI_CLEAN_BUILD:-?})"
@@ -37,6 +48,18 @@ for tool in docker psql pg_isready ruby git; do
   command -v "$tool" >/dev/null 2>&1 || infra "$tool is not on PATH"
 done
 docker info >/dev/null 2>&1 || infra "the Docker daemon is not answering"
+
+# Say what this build covered (ISS-2175); devops/templates/ci/build.sh has the
+# contract. An unset CI_COVERAGE_FILE — somebody running this by hand — leaves
+# the echo.
+ci_report() {                      # ci_report covered|not-run "<short phrase>"
+  local line="ci-$1: $2"
+  echo "$line"
+  [ -z "${CI_COVERAGE_FILE:-}" ] || printf '%s\n' "$line" >>"$CI_COVERAGE_FILE"
+}
+
+source ci/test-steps.sh
+ci_steps_begin
 
 # The specs commit into scratch git repositories. An identity in the
 # environment reaches those commits without writing anybody's git config.
@@ -80,5 +103,18 @@ echo "postgres ready on 127.0.0.1:$port"
 export SEM_TEST_PGHOST=127.0.0.1 SEM_TEST_PGPORT=$port
 
 echo "--- rspec"
-cd test
-./run.rb
+ci_step test-steps-template "ci/test-steps.sh is devops' template" ci_steps_template_check
+
+# One spec file, run alone by test/run.rb (which installs rspec on first use).
+rspec_file() {                     # rspec_file <path under test/>
+  cd test
+  ./run.rb "$1"
+}
+
+while IFS= read -r spec; do
+  name=${spec#specs/}
+  name=${name%.rb}
+  ci_step "${name//\//.}" "rspec $spec" rspec_file "$spec"
+done < <(cd test && find specs -type f -name '*spec.rb' | LC_ALL=C sort)
+
+ci_steps_end
