@@ -2,17 +2,12 @@ require File.expand_path('../../init.rb', __dir__)
 
 describe "Apply" do
 
+  # A repository holding one pending script. The script is written into
+  # scripts/ directly: adding it through sem-add is sem_add_spec's subject,
+  # and the example below that names a scripts_dir still runs sem-add
   def with_script_setup(&block)
-    add_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-add")
-    random_number = rand(100000)
-
     TestUtils.with_bootstrapped_db do |db|
-      TestUtils.in_test_repo do
-        File.open("new.sql", "w") do |out|
-          out << "create table tmp (id integer);\n"
-          out << "insert into tmp (id) values (%s);\n" % [random_number]
-        end
-        TestUtils.sh("#{add_path} ./new.sql")
+      TestUtils.in_test_repo_with_script(:sql_command => "create table tmp (id integer);\ninsert into tmp (id) values (1);\n") do
         yield db
       end
     end
@@ -28,45 +23,24 @@ describe "Apply" do
     end
   end
 
-  it "applies sql scripts without dry_run" do
+  it "applies sql scripts without dry_run, recording no version when no VERSION file is present" do
     with_script_setup do |db|
       apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
       TestUtils.sh("#{apply_path} --url #{db.url}")
       db.psql_command("select count(*) from tmp").to_i.should == 1
+      db.psql_command("select count(*) from schema_evolution_manager.versions").to_i.should == 0
     end
   end
 
-  it "records the version from a VERSION file on apply" do
-    recorded_version = nil
+  it "records the version from a VERSION file on apply, once across re-applies" do
     with_script_setup do |db|
       apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
       File.open("VERSION", "w") { |out| out << "2.0.0" }
       TestUtils.sh("#{apply_path} --url #{db.url}")
-      recorded_version = db.psql_command("select version from schema_evolution_manager.versions order by id desc limit 1").strip
-    end
-    recorded_version.should == "2.0.0"
-  end
-
-  it "records nothing when no VERSION file is present" do
-    version_count = nil
-    with_script_setup do |db|
-      apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
+      db.psql_command("select version from schema_evolution_manager.versions order by id desc limit 1").strip.should == "2.0.0"
       TestUtils.sh("#{apply_path} --url #{db.url}")
-      version_count = db.psql_command("select count(*) from schema_evolution_manager.versions").to_i
+      db.psql_command("select count(*) from schema_evolution_manager.versions").to_i.should == 1
     end
-    version_count.should == 0
-  end
-
-  it "does not duplicate a version across re-applies" do
-    version_count = nil
-    with_script_setup do |db|
-      apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
-      File.open("VERSION", "w") { |out| out << "2.0.0" }
-      TestUtils.sh("#{apply_path} --url #{db.url}")
-      TestUtils.sh("#{apply_path} --url #{db.url}")
-      version_count = db.psql_command("select count(*) from schema_evolution_manager.versions").to_i
-    end
-    version_count.should == 1
   end
 
   it "applies scripts from the scripts_dir named by .sem" do

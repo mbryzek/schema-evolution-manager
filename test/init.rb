@@ -14,10 +14,27 @@ module TestUtils
     SchemaEvolutionManager::Library.system_or_error(["/bin/sh", "-c", command])
   end
 
+  # Yields a database identical to a freshly bootstrapped one. It is a
+  # copy of a template database bootstrapped once per process, since
+  # bootstrapping costs a dozen psql round trips and copying costs one
   def TestUtils.with_bootstrapped_db
-    TestUtils.with_db do |db|
-      db.bootstrap!
+    TestUtils.with_db(:template => TestUtils.bootstrapped_template) do |db|
       yield db
+    end
+  end
+
+  # Name of a database on the test server holding nothing but the
+  # bootstrap scripts; created on first use and dropped at exit
+  def TestUtils.bootstrapped_template
+    server = TestUtils.server_url("postgres")
+    @bootstrapped_templates ||= {}
+    @bootstrapped_templates[server] ||= begin
+      superdb = SchemaEvolutionManager::Db.new(server)
+      name = TestUtils.random_db_name
+      superdb.psql_command("create database #{name}")
+      at_exit { superdb.psql_command("drop database if exists #{name}") }
+      SchemaEvolutionManager::Db.new(TestUtils.server_url(name)).bootstrap!
+      name
     end
   end
 
@@ -72,12 +89,16 @@ module TestUtils
     "postgresql://#{userinfo}@#{uri.host}#{port}/#{name}"
   end
 
-  def TestUtils.with_db
+  # @param template: Optional database to copy instead of an empty one
+  def TestUtils.with_db(opts={})
+    template = opts.delete(:template)
+    SchemaEvolutionManager::Preconditions.assert_empty_opts(opts)
+
     superdb = SchemaEvolutionManager::Db.new(TestUtils.server_url("postgres"))
     name = TestUtils.random_db_name
     db = SchemaEvolutionManager::Db.new(TestUtils.server_url(name))
     begin
-      superdb.psql_command("create database #{name}")
+      superdb.psql_command(template ? "create database #{name} template #{template}" : "create database #{name}")
       yield db
     ensure
       superdb.psql_command("drop database if exists #{name}")
