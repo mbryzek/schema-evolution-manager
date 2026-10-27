@@ -91,18 +91,50 @@ module TestUtils
 
   # @param template: Optional database to copy instead of an empty one
   def TestUtils.with_db(opts={})
+    db = TestUtils.create_db(opts)
+    begin
+      yield db
+    ensure
+      TestUtils.drop_db(db)
+    end
+  end
+
+  # Creates a throwaway database on the test server and returns a Db for it.
+  # Pair with drop_db; with_db does both around a block. A spec file whose
+  # examples can share one database creates it in before(:all) and drops it in
+  # after(:all), since creating and dropping a database is most of the cost
+  # of a DB-backed example.
+  #
+  # @param template: Optional database to copy instead of an empty one
+  def TestUtils.create_db(opts={})
     template = opts.delete(:template)
     SchemaEvolutionManager::Preconditions.assert_empty_opts(opts)
 
-    superdb = SchemaEvolutionManager::Db.new(TestUtils.server_url("postgres"))
     name = TestUtils.random_db_name
-    db = SchemaEvolutionManager::Db.new(TestUtils.server_url(name))
+    TestUtils.superdb.psql_command(template ? "create database #{name} template #{template}" : "create database #{name}")
+    SchemaEvolutionManager::Db.new(TestUtils.server_url(name))
+  end
+
+  def TestUtils.create_bootstrapped_db
+    db = TestUtils.create_db
     begin
-      superdb.psql_command(template ? "create database #{name} template #{template}" : "create database #{name}")
-      yield db
-    ensure
-      superdb.psql_command("drop database if exists #{name}")
+      db.bootstrap!
+    rescue Exception
+      TestUtils.drop_db(db)
+      raise
     end
+    db
+  end
+
+  def TestUtils.drop_db(db)
+    name = URI.parse(db.url).path.sub(/\A\//, "")
+    SchemaEvolutionManager::Preconditions.check_state(name.start_with?("schema_evolution_manager_test_db_"),
+                                                      "Refusing to drop non-test database[#{name}]")
+    TestUtils.superdb.psql_command("drop database if exists #{name}")
+  end
+
+  def TestUtils.superdb
+    SchemaEvolutionManager::Db.new(TestUtils.server_url("postgres"))
   end
 
   # Creates a test repository for schema script
