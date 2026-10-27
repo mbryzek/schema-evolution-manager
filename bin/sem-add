@@ -23,14 +23,14 @@ SchemaEvolutionManager::Preconditions.check_state(file.match(/\.sql/i), "File[#{
 scripts_dir = SchemaEvolutionManager::Config.load.scripts_dir
 SchemaEvolutionManager::Library.ensure_dir!(scripts_dir)
 
-contents = IO.read(file)
-now = Time.now.utc.strftime('%Y%m%d-%H%M%S')
-target = File.join(scripts_dir, "#{now}.sql")
+# A second already holding a script takes the next free one rather than
+# waiting for the clock: names stay unique and in the order they were added.
+stamp = Time.now.utc
+target = File.join(scripts_dir, "#{stamp.strftime('%Y%m%d-%H%M%S')}.sql")
 
 while File.exist?(target)
-  sleep 0.1
-  now = Time.now.utc.strftime('%Y%m%d-%H%M%S')
-  target = File.join(scripts_dir, "#{now}.sql")
+  stamp += 1
+  target = File.join(scripts_dir, "#{stamp.strftime('%Y%m%d-%H%M%S')}.sql")
 end
 
 puts "Adding #{target}"
