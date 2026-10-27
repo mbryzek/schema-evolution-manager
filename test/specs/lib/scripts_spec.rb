@@ -2,24 +2,6 @@ require File.expand_path('../../init.rb', __dir__)
 
 describe SchemaEvolutionManager::Scripts do
 
-  it "each_pending" do
-    SchemaEvolutionManager::Library.with_temp_file do |tmp|
-      SchemaEvolutionManager::Library.ensure_dir!(tmp)
-      File.open(File.join(tmp, "20121113-150902.sql"), "w") { |out| out << "select 1" }
-      File.open(File.join(tmp, "20121114-150902.sql"), "w") { |out| out << "select 1" }
-      File.open(File.join(tmp, "20121114-150903.sql"), "w") { |out| out << "select 1" }
-
-      TestUtils.with_bootstrapped_db do |db|
-        scripts = SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS)
-        found = []
-        scripts.each_pending(tmp) do |name, path|
-          found << name
-        end
-        found.sort.join(" ").should == "20121113-150902.sql 20121114-150902.sql 20121114-150903.sql"
-      end
-    end
-  end
-
   describe "hostile script basenames" do
 
     let(:db) { SchemaEvolutionManager::Db.new("postgresql://localhost:5432/unused") }
@@ -76,48 +58,76 @@ describe SchemaEvolutionManager::Scripts do
     names.join(" ").should == "20130318-105434.sql 20130318-105456.sql 20260717-000000.sql"
   end
 
-  it "creates all scripts table" do
-    TestUtils.with_bootstrapped_db do |db|
-      tables = db.psql_command("select table_name from information_schema.tables where table_schema ='%s'" % [SchemaEvolutionManager::Db.schema_name])
+  # Creating, bootstrapping and dropping a database is most of the cost of a
+  # DB-backed example, so these share one. Each starts with an empty scripts
+  # table; the bootstrap_scripts rows the bootstrap wrote are left alone.
+  describe "against a bootstrapped database" do
+
+    before(:all) { @db = TestUtils.create_bootstrapped_db }
+    after(:all) { TestUtils.drop_db(@db) if @db }
+    before(:each) { @db.psql_command("delete from %s.%s" % [SchemaEvolutionManager::Db.schema_name, SchemaEvolutionManager::Scripts::SCRIPTS]) }
+
+    let(:scripts) { SchemaEvolutionManager::Scripts.new(@db, SchemaEvolutionManager::Scripts::SCRIPTS) }
+
+    it "each_pending" do
+      SchemaEvolutionManager::Library.with_temp_file do |tmp|
+        SchemaEvolutionManager::Library.ensure_dir!(tmp)
+        File.open(File.join(tmp, "20121113-150902.sql"), "w") { |out| out << "select 1" }
+        File.open(File.join(tmp, "20121114-150902.sql"), "w") { |out| out << "select 1" }
+        File.open(File.join(tmp, "20121114-150903.sql"), "w") { |out| out << "select 1" }
+
+        found = []
+        scripts.each_pending(tmp) do |name, path|
+          found << name
+        end
+        found.sort.join(" ").should == "20121113-150902.sql 20121114-150902.sql 20121114-150903.sql"
+      end
+    end
+
+    it "each_pending skips a script already recorded as run" do
+      SchemaEvolutionManager::Library.with_temp_file do |tmp|
+        SchemaEvolutionManager::Library.ensure_dir!(tmp)
+        File.open(File.join(tmp, "20121113-150902.sql"), "w") { |out| out << "select 1" }
+        File.open(File.join(tmp, "20121114-150902.sql"), "w") { |out| out << "select 1" }
+        scripts.record_as_run!("20121113-150902.sql")
+
+        found = []
+        scripts.each_pending(tmp) { |name, _| found << name }
+        found.should == ["20121114-150902.sql"]
+      end
+    end
+
+    it "creates all scripts table" do
+      tables = @db.psql_command("select table_name from information_schema.tables where table_schema ='%s'" % [SchemaEvolutionManager::Db.schema_name])
       tables.split("\n").map(&:strip).sort.join(" ").should == (SchemaEvolutionManager::Scripts::VALID_TABLE_NAMES + ["versions"]).sort.join(" ")
     end
-  end
 
-  it "applies all bootstrap scripts" do
-    TestUtils.with_bootstrapped_db do |db|
-      scripts = SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::BOOTSTRAP_SCRIPTS)
-      scripts.has_run?("20130318-105434.sql").should be true
-      scripts.has_run?("20130318-105456.sql").should be true
+    it "applies all bootstrap scripts" do
+      bootstrap = SchemaEvolutionManager::Scripts.new(@db, SchemaEvolutionManager::Scripts::BOOTSTRAP_SCRIPTS)
+      bootstrap.has_run?("20130318-105434.sql").should be true
+      bootstrap.has_run?("20130318-105456.sql").should be true
     end
-  end
 
-  describe "record_as_run!" do
+    describe "record_as_run!" do
 
-    it "valid filename" do
-      TestUtils.with_bootstrapped_db do |db|
-        scripts = SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS)
+      it "valid filename" do
         scripts.has_run?("20130318-123458.sql").should be false
         scripts.record_as_run!("20130318-123458.sql")
         scripts.has_run?("20130318-123458.sql").should be true
       end
-    end
 
-    it "is idempotent" do
-      TestUtils.with_bootstrapped_db do |db|
-        scripts = SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS)
+      it "is idempotent" do
         scripts.record_as_run!("20130318-123458.sql")
         scripts.record_as_run!("20130318-123458.sql")
-        scripts.has_run?("20130318-123458.sql").should be true
+        scripts.applied.should == ["20130318-123458.sql"]
       end
-    end
 
-    it "invalid filename" do
-      TestUtils.with_bootstrapped_db do |db|
-        scripts = SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS)
+      it "invalid filename" do
         lambda {
           scripts.record_as_run!("2012-123456.sql")
         }.should raise_error(RuntimeError)
       end
+
     end
 
   end
