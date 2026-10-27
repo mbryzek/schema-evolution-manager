@@ -29,18 +29,17 @@ describe "Add" do
     path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-add")
     TestUtils.in_test_repo do
       File.open("new1.sql", "w") { |out| out << "select 1" }
-      File.open("new2.sql", "w") { |out| out << "select 1" }
-      File.open("new3.sql", "w") { |out| out << "select 1" }
+      File.open("new2.sql", "w") { |out| out << "select 2" }
+      File.open("new3.sql", "w") { |out| out << "select 3" }
       SchemaEvolutionManager::Scripts.all("scripts").size.should == 0
       ["./new1.sql", "./new2.sql", "./new3.sql"].each do |file|
         SchemaEvolutionManager::Library.system_or_error([path, file])
       end
 
-      scripts = SchemaEvolutionManager::Scripts.all("scripts").map { |s|
-        s.sub(/^scripts\//, '')
-      }
+      scripts = SchemaEvolutionManager::Scripts.all("scripts")
       scripts.size.should == 3
       scripts.uniq.size.should == 3
+      scripts.sort.map { |s| IO.read(s) }.should == ["select 1", "select 2", "select 3"]
     end
   end
 
