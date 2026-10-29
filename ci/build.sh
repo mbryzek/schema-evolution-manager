@@ -18,8 +18,6 @@
 # daemon, no psql or ruby, or a container that never came up. It is posted as an
 # infrastructure fault rather than a red on the branch.
 #
-# ci-needs: docker
-#
 # TEST HEALTH (ISS-24445, DES-18577 "Every repository with CI"). Each rspec file
 # under test/specs is one SPEC: `ci_step` from `ci/test-steps.sh` — devops'
 # `templates/ci/test-steps.sh`, byte for byte, which says how — runs it, writes
