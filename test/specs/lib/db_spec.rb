@@ -164,6 +164,16 @@ describe SchemaEvolutionManager::Db do
         db.schema_schema_evolution_manager_exists?.should be true
       end
     end
+
+    it "asks again while the schema is absent, and not once it has been seen" do
+      TestUtils.with_db do |db|
+        db.schema_schema_evolution_manager_exists?.should be false
+        db.bootstrap!
+        db.schema_schema_evolution_manager_exists?.should be true
+        db.should_not_receive(:psql_command)
+        db.schema_schema_evolution_manager_exists?.should be true
+      end
+    end
   end
 
   it "should raise an error for invalid url" do

@@ -100,10 +100,14 @@ module SchemaEvolutionManager
       @psql_args + PSQL_ISOLATION_OPTIONS + ["--set", "ON_ERROR_STOP=1", "--file", path] + Db.attribute_values(path) + [@url]
     end
 
-    # True if the specific schema exists; false otherwise
+    # True if the specific schema exists; false otherwise. Once seen the
+    # answer is kept: every pending-script check asks it, and nothing sem
+    # runs drops the schema. An absent schema is asked again, since a
+    # bootstrap or an upgrade script can create it mid-run
     def schema_schema_evolution_manager_exists?
+      return true if @schema_exists
       sql = "select count(*) from pg_namespace where nspname='%s'" % Db.schema_name
-      psql_command(sql).to_i > 0
+      @schema_exists = psql_command(sql).to_i > 0
     end
 
     # Parses command line arguments returning an instance of

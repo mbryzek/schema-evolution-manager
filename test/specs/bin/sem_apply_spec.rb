@@ -2,9 +2,16 @@ require File.expand_path('../../init.rb', __dir__)
 
 describe "Apply" do
 
-  # A repository holding one pending script. The script is written into
-  # scripts/ directly: adding it through sem-add is sem_add_spec's subject,
-  # and the example below that names a scripts_dir still runs sem-add
+  # Every script here is written into its scripts directory directly:
+  # adding one through sem-add, .sem's scripts_dir included, is
+  # sem_add_spec's subject, and a process start is most of what an
+  # example in this spec costs
+  def write_script(dir, filename, sql)
+    FileUtils.mkdir_p(dir)
+    File.open(File.join(dir, filename), "w") { |out| out << sql }
+  end
+
+  # A repository holding one pending script
   def with_script_setup(&block)
     TestUtils.with_bootstrapped_db do |db|
       TestUtils.in_test_repo_with_script(:sql_command => "create table tmp (id integer);\ninsert into tmp (id) values (1);\n") do
@@ -13,43 +20,39 @@ describe "Apply" do
     end
   end
 
-  # The dry run and the real apply share one setup: the real apply then
-  # finding the script still pending proves the dry run recorded nothing
-  it "applies nothing with dry_run, then applies the script, recording no version when no VERSION file is present" do
+  # One setup carries the dry run, the first apply and the version: each
+  # step finds the state the one before it left, so a step that wrote
+  # more than it should shows up in the next one's assertions. That a
+  # re-apply records an unchanged version once is versions_spec's subject
+  it "applies nothing with dry_run, then applies the script, then records the VERSION file on a re-apply" do
     with_script_setup do |db|
       apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
+      File.open("VERSION", "w") { |out| out << "2.0.0" }
       TestUtils.sh("#{apply_path} --url #{db.url} --dry_run")
       lambda {
         db.psql_command("select count(*) from tmp")
       }.should raise_error(RuntimeError)
       db.psql_command("select count(*) from schema_evolution_manager.scripts").to_i.should == 0
+      db.psql_command("select count(*) from schema_evolution_manager.versions").to_i.should == 0
 
+      File.delete("VERSION")
       TestUtils.sh("#{apply_path} --url #{db.url}")
       db.psql_command("select count(*) from tmp").to_i.should == 1
       db.psql_command("select count(*) from schema_evolution_manager.versions").to_i.should == 0
-    end
-  end
 
-  it "records the version from a VERSION file on apply, once across re-applies" do
-    with_script_setup do |db|
-      apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
       File.open("VERSION", "w") { |out| out << "2.0.0" }
       TestUtils.sh("#{apply_path} --url #{db.url}")
-      db.psql_command("select version from schema_evolution_manager.versions order by id desc limit 1").strip.should == "2.0.0"
-      TestUtils.sh("#{apply_path} --url #{db.url}")
-      db.psql_command("select count(*) from schema_evolution_manager.versions").to_i.should == 1
+      db.psql_command("select count(*) from tmp").to_i.should == 1
+      db.psql_command("select version from schema_evolution_manager.versions").strip.should == "2.0.0"
     end
   end
 
-  it "applies scripts from the scripts_dir named by .sem" do
-    add_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-add")
+  it "applies scripts from the scripts_dir named by .sem, from a subdirectory" do
     apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
     TestUtils.with_bootstrapped_db do |db|
       TestUtils.in_test_repo do
         File.open(".sem", "w") { |out| out << "sem.config.scripts_dir = schema/scripts\n" }
-        File.open("new.sql", "w") { |out| out << "create table tmp (id integer);\ninsert into tmp (id) values (1);\n" }
-        SchemaEvolutionManager::Library.system_or_error([add_path, "./new.sql"])
-        SchemaEvolutionManager::Scripts.all("schema/scripts").size.should == 1
+        write_script("schema/scripts", "20130318-105434.sql", "create table tmp (id integer);\ninsert into tmp (id) values (1);\n")
         FileUtils.mkdir_p("nested")
         Dir.chdir("nested") do
           SchemaEvolutionManager::Library.system_or_error([apply_path, "--url", db.url])
@@ -60,19 +63,13 @@ describe "Apply" do
   end
 
   it "reports a failing script with psql's error at the line in the source file" do
-    add_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-add")
     apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
     output = status = script = nil
 
     TestUtils.with_bootstrapped_db do |db|
       TestUtils.in_test_repo do
-        File.open("broken.sql", "w") do |out|
-          out << "create table tmp (id integer);\n"
-          out << "\n"
-          out << "insert into no_such_table (id) values (1);\n"
-        end
-        SchemaEvolutionManager::Library.system_or_error([add_path, "./broken.sql"])
-        script = File.join(SchemaEvolutionManager::Config.load.scripts_dir, File.basename(Dir.glob("scripts/*.sql").first))
+        write_script("scripts", "20130318-105434.sql", "create table tmp (id integer);\n\ninsert into no_such_table (id) values (1);\n")
+        script = File.join(SchemaEvolutionManager::Config.load.scripts_dir, "20130318-105434.sql")
         output, status = Open3.capture2e(apply_path, "--url", db.url)
       end
     end
