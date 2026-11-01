@@ -6,7 +6,7 @@
 # devops/templates/ci/build.sh is the reference and devops/docs/ci.md carries
 # what is load-bearing about it. ISS-17278
 #
-# It runs the rspec suite (test/run.rb, which installs rspec into ./gems).
+# It runs the rspec suite (test/run.rb; `./run.rb --install` puts rspec in ./gems).
 # Most specs create and drop a database, so the suite needs a Postgres server.
 # This script starts one in a throwaway container on a port Docker picks, points
 # the specs at it through SEM_TEST_PGHOST / SEM_TEST_PGPORT (test/init.rb), and
@@ -103,7 +103,12 @@ export SEM_TEST_PGHOST=127.0.0.1 SEM_TEST_PGPORT=$port
 echo "--- rspec"
 ci_step test-steps-template "ci/test-steps.sh is devops' template" ci_steps_template_check
 
-# One spec file, run alone by test/run.rb (which installs rspec on first use).
+# rspec is installed into ./gems once, here, outside every step: a step's time
+# is its spec's, and a fresh checkout's install would otherwise land on
+# whichever spec file sorts first, which is what the slow list would then time.
+(cd test && ./run.rb --install) || infra "could not install rspec into ./gems"
+
+# One spec file, run alone by test/run.rb.
 rspec_file() {                     # rspec_file <path under test/>
   cd test
   ./run.rb "$1"
