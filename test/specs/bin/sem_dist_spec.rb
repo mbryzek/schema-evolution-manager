@@ -20,29 +20,21 @@ describe "Dist" do
     SchemaEvolutionManager::Library.git_create_tag(tag)
   end
 
-  # Extracts the single tarball in dist/ into ./tmp, yielding the
-  # release directory it holds
-  def extract_release
-    tarballs = Dir.glob("dist/*.tar.gz")
-    tarballs.size.should == 1
-    FileUtils.mkdir("tmp")
-    SchemaEvolutionManager::Library.system_or_error(["tar", "-xzf", tarballs.first, "-C", "tmp"])
-    entries = Dir.children("tmp")
-    entries.size.should == 1
-    yield File.join("tmp", entries.first)
-  end
-
   # One repository and its distributions serve every example in this group:
   # each only reads what sem-dist wrote, and building a repository and a
   # tarball (git init, sem-add, a commit, a tag, sem-dist) is most of the
-  # cost of an example.
+  # cost of an example. The repository sits in a directory whose path a
+  # shell would split, so every example also proves sem-dist passes that
+  # path through intact.
   describe "a tagged repository" do
 
     before(:all) do
       @random_string = "random_string_%s" % [rand(100000)]
       @artifact_name = "my db's schema"
-      @repo = Dir.mktmpdir("sem-dist-spec")
-      @default_name = "%s-1.2.3" % [File.basename(@repo)]
+      @tmpdir = Dir.mktmpdir("sem-dist-spec")
+      @repo = File.join(@tmpdir, TestUtils::AWKWARD_DIRNAME)
+      @default_name = "%s-1.2.3" % [TestUtils::AWKWARD_DIRNAME]
+      FileUtils.mkdir(@repo)
       Dir.chdir(@repo) do
         SchemaEvolutionManager::Library.system_or_error(["git", "init", "--quiet", "."])
         commit_script_and_tag("select #{@random_string}", "1.2.3")
@@ -57,7 +49,7 @@ describe "Dist" do
     end
 
     after(:all) do
-      FileUtils.rm_rf(@repo) if @repo
+      FileUtils.rm_rf(@tmpdir) if @tmpdir
     end
 
     it "can create a distribution" do
@@ -91,18 +83,6 @@ describe "Dist" do
       end
     end
 
-  end
-
-  it "creates a distribution from a directory whose path a shell would split" do
-    TestUtils.in_test_repo(:dirname => TestUtils::AWKWARD_DIRNAME) do
-      commit_script_and_tag("select 1", "1.0.0")
-      SchemaEvolutionManager::Library.system_or_error([dist_path, "--tag", "1.0.0"])
-      Dir.glob("dist/*.tar.gz").map { |f| File.basename(f) }.should == ["#{TestUtils::AWKWARD_DIRNAME}-1.0.0.tar.gz"]
-      extract_release do |release_dir|
-        File.basename(release_dir).should == "#{TestUtils::AWKWARD_DIRNAME}-1.0.0"
-        SchemaEvolutionManager::Scripts.all(File.join(release_dir, "scripts")).size.should == 1
-      end
-    end
   end
 
   it "packs the scripts_dir named by .sem as scripts/ and never packs .sem" do
