@@ -13,19 +13,17 @@ describe "Apply" do
     end
   end
 
-  it "does not apply sql scripts with dry_run" do
+  # The dry run and the real apply share one setup: the real apply then
+  # finding the script still pending proves the dry run recorded nothing
+  it "applies nothing with dry_run, then applies the script, recording no version when no VERSION file is present" do
     with_script_setup do |db|
       apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
       TestUtils.sh("#{apply_path} --url #{db.url} --dry_run")
       lambda {
         db.psql_command("select count(*) from tmp")
       }.should raise_error(RuntimeError)
-    end
-  end
+      db.psql_command("select count(*) from schema_evolution_manager.scripts").to_i.should == 0
 
-  it "applies sql scripts without dry_run, recording no version when no VERSION file is present" do
-    with_script_setup do |db|
-      apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
       TestUtils.sh("#{apply_path} --url #{db.url}")
       db.psql_command("select count(*) from tmp").to_i.should == 1
       db.psql_command("select count(*) from schema_evolution_manager.versions").to_i.should == 0
