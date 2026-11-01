@@ -59,13 +59,14 @@ describe SchemaEvolutionManager::Scripts do
   end
 
   # Creating, bootstrapping and dropping a database is most of the cost of a
-  # DB-backed example, so these share one. Each starts with an empty scripts
-  # table; the bootstrap_scripts rows the bootstrap wrote are left alone.
+  # DB-backed example, so these share one. Every psql call is a round trip, so
+  # rather than emptying the scripts table before each example, each example
+  # names scripts no other example records: the 20121113 to 20121116 dates
+  # are each_pending's and the 20130319 and 20130320 dates record_as_run!'s.
   describe "against a bootstrapped database" do
 
     before(:all) { @db = TestUtils.create_bootstrapped_db }
     after(:all) { TestUtils.drop_db(@db) if @db }
-    before(:each) { @db.psql_command("delete from %s.%s" % [SchemaEvolutionManager::Db.schema_name, SchemaEvolutionManager::Scripts::SCRIPTS]) }
 
     let(:scripts) { SchemaEvolutionManager::Scripts.new(@db, SchemaEvolutionManager::Scripts::SCRIPTS) }
 
@@ -87,13 +88,13 @@ describe SchemaEvolutionManager::Scripts do
     it "each_pending skips a script already recorded as run" do
       SchemaEvolutionManager::Library.with_temp_file do |tmp|
         SchemaEvolutionManager::Library.ensure_dir!(tmp)
-        File.open(File.join(tmp, "20121113-150902.sql"), "w") { |out| out << "select 1" }
-        File.open(File.join(tmp, "20121114-150902.sql"), "w") { |out| out << "select 1" }
-        scripts.record_as_run!("20121113-150902.sql")
+        File.open(File.join(tmp, "20121115-150902.sql"), "w") { |out| out << "select 1" }
+        File.open(File.join(tmp, "20121116-150902.sql"), "w") { |out| out << "select 1" }
+        scripts.record_as_run!("20121115-150902.sql")
 
         found = []
         scripts.each_pending(tmp) { |name, _| found << name }
-        found.should == ["20121114-150902.sql"]
+        found.should == ["20121116-150902.sql"]
       end
     end
 
@@ -111,15 +112,15 @@ describe SchemaEvolutionManager::Scripts do
     describe "record_as_run!" do
 
       it "valid filename" do
-        scripts.has_run?("20130318-123458.sql").should be false
-        scripts.record_as_run!("20130318-123458.sql")
-        scripts.has_run?("20130318-123458.sql").should be true
+        scripts.has_run?("20130319-123458.sql").should be false
+        scripts.record_as_run!("20130319-123458.sql")
+        scripts.has_run?("20130319-123458.sql").should be true
       end
 
       it "is idempotent" do
-        scripts.record_as_run!("20130318-123458.sql")
-        scripts.record_as_run!("20130318-123458.sql")
-        scripts.applied.should == ["20130318-123458.sql"]
+        scripts.record_as_run!("20130320-123458.sql")
+        scripts.record_as_run!("20130320-123458.sql")
+        scripts.applied.count("20130320-123458.sql").should == 1
       end
 
       it "invalid filename" do
