@@ -3,18 +3,35 @@ require File.expand_path('../../init.rb', __dir__)
 # Each example here starts bin/sem-info as its own process, which is what it
 # covers: the dispatch, stdout vs stderr and the exit status. Tag arithmetic is
 # lib/sem_info_spec's, so the process is started once per behaviour, not once
-# per input.
+# per input, and the processes one example reads side by side start together.
 describe "sem-info" do
 
   def sem_info(*args)
     Open3.capture3(File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-info"), *args)
   end
 
-  it "can display latest tag" do
+  # Runs each argv as its own bin/<command> process, all at once, and returns
+  # their [stdout+stderr, status] pairs in order. None of them writes anything,
+  # so starting them together changes nothing they print.
+  def run_all(*commands)
+    commands.map { |cmd, *args|
+      Thread.new { Open3.capture2e(File.join(SchemaEvolutionManager::Library.base_dir, "bin", cmd), *args) }
+    }.map(&:value)
+  end
+
+  it "tag latest, next and exists" do
     TestUtils.in_test_repo_with_commit do
       SchemaEvolutionManager::Library.git_create_tag("0.0.5")
-      sem_info("tag", "latest").first.strip.should == "0.0.5"
-      sem_info("tag", "next", "minor").first.strip.should == "0.1.0"
+      latest, next_minor, missing, present = run_all(
+        %w(sem-info tag latest),
+        %w(sem-info tag next minor),
+        %w(sem-info tag exists 9.1.2),
+        %w(sem-info tag exists 0.0.5)
+      ).map { |output, _| output.strip }
+      latest.should == "0.0.5"
+      next_minor.should == "0.1.0"
+      missing.should == "false"
+      present.should == "true"
 
       SchemaEvolutionManager::SemInfo.tag(["next"]).should == "0.0.6"
       SchemaEvolutionManager::SemInfo.tag(["next", "micro"]).should == "0.0.6"
@@ -28,14 +45,6 @@ describe "sem-info" do
     end
   end
 
-  it "tag exists" do
-    TestUtils.in_test_repo_with_commit do
-      SchemaEvolutionManager::Library.git_create_tag("0.0.5")
-      sem_info("tag", "exists", "9.1.2").first.strip.should == "false"
-      sem_info("tag", "exists", "0.0.5").first.strip.should == "true"
-    end
-  end
-
   it "version" do
     sem_info("version").first.strip.should == SchemaEvolutionManager::SemVersion::VERSION
   end
@@ -45,11 +54,9 @@ describe "sem-info" do
   end
 
   it "--version on every command prints the version and exits" do
-    %w(sem-apply sem-baseline sem-init sem-dist).each do |cmd|
-      path = File.join(SchemaEvolutionManager::Library.base_dir, "bin", cmd)
-      output, status = Open3.capture2e(path, "--version")
-      status.exitstatus.should == 0
-      output.strip.should == SchemaEvolutionManager::SemVersion::VERSION
+    commands = %w(sem-apply sem-baseline sem-init sem-dist)
+    run_all(*commands.map { |cmd| [cmd, "--version"] }).zip(commands).each do |(output, status), cmd|
+      [cmd, status.exitstatus, output.strip].should == [cmd, 0, SchemaEvolutionManager::SemVersion::VERSION]
     end
   end
 
