@@ -57,6 +57,39 @@ describe SchemaEvolutionManager::Release do
       Release.decide("0.9.62", [], TAGS, "1.0").should == [:refuse, "1.0 is not a release version (x.y.z)"]
     end
 
+    it "publishes a head tagged with the requested version" do
+      Release.decide("0.9.61", ["0.9.62"], TAGS, "0.9.62").should == [:publish, "0.9.62"]
+    end
+
+    it "refuses a requested version the tagged head does not carry" do
+      Release.decide("0.9.61", ["0.9.62"], TAGS, "0.9.63").should == [:refuse, "HEAD is tagged 0.9.62, not the requested 0.9.63"]
+    end
+
+  end
+
+  describe "main_lags?" do
+
+    it "is true while main's VERSION is older than the version" do
+      Release.main_lags?("0.9.61\n", "0.9.62").should == true
+    end
+
+    it "is false once main is at or past the version" do
+      Release.main_lags?("0.9.62\n", "0.9.62").should == false
+      Release.main_lags?("0.10.0", "0.9.62").should == false
+    end
+
+  end
+
+  describe "published_versions" do
+
+    it "reads the versions gem list prints" do
+      Release.published_versions("\n*** REMOTE GEMS ***\n\nschema-evolution-manager (0.9.65, 0.9.64 ruby, 0.9.63)\n").should == ["0.9.65", "0.9.64", "0.9.63"]
+    end
+
+    it "is empty when the gem is not listed" do
+      Release.published_versions("\n*** REMOTE GEMS ***\n\n").should == []
+    end
+
   end
 
   describe "readme_with_version" do
