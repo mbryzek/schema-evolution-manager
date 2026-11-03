@@ -9,7 +9,9 @@ module SchemaEvolutionManager
 
     # The run's options. --apply releases without asking anything: the
     # next micro version (or --version), committed, tagged and pushed to
-    # origin. Without it the run asks for the version and pushes nothing.
+    # origin. --apply --version V in a checkout whose HEAD already carries
+    # tag V publishes that tag instead (Release.decide). Without --apply
+    # the run asks for the version and pushes nothing.
     def Release.parse_args(argv)
       opts = { :apply => false, :version => nil }
       args = argv.dup
@@ -38,9 +40,22 @@ module SchemaEvolutionManager
     # the commit being released: one that already carries a release tag is
     # released, which is success with nothing to do.
     #
-    # Returns [:already, tag], [:release, version] or [:refuse, why].
+    # A head that already carries the REQUESTED version's tag is a tag cut
+    # by somebody else (devops' rollout tags first, then runs this script
+    # in a checkout of that tag): [:publish, version] builds and pushes
+    # its gem and brings main's VERSION up to it, rather than reading the
+    # tag as a release already made.
+    #
+    # Returns [:already, tag], [:publish, version], [:release, version] or
+    # [:refuse, why].
     def Release.decide(current, tags_at_head, all_tags, requested=nil)
       at_head = Release.release_tags(tags_at_head)
+      if requested && !at_head.empty?
+        if at_head.include?(requested)
+          return [:publish, requested]
+        end
+        return [:refuse, "HEAD is tagged %s, not the requested %s" % [at_head.join(", "), requested]]
+      end
       if !at_head.empty?
         return [:already, at_head.last]
       end
@@ -58,6 +73,21 @@ module SchemaEvolutionManager
         return [:refuse, "%s is not newer than the newest release %s" % [version.to_version_string, newest]]
       end
       [:release, version.to_version_string]
+    end
+
+    # Whether main, whose VERSION file reads +main_version+, still lags the
+    # published +version+ and so needs the version-bump commit.
+    def Release.main_lags?(main_version, version)
+      (Version.parse(main_version.strip) <=> Version.parse(version)) < 0
+    end
+
+    # The versions RubyGems lists for the gem, read from the output of
+    # `gem list --remote --exact --all schema-evolution-manager`, whose line
+    # is `schema-evolution-manager (0.9.65, 0.9.64, ...)`.
+    def Release.published_versions(gem_list_output)
+      line = gem_list_output.lines.find { |l| l.start_with?("schema-evolution-manager (") }
+      return [] if line.nil?
+      line[/\((.*)\)/, 1].to_s.split(",").map { |v| v.strip.split(" ").first }.compact
     end
 
     # README.md with its install instructions pointing at +version+, or nil
