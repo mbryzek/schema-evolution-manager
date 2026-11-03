@@ -14,8 +14,9 @@
 # together, and pushes the gem. Homebrew's formula follows the tag. A
 # tip of origin/main that already carries a release tag is released:
 # that is success with nothing to do, so a second run is harmless.
-# `dev deploy all` runs it in its checkout of origin/main whenever main is
-# ahead of the newest tag (devops' Deploy_item.tag_releases).
+# This untagged path is for a person's run. devops' rollout releases this
+# repo the other way: it cuts tag V first and then runs `--apply --version V`
+# in a checkout of that tag (devops' Rollout_release_kind), described below.
 #
 # --version V in a checkout whose HEAD carries tag V PUBLISHES that tag,
 # which somebody else cut (devops' rollout tags first and then runs this
