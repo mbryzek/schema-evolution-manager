@@ -42,11 +42,11 @@ SEM_VERSION_PATH = "lib/schema-evolution-manager/sem_version.rb"
 # The files a release writes its version into, relative to the checkout.
 VERSION_FILES = ["VERSION", "README.md", SEM_VERSION_PATH]
 
-# ci/build.sh starts a throwaway Postgres container for the suite and streams
+# ci/build.fast.sh starts a throwaway Postgres container for the suite and streams
 # the rspec output here, so a failing spec is readable rather than captured.
 def run_tests
   puts "Running Tests"
-  system("./ci/build.sh") || Pre.check_state(false, "Tests failed (exit %s)" % $?.exitstatus)
+  system("./ci/build.fast.sh") || Pre.check_state(false, "Tests failed (exit %s)" % $?.exitstatus)
   puts "All tests passed"
 end
 
