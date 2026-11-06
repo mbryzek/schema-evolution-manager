@@ -8,7 +8,7 @@ def run(command)
 end
 
 # rspec lives in ./gems and is installed on first use. `./run.rb --install`
-# installs it and exits, so ci/build.sh pays for the install before its timed
+# installs it and exits, so ci/build.fast.sh pays for the install before its timed
 # steps rather than inside whichever spec file happens to run first.
 gem_home = SchemaEvolutionManager::Library.normalize_path(File.join(File.dirname(__FILE__), '../gems'))
 rspec = File.join(gem_home, 'bin/rspec')
@@ -26,7 +26,7 @@ rescue RuntimeError => e
   exit(1)
 end
 
-# Spec files named on the command line run alone (ci/build.sh runs each file as
+# Spec files named on the command line run alone (ci/build.fast.sh runs each file as
 # one step); with none, every spec runs.
 files = ARGV.empty? ? `find specs -type f -name "*spec.rb"`.strip.split : ARGV
 

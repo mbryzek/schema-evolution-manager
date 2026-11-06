@@ -53,7 +53,7 @@ module TestUtils
   # Variables holding a full server url, in order of precedence.
   SERVER_URL_VARS = %w(SEM_TEST_DB_URL SEM_TEST_SERVER_URL CONF_DB_DEV_URL)
 
-  # Variables naming the server by host and port; ci/build.sh points them at
+  # Variables naming the server by host and port; ci/build.fast.sh points them at
   # a container it starts for the run.
   SERVER_HOST_VARS = %w(SEM_TEST_PGHOST SEM_TEST_PGPORT)
 
