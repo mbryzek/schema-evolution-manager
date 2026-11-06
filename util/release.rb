@@ -7,6 +7,12 @@ module SchemaEvolutionManager
 
     USAGE = "usage: util/create-release.rb [--apply] [--version x.y.z]" unless defined?(USAGE)
 
+    # The build script create-release.rb's run_tests runs before it tags,
+    # relative to the repository root. test/specs/util/release_spec.rb
+    # asserts the tree has it, so renaming the script fails the suite
+    # rather than the next release.
+    BUILD_SCRIPT = "ci/build.fast.sh" unless defined?(BUILD_SCRIPT)
+
     # The run's options. --apply releases without asking anything: the
     # next micro version (or --version), committed, tagged and pushed to
     # origin. --apply --version V in a checkout whose HEAD already carries

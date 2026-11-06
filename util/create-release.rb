@@ -46,7 +46,7 @@ VERSION_FILES = ["VERSION", "README.md", SEM_VERSION_PATH]
 # the rspec output here, so a failing spec is readable rather than captured.
 def run_tests
   puts "Running Tests"
-  system("./ci/build.fast.sh") || Pre.check_state(false, "Tests failed (exit %s)" % $?.exitstatus)
+  system("./%s" % Release::BUILD_SCRIPT) || Pre.check_state(false, "Tests failed (exit %s)" % $?.exitstatus)
   puts "All tests passed"
 end
 
