@@ -1,10 +1,11 @@
 # shellcheck shell=bash
 #
-# TEST HEALTH FOR A REPOSITORY WHOSE ci/build.sh IS ITS TEST RUNNER (ISS-19891,
+# TEST HEALTH FOR A REPOSITORY WHOSE BUILD SCRIPT IS ITS TEST RUNNER (ISS-19891,
 # design DES-18577 "Every repository with CI").
 #
 # Some repositories have no test runner of their own: no build.sbt, package.json,
-# elm.json or dune-project. Their `ci/build.sh` is a list of checks, and that list
+# elm.json or dune-project. Their build script (`ci/build.slow.sh` or
+# `ci/build.fast.sh`) is a list of checks, and that list
 # IS the suite. This file makes each named check one SPEC, so such a repository
 # meets the four lines of the contract `dev ci test-health` reads:
 #
@@ -26,7 +27,9 @@
 # as `ci/test-steps.sh`, and runs `ci_steps_template_check` as a step of its own,
 # which diffs the copy against `dev repo cat devops templates/ci/test-steps.sh`.
 #
-# USE, in ci/build.sh:
+# USE, in ci/build.slow.sh or ci/build.fast.sh. Its fault lines begin
+# `ci/build.sh: `, the prefix the build's red-cause reader matches, whatever the
+# script itself is named:
 #
 #   # ci-test-reports: target/ci-test-reports/*.xml
 #   # ci-test-lists: required
@@ -294,7 +297,7 @@ ci_steps_end() {
     echo "ci-lists: checked $count listed spec(s)"
   fi
   echo "ci-test-phase: $((SECONDS - ci_steps_phase_start))s"
-  [ "$ci_steps_slow_only" = "true" ] || echo "ci-scope: full every step of ci/build.sh"
+  [ "$ci_steps_slow_only" = "true" ] || echo "ci-scope: full every step of the build script"
   [ "$ci_steps_reran" = "false" ] || echo "ci-rerun: done"
   rm -rf "$ci_steps_work"
   if [ "${#ci_steps_failed[@]}" -gt 0 ]; then
