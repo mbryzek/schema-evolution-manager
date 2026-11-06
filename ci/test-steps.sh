@@ -297,7 +297,7 @@ ci_steps_end() {
     echo "ci-lists: checked $count listed spec(s)"
   fi
   echo "ci-test-phase: $((SECONDS - ci_steps_phase_start))s"
-  [ "$ci_steps_slow_only" = "true" ] || echo "ci-scope: full every step of ci/build.sh"
+  [ "$ci_steps_slow_only" = "true" ] || echo "ci-scope: full every step of the build script"
   [ "$ci_steps_reran" = "false" ] || echo "ci-rerun: done"
   rm -rf "$ci_steps_work"
   if [ "${#ci_steps_failed[@]}" -gt 0 ]; then
