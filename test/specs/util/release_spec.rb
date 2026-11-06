@@ -110,6 +110,16 @@ describe SchemaEvolutionManager::Release do
 
   end
 
+  describe "BUILD_SCRIPT" do
+
+    it "names an executable script the tree has" do
+      path = File.expand_path(File.join('../../..', Release::BUILD_SCRIPT), __dir__)
+      File.file?(path).should be(true), "util/create-release.rb runs %s, which the tree does not have" % Release::BUILD_SCRIPT
+      File.executable?(path).should be(true), "util/create-release.rb runs %s, which is not executable" % Release::BUILD_SCRIPT
+    end
+
+  end
+
   describe "sem_version_source" do
 
     it "matches the shape of the checked-in sem_version.rb" do
