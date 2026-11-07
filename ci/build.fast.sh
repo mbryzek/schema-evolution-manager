@@ -19,8 +19,8 @@
 # infrastructure fault rather than a red on the branch.
 #
 # TEST HEALTH (ISS-24445, DES-18577 "Every repository with CI"). Each rspec file
-# under test/specs is one SPEC: `ci_step` from `ci/test-steps.sh` — devops'
-# `templates/ci/test-steps.sh`, byte for byte, which says how — runs it, writes
+# under test/specs is one SPEC: `ci_step` from devops'
+# `templates/ci/test-steps.sh`, sourced from the release, which says how — runs it, writes
 # its JUnit report where the line below names, leaves out a file the lists hold
 # as quarantined or slow, and reruns a failed file once. A failed file does not
 # stop the build: every file runs and `ci_steps_end` fails it. A step's name is
@@ -56,7 +56,10 @@ ci_report() {                      # ci_report covered|not-run "<short phrase>"
   [ -z "${CI_COVERAGE_FILE:-}" ] || printf '%s\n' "$line" >>"$CI_COVERAGE_FILE"
 }
 
-source ci/test-steps.sh
+# devops' Test Health steps, sourced from the release on PATH rather than copied
+# (ISS-53964), so a change to them is one devops release and no pull request here.
+ci_steps_lib=$(dev ci template ci/test-steps.sh) || exit 75
+source "$ci_steps_lib"
 ci_steps_begin
 
 # The specs commit into scratch git repositories. An identity in the
@@ -101,7 +104,6 @@ echo "postgres ready on 127.0.0.1:$port"
 export SEM_TEST_PGHOST=127.0.0.1 SEM_TEST_PGPORT=$port
 
 echo "--- rspec"
-ci_step test-steps-template "ci/test-steps.sh is devops' template" ci_steps_template_check
 
 # rspec is installed into ./gems once, here, outside every step: a step's time
 # is its spec's, and a fresh checkout's install would otherwise land on
