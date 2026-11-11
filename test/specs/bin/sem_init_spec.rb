@@ -13,6 +13,17 @@ describe "Init" do
     end
   end
 
+  it "refuses with neither --url nor --name, before writing anything" do
+    init_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-init")
+    SchemaEvolutionManager::Library.with_temp_file do |tmp|
+      SchemaEvolutionManager::Library.system_or_error(["git", "init", "--quiet", tmp])
+      _, stderr, status = Open3.capture3(init_path, "--dir", tmp, "--host", "sem-test.invalid")
+      status.exitstatus.should == 3
+      stderr.should include("ERROR: Missing database connection")
+      File.exist?(File.join(tmp, "dev.rb")).should be false
+    end
+  end
+
   it "basics" do
     run_init("postgresql://postgres@localhost:5432/sample") do |dir|
       File.exist?(File.join(dir, "dev.rb")).should be true

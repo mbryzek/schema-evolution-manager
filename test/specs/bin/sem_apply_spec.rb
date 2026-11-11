@@ -102,3 +102,25 @@ describe "Apply" do
     output.should include("no_such_table")
   end
 end
+
+describe "Apply connection flags" do
+
+  # Refused before any connection is attempted, so no database is needed
+  it "refuses to run with neither --url nor --name" do
+    apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
+    TestUtils.in_test_repo do
+      _, stderr, status = Open3.capture3(apply_path, "--host", "sem-test.invalid")
+      status.exitstatus.should == 3
+      stderr.should include("ERROR: Missing database connection")
+    end
+  end
+
+  it "refuses a bare database name passed as --url" do
+    apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
+    TestUtils.in_test_repo do
+      _, stderr, status = Open3.capture3(apply_path, "--url", "testdb")
+      status.exitstatus.should == 3
+      stderr.should include("use --name testdb")
+    end
+  end
+end

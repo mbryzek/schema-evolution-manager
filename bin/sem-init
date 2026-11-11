@@ -21,15 +21,9 @@
 load File.join(File.dirname(__FILE__), 'sem-config')
 SchemaEvolutionManager::Library.set_verbose(true)
 
-args = SchemaEvolutionManager::Args.from_stdin(:required => %w(dir), :optional => %w(url host port name user scripts_dir))
+args = SchemaEvolutionManager::Args.from_stdin(:required => %w(dir), :optional => SchemaEvolutionManager::Db::CONNECTION_FLAGS + %w(scripts_dir))
 SchemaEvolutionManager::Preconditions.check_state(File.directory?(args.dir), "Dir[%s] does not exist" % args.dir)
-
-if args.url.nil? && args.name.nil?
-  puts "Must specify either url or name"
-  exit(1)
-end
-
-db = SchemaEvolutionManager::Db.from_args(args)
+db = SchemaEvolutionManager::Db.from_command_line(args)
 
 def copy_file(source, target, substitutions)
   template = SchemaEvolutionManager::Template.new
