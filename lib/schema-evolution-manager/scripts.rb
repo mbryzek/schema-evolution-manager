@@ -2,6 +2,8 @@ module SchemaEvolutionManager
 
   class Scripts
 
+    attr_reader :db, :table_name
+
     if !defined?(SCRIPTS)
       SCRIPTS = "scripts"
       BOOTSTRAP_SCRIPTS = "bootstrap_scripts"
@@ -100,7 +102,7 @@ module SchemaEvolutionManager
           puts ""
         elsif execute
           print "#{label} #{filename}" unless quiet
-          @db.psql_file(filename, path)
+          @db.psql_file(filename, path, self)
           record_as_run!(filename)
           puts " Done" unless quiet
         else
@@ -125,9 +127,15 @@ module SchemaEvolutionManager
 
     # Inserts a record to indiciate that we have loaded the specified file.
     def record_as_run!(filename)
+      @db.psql_command(record_as_run_sql(filename))
+    end
+
+    # The statement record_as_run! executes: an idempotent insert of
+    # filename into this instance's table. ScriptError#dml prints it as
+    # the recovery command, so the hint and the write are one statement.
+    def record_as_run_sql(filename)
       literal = Db.quote_literal(Scripts.assert_valid_filename!(filename))
-      command = "insert into %s.%s (filename) select %s where not exists (select 1 from %s.%s where filename = %s)" % [Db.schema_name, @table_name, literal, Db.schema_name, @table_name, literal]
-      @db.psql_command(command)
+      "insert into %s.%s (filename) select %s where not exists (select 1 from %s.%s where filename = %s)" % [Db.schema_name, @table_name, literal, Db.schema_name, @table_name, literal]
     end
 
     # Returns the sorted list of filenames already applied to this database.

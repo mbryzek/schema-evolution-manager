@@ -4,16 +4,20 @@ module SchemaEvolutionManager
 
     attr_reader :path, :output
 
-    def initialize(db, filename, path, output)
-      @db = Preconditions.assert_class(db, Db)
+    # @param scripts The Scripts instance that records filename as run
+    def initialize(scripts, filename, path, output)
+      @scripts = Preconditions.assert_class(scripts, Scripts)
       @filename = Preconditions.assert_class(filename, String)
       @path = Preconditions.assert_class(path, String)
       @output = Preconditions.assert_class(output, String)
     end
 
+    # The psql command that records this script as applied: the statement
+    # Scripts#record_as_run! executes, in the argv Db#psql_command runs.
     def dml
-      sql_command = "insert into %s.%s (filename) values ('%s')" % [Db.schema_name, Scripts::SCRIPTS, @filename]
-      "psql --command \"%s\" %s" % [sql_command, @db.sanitized_url]
+      db = @scripts.db
+      command = db.psql_command_args(@scripts.record_as_run_sql(@filename)) + [db.sanitized_url]
+      Library.command_to_s(command)
     end
 
   end

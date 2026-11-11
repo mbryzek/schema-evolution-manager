@@ -2,6 +2,14 @@ module SchemaEvolutionManager
 
   class Db
 
+    # Every flag that names a database connection. A command that opens a
+    # Db accepts these plus its own flags (dry_run, password, scripts_dir)
+    CONNECTION_FLAGS = %w(url host port name user set) unless defined?(CONNECTION_FLAGS)
+
+    # The connection flags do not name a database: neither --url nor
+    # --name, or a --url that is not a connection string
+    class InvalidConnection < RuntimeError; end
+
     # psql_args: the psql executable and its global options, as an argv
     attr_reader :url, :psql_args
 
@@ -54,9 +62,14 @@ module SchemaEvolutionManager
 
     # executes a simple sql command.
     def psql_command(sql_command)
-      Preconditions.assert_class(sql_command, String)
-      command = @psql_args + PSQL_ISOLATION_OPTIONS + ["--no-align", "--tuples-only", "--command", sql_command]
+      command = psql_command_args(sql_command)
       Library.system_or_error(command + [@url], :log => command + [sanitized_url])
+    end
+
+    # The psql argv psql_command runs for sql_command, without the url.
+    def psql_command_args(sql_command)
+      Preconditions.assert_class(sql_command, String)
+      @psql_args + PSQL_ISOLATION_OPTIONS + ["--no-align", "--tuples-only", "--command", sql_command]
     end
 
     def Db.attribute_values(path)
@@ -88,15 +101,19 @@ module SchemaEvolutionManager
     # executes sql commands from a file in a single transaction.
     # psql reads the original file, so the line numbers and path in
     # any psql error match the file in git.
-    def psql_file(filename, path)
+    #
+    # @param scripts The Scripts instance that records filename as run;
+    # a failure's ScriptError prints the command that records it there.
+    def psql_file(filename, path, scripts)
       Preconditions.assert_class(path, String)
+      Preconditions.assert_class(scripts, Scripts)
       Preconditions.check_state(File.exist?(path), "File[%s] not found" % path)
 
       command = psql_file_command(path)
 
       output, status = Open3.capture2e(*command)
       if !status.success?
-        raise ScriptError.new(self, filename, path, output)
+        raise ScriptError.new(scripts, filename, path, output)
       end
     end
 
@@ -118,26 +135,55 @@ module SchemaEvolutionManager
     end
 
     # Parses command line arguments returning an instance of
-    # Db. Exists if invalid config.
+    # Db. Raises InvalidConnection if they name no database.
     def Db.parse_command_line_config(arg_string)
       Preconditions.assert_class(arg_string, String)
-      args = Args.new(arg_string, :optional => ['url', 'host', 'user', 'name', 'port', 'set'])
+      args = Args.new(arg_string, :optional => CONNECTION_FLAGS)
       Db.from_args(args)
     end
 
+    # The Db a command's connection flags name. Prompts for a password
+    # when --password was given. A connection the flags do not name is
+    # one ERROR line on stderr and exit 3.
+    def Db.from_command_line(args)
+      Preconditions.assert_class(args, Args)
+      password = args.password ? Ask.for_password("Please enter your password: ") : nil
+      begin
+        Db.from_args(args, :password => password)
+      rescue InvalidConnection => e
+        $stderr.puts "ERROR: %s" % e.message
+        exit(3)
+      end
+    end
+
     # @param password: Optional password to use when connecting to the database.
+    # Raises InvalidConnection unless args name a database: a --url
+    # that is a connection string, or a --name.
     def Db.from_args(args, opts={})
       Preconditions.assert_class(args, Args)
       password = opts.delete(:password)
       Preconditions.assert_empty_opts(opts)
 
-      options = { :password => password, :set => args.set }
-      if args.url
-        Db.new(args.url, options)
+      Db.new(Db.connection_url(args), :password => password, :set => args.set)
+    end
+
+    # The url args name: --url as given, else one built from --host,
+    # --port, --name and --user
+    def Db.connection_url(args)
+      url = args.url.to_s.strip
+      name = args.name.to_s.strip
+
+      if !url.empty?
+        # A bare database name passed to --url is the common mistake
+        if !url.include?("://")
+          raise InvalidConnection.new("--url must be a full connection string (e.g. postgres://localhost:5432/%s). To connect by database name, use --name %s." % [url, url])
+        end
+        url
+      elsif name.empty?
+        raise InvalidConnection.new("Missing database connection. Provide --url <postgres url> or --host/--name.")
       else
-        base = "%s:%s/%s" % [args.host || "localhost", args.port || ConnectionData::DEFAULT_PORT, args.name]
-        url = args.user ? "%s@%s" % [args.user, base] : base
-        Db.new("postgres://" + url, options)
+        base = "%s:%s/%s" % [args.host || "localhost", args.port || ConnectionData::DEFAULT_PORT, name]
+        "postgres://" + (args.user ? "%s@%s" % [args.user, base] : base)
       end
     end
 

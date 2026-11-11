@@ -74,7 +74,7 @@ describe SchemaEvolutionManager::Db do
     TestUtils.with_db do |db|
       sql = "create table psql_file_test (id integer); insert into psql_file_test (id) values (10);"
       SchemaEvolutionManager::Library.write_to_temp_file(sql) do |path|
-        db.psql_file("20130318-105434.sql", path)
+        db.psql_file("20130318-105434.sql", path, SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS))
       end
       db.psql_command("select id from psql_file_test").should == "10"
     end
@@ -128,7 +128,7 @@ describe SchemaEvolutionManager::Db do
         ["", $?]
       end
       SchemaEvolutionManager::Library.write_to_temp_file("select 1;") do |path|
-        db.psql_file("20130318-105434.sql", path)
+        db.psql_file("20130318-105434.sql", path, SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS))
       end
       commands.size.should == 1
       commands.first.should include("--no-psqlrc", "--no-password")
@@ -141,7 +141,7 @@ describe SchemaEvolutionManager::Db do
       sql = "select 1;\n\nselect * from psql_file_no_such_table;\n"
       SchemaEvolutionManager::Library.write_to_temp_file(sql) do |path|
         lambda {
-          db.psql_file("20130318-105434.sql", path)
+          db.psql_file("20130318-105434.sql", path, SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS))
         }.should raise_error(SchemaEvolutionManager::ScriptError) { |e|
           e.path.should == path
           e.output.should include("psql:#{path}:3: ERROR")
@@ -174,6 +174,35 @@ describe SchemaEvolutionManager::Db do
         db.schema_schema_evolution_manager_exists?.should be true
       end
     end
+  end
+
+  describe "SchemaEvolutionManager::Db.from_args" do
+
+    def from_args(arg_string)
+      SchemaEvolutionManager::Db.from_args(SchemaEvolutionManager::Args.new(arg_string, :optional => SchemaEvolutionManager::Db::CONNECTION_FLAGS))
+    end
+
+    it "uses --url as given" do
+      from_args("--url postgresql://sem-test.invalid:5433/testdb --host ignored").url.should == "postgresql://sem-test.invalid:5433/testdb"
+    end
+
+    it "builds the url from --host, --port, --user and --name" do
+      from_args("--name testdb").url.should == "postgres://localhost:5432/testdb"
+      from_args("--host sem-test.invalid --port 5433 --user web --name testdb").url.should == "postgres://web@sem-test.invalid:5433/testdb"
+    end
+
+    it "refuses flags naming neither a url nor a database name" do
+      lambda {
+        from_args("--host sem-test.invalid --user web")
+      }.should raise_error(SchemaEvolutionManager::Db::InvalidConnection, "Missing database connection. Provide --url <postgres url> or --host/--name.")
+    end
+
+    it "refuses a bare database name passed as --url, naming --name" do
+      lambda {
+        from_args("--url testdb")
+      }.should raise_error(SchemaEvolutionManager::Db::InvalidConnection, /To connect by database name, use --name testdb/)
+    end
+
   end
 
   it "should raise an error for invalid url" do

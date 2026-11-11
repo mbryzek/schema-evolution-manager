@@ -143,7 +143,7 @@ describe SchemaEvolutionManager::Scripts do
     # schema is absent, so both are pending; records each psql call in calls
     def with_two_pending(calls)
       db.stub(:schema_schema_evolution_manager_exists?).and_return(false)
-      db.stub(:psql_file) { |filename, _| calls << [:file, filename] }
+      db.stub(:psql_file) { |filename, _, _| calls << [:file, filename] }
       db.stub(:psql_command) { |sql| calls << [:command, sql]; "" }
       SchemaEvolutionManager::Library.with_temp_file do |tmp|
         SchemaEvolutionManager::Library.ensure_dir!(tmp)
