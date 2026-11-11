@@ -27,6 +27,15 @@ describe "Add" do
     end
   end
 
+  it "refuses a file whose name does not end in .sql, leaving it in place" do
+    TestUtils.in_test_repo do
+      write_script("new.sql.bak", "select 1")
+      lambda { sem_add("new.sql.bak") }.should raise_error(RuntimeError, /Non zero exit code/)
+      File.exist?("new.sql.bak").should be true
+      SchemaEvolutionManager::Scripts.all("scripts").size.should == 0
+    end
+  end
+
   # The scripts already present hold this second and the next, so the
   # added one has to step past both whenever it runs within them: the
   # same collision three sem-adds inside one second would meet
