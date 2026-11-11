@@ -56,17 +56,8 @@ module SchemaEvolutionManager
 
       scripts = Scripts.new(self, Scripts::BOOTSTRAP_SCRIPTS)
       dir = File.join(Library.base_dir, "scripts")
-      count = 0
-      scripts.each_pending(dir) do |filename, path|
-        count += 1
-        if dry_run
-          puts "[DRY RUN] Bootstrapping #{filename}"
-        else
-          psql_file(filename, path, scripts)
-          scripts.record_as_run!(filename)
-        end
-      end
-      count
+      scripts.apply_pending!(dir, :execute => true, :dry_run => dry_run,
+                             :label => "Bootstrapping", :quiet => true)
     end
 
     # executes a simple sql command.
