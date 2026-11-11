@@ -47,6 +47,28 @@ describe "Apply" do
     end
   end
 
+  # A dry run against a database sem has never touched lists the bootstrap
+  # scripts and the pending scripts, and leaves the database as it was:
+  # without sem's schema. ISS-76250
+  it "neither bootstraps nor applies with dry_run against an empty database" do
+    apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
+    output = status = nil
+
+    TestUtils.with_db do |db|
+      TestUtils.in_test_repo_with_script(:sql_command => "create table tmp (id integer);\n") do
+        output, status = Open3.capture2e(apply_path, "--url", db.url, "--dry_run")
+      end
+      db.psql_command("select count(*) from pg_namespace where nspname = 'schema_evolution_manager'").to_i.should == 0
+      lambda {
+        db.psql_command("select count(*) from tmp")
+      }.should raise_error(RuntimeError)
+    end
+
+    status.exitstatus.should == 0
+    output.should include("[DRY RUN] Bootstrapping 20130318-105434.sql")
+    output.should include("[DRY RUN] Applying 20130318-105434.sql")
+  end
+
   it "applies scripts from the scripts_dir named by .sem, from a subdirectory" do
     apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
     TestUtils.with_bootstrapped_db do |db|
