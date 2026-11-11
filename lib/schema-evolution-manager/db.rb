@@ -40,16 +40,21 @@ module SchemaEvolutionManager
       scripts = Scripts.new(self, Scripts::BOOTSTRAP_SCRIPTS)
       dir = File.join(Library.base_dir, "scripts")
       scripts.each_pending(dir) do |filename, path|
-        psql_file(filename, path)
+        psql_file(filename, path, scripts)
         scripts.record_as_run!(filename)
       end
     end
 
     # executes a simple sql command.
     def psql_command(sql_command)
-      Preconditions.assert_class(sql_command, String)
-      command = @psql_args + PSQL_ISOLATION_OPTIONS + ["--no-align", "--tuples-only", "--command", sql_command]
+      command = psql_command_args(sql_command)
       Library.system_or_error(command + [@url], :log => command + [sanitized_url])
+    end
+
+    # The psql argv psql_command runs for sql_command, without the url.
+    def psql_command_args(sql_command)
+      Preconditions.assert_class(sql_command, String)
+      @psql_args + PSQL_ISOLATION_OPTIONS + ["--no-align", "--tuples-only", "--command", sql_command]
     end
 
     def Db.attribute_values(path)
@@ -81,15 +86,19 @@ module SchemaEvolutionManager
     # executes sql commands from a file in a single transaction.
     # psql reads the original file, so the line numbers and path in
     # any psql error match the file in git.
-    def psql_file(filename, path)
+    #
+    # @param scripts The Scripts instance that records filename as run;
+    # a failure's ScriptError prints the command that records it there.
+    def psql_file(filename, path, scripts)
       Preconditions.assert_class(path, String)
+      Preconditions.assert_class(scripts, Scripts)
       Preconditions.check_state(File.exist?(path), "File[%s] not found" % path)
 
       command = psql_file_command(path)
 
       output, status = Open3.capture2e(*command)
       if !status.success?
-        raise ScriptError.new(self, filename, path, output)
+        raise ScriptError.new(scripts, filename, path, output)
       end
     end
 
