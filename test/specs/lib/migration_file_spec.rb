@@ -40,6 +40,16 @@ describe SchemaEvolutionManager::MigrationFile do
     end
   end
 
+  describe "single_transaction?" do
+    [["", true], ["-- sem.attribute.transaction = single\n", true], ["-- sem.attribute.transaction = none\n", false]].each do |header, expected|
+      it "is #{expected} for #{header.strip.empty? ? "the default" : header.strip}" do
+        TestUtils.in_test_repo_with_script(:sql_command => header + "select 1") do |path|
+          SchemaEvolutionManager::MigrationFile.new(path).single_transaction?.should == expected
+        end
+      end
+    end
+  end
+
   it "for a file that does not exist" do
     lambda {
       SchemaEvolutionManager::MigrationFile.new("scripts/foo.sql")

@@ -53,6 +53,12 @@ module SchemaEvolutionManager
       @attribute_values = parse_attribute_values
     end
 
+    # True when psql applies the whole file in one transaction
+    # (transaction = single, the default)
+    def single_transaction?
+      @attribute_values.any? { |v| v.attribute.name == "transaction" && v.value == "single" }
+    end
+
     private
 
     # Returns a list of AttributeValues from the file itself,

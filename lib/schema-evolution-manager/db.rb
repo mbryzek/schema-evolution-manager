@@ -98,9 +98,19 @@ module SchemaEvolutionManager
       options
     end
 
-    # executes sql commands from a file in a single transaction.
-    # psql reads the original file, so the line numbers and path in
-    # any psql error match the file in git.
+    # Applies the sql file at path and records filename as run in
+    # scripts. psql reads the original file, so the line numbers and path
+    # in any psql error match the file in git.
+    #
+    # A file applied in a single transaction (the default) is recorded by
+    # the same psql invocation, inside that transaction: the script and
+    # its record commit together or not at all, so no interruption can
+    # leave a script applied but unrecorded for the next run to repeat.
+    #
+    # A transaction = none file has no transaction to record it in. It is
+    # recorded afterwards on a connection of its own, and a failure of
+    # that record raises a ScriptError whose applied? is true: the script
+    # ran, and its dml is the one statement left to run.
     #
     # @param scripts The Scripts instance that records filename as run;
     # a failure's ScriptError prints the command that records it there.
@@ -109,19 +119,34 @@ module SchemaEvolutionManager
       Preconditions.assert_class(scripts, Scripts)
       Preconditions.check_state(File.exist?(path), "File[%s] not found" % path)
 
-      command = psql_file_command(path)
+      single = MigrationFile.new(path).single_transaction?
+      record_sql = scripts.record_as_run_sql(filename)
+      command = psql_file_command(path, single ? record_sql : nil)
 
       output, status = Open3.capture2e(*command)
       if !status.success?
         raise ScriptError.new(scripts, filename, path, output)
+      end
+
+      if !single
+        begin
+          scripts.record_as_run!(filename)
+        rescue RuntimeError => e
+          raise ScriptError.new(scripts, filename, path, e.message, :applied => true)
+        end
       end
     end
 
     # The psql argv psql_file runs. ON_ERROR_STOP is set on the
     # command line, after any --set the caller passed, so it is in
     # effect before the first line of the file is read.
-    def psql_file_command(path)
-      @psql_args + PSQL_ISOLATION_OPTIONS + ["--set", "ON_ERROR_STOP=1", "--file", path] + Db.attribute_values(path) + [@url]
+    #
+    # @param record_sql: When given, run by the same psql after the file
+    # (a --command after the --file), so --single-transaction wraps both
+    # in one BEGIN ... COMMIT.
+    def psql_file_command(path, record_sql=nil)
+      record = record_sql ? ["--command", record_sql] : []
+      @psql_args + PSQL_ISOLATION_OPTIONS + ["--set", "ON_ERROR_STOP=1", "--file", path] + record + Db.attribute_values(path) + [@url]
     end
 
     # True if the specific schema exists; false otherwise. Once seen the
