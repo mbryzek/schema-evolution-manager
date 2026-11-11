@@ -61,6 +61,10 @@ module SchemaEvolutionManager
       end
 
       found_arguments = parse_string_arguments(args)
+      not_accepted = found_arguments.keys - required - optional
+      Preconditions.check_state(not_accepted.empty?,
+                                "Flag[%s] is not accepted by this command. Accepted: %s" %
+                                [not_accepted.map { |f| "--#{f}" }.join(" "), (required + optional).map { |f| "--#{f}" }.join(" ")])
       missing = required.select { |field| blank?(found_arguments[field]) }
 
       @artifact_name = found_arguments.delete(:artifact_name)
@@ -76,7 +80,7 @@ module SchemaEvolutionManager
       @set = found_arguments.delete(:set) || []
 
       @dry_run = found_arguments.delete(:dry_run)
-      @non_interactice = found_arguments.delete(:non_interactive)
+      @non_interactive = found_arguments.delete(:non_interactive)
       @password = found_arguments.delete(:password)
       @help = found_arguments.delete(:help)
       @verbose = found_arguments.delete(:verbose)
@@ -155,6 +159,7 @@ module SchemaEvolutionManager
         index += 1
 
         if FLAGS_WITH_ARGUMENTS.has_key?(flag)
+          Preconditions.check_state(index < values.length, "Flag[--%s] needs a value" % flag)
           if ARRAY_FLAGS.include?(flag)
             found[flag] ||= []
             found[flag] << values[index]

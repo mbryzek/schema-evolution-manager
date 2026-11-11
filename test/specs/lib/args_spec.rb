@@ -50,4 +50,28 @@ describe SchemaEvolutionManager::Args do
     end
   end
 
+  it "refuses a known flag the command does not accept" do
+    expect {
+      SchemaEvolutionManager::Args.new("--url postgres://localhost/db --password", :optional => %w(url))
+    }.to raise_error(RuntimeError, /Flag\[--password\] is not accepted by this command/)
+  end
+
+  it "accepts help, verbose and version on every command" do
+    args = SchemaEvolutionManager::Args.new("--verbose", :optional => %w(url))
+    args.url.should be nil
+  end
+
+  it "refuses a flag that needs a value when none follows" do
+    expect {
+      SchemaEvolutionManager::Args.new("--url", :optional => %w(url))
+    }.to raise_error(RuntimeError, /Flag\[--url\] needs a value/)
+    expect {
+      SchemaEvolutionManager::Args.new("--set", :optional => %w(set))
+    }.to raise_error(RuntimeError, /Flag\[--set\] needs a value/)
+  end
+
+  it "reads non_interactive" do
+    SchemaEvolutionManager::Args.new("--non_interactive", :optional => %w(non_interactive)).non_interactive.should be true
+  end
+
 end
