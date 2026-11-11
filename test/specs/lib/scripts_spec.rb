@@ -191,11 +191,11 @@ describe SchemaEvolutionManager::Scripts do
       end
     end
 
-    it "is silent without a label" do
+    it "is silent when quiet" do
       calls = []
       with_two_pending(calls) do |dir|
         expect {
-          scripts.apply_pending!(dir, :execute => true, :dry_run => false).should == 2
+          scripts.apply_pending!(dir, :execute => true, :dry_run => false, :label => "Bootstrapping", :quiet => true).should == 2
         }.not_to output.to_stdout
       end
       records(calls).should == 2
@@ -203,7 +203,7 @@ describe SchemaEvolutionManager::Scripts do
 
     it "refuses a missing directory" do
       lambda {
-        scripts.apply_pending!("/nonexistent/sem-scripts", :execute => true, :dry_run => false)
+        scripts.apply_pending!("/nonexistent/sem-scripts", :execute => true, :dry_run => false, :label => "Applying")
       }.should raise_error(RuntimeError, "Dir[/nonexistent/sem-scripts] does not exist")
     end
 

@@ -80,11 +80,13 @@ module SchemaEvolutionManager
     # @param dry_run: true prints each pending script and its path and
     #        changes nothing
     # @param label: The action printed per script ("Applying",
-    #        "Baselining"); nil prints nothing
+    #        "Baselining", "Bootstrapping")
+    # @param quiet: true prints nothing outside a dry run
     def apply_pending!(dir, opts={})
       execute = opts.delete(:execute)
       dry_run = opts.delete(:dry_run)
-      label = opts.delete(:label)
+      label = Preconditions.assert_class(opts.delete(:label), String)
+      quiet = opts.delete(:quiet) || false
       Preconditions.assert_empty_opts(opts)
       Preconditions.check_state(File.directory?(dir),
                                 "Dir[%s] does not exist" % dir)
@@ -93,18 +95,16 @@ module SchemaEvolutionManager
       each_pending(dir) do |filename, path|
         count += 1
         if dry_run
-          if label
-            puts "[DRY RUN] #{label} #{filename}"
-            puts path
-            puts ""
-          end
+          puts "[DRY RUN] #{label} #{filename}"
+          puts path
+          puts ""
         elsif execute
-          print "#{label} #{filename}" if label
+          print "#{label} #{filename}" unless quiet
           @db.psql_file(filename, path)
           record_as_run!(filename)
-          puts " Done" if label
+          puts " Done" unless quiet
         else
-          puts "#{label} #{filename}" if label
+          puts "#{label} #{filename}" unless quiet
           record_as_run!(filename)
         end
       end
