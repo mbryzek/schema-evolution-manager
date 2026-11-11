@@ -71,13 +71,90 @@ describe SchemaEvolutionManager::Db do
   end
 
   it "psql_file" do
-    TestUtils.with_db do |db|
+    TestUtils.with_bootstrapped_db do |db|
+      scripts = SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS)
       sql = "create table psql_file_test (id integer); insert into psql_file_test (id) values (10);"
       SchemaEvolutionManager::Library.write_to_temp_file(sql) do |path|
-        db.psql_file("20130318-105434.sql", path, SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS))
+        db.psql_file("20130318-105434.sql", path, scripts)
       end
       db.psql_command("select id from psql_file_test").should == "10"
+      scripts.has_run?("20130318-105434.sql").should be true
     end
+  end
+
+  describe "psql_file records the script" do
+
+    def table_exists?(db, name)
+      db.psql_command("select count(*) from pg_class where relname = '#{name}'") == "1"
+    end
+
+    it "in the single transaction that applies it, with one psql invocation" do
+      db = SchemaEvolutionManager::Db.new("postgres://localhost:5432/testdb")
+      scripts = SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS)
+      db.should_not_receive(:psql_command)
+      commands = []
+      Open3.stub(:capture2e) do |*command|
+        commands << command
+        system("true")
+        ["", $?]
+      end
+      SchemaEvolutionManager::Library.write_to_temp_file("select 1;") do |path|
+        db.psql_file("20130318-105434.sql", path, scripts)
+        commands.size.should == 1
+        argv = commands.first
+        argv.should include("--single-transaction")
+        argv[argv.index("--file") + 1].should == path
+        argv[argv.index("--command") + 1].should == scripts.record_as_run_sql("20130318-105434.sql")
+        argv.index("--command").should be > argv.index("--file")
+      end
+    end
+
+    it "or applies nothing: a record that fails rolls the script back" do
+      TestUtils.with_db do |db|
+        # No sem schema, so the record cannot be written
+        scripts = SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS)
+        SchemaEvolutionManager::Library.write_to_temp_file("create table psql_file_atomic (id integer);") do |path|
+          lambda {
+            db.psql_file("20130318-105434.sql", path, scripts)
+          }.should raise_error(SchemaEvolutionManager::ScriptError) { |e|
+            e.applied?.should be false
+            e.output.should include("schema_evolution_manager.scripts")
+          }
+        end
+        table_exists?(db, "psql_file_atomic").should be false
+      end
+    end
+
+    it "afterwards for transaction = none, raising an applied ScriptError when that record fails" do
+      TestUtils.with_db do |db|
+        scripts = SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS)
+        sql = "-- sem.attribute.transaction = none\ncreate table psql_file_none (id integer);\n"
+        SchemaEvolutionManager::Library.write_to_temp_file(sql) do |path|
+          lambda {
+            db.psql_file("20130318-105434.sql", path, scripts)
+          }.should raise_error(SchemaEvolutionManager::ScriptError) { |e|
+            e.applied?.should be true
+            e.path.should == path
+            Shellwords.split(e.dml).should include(scripts.record_as_run_sql("20130318-105434.sql"))
+          }
+        end
+        table_exists?(db, "psql_file_none").should be true
+      end
+    end
+
+    it "afterwards for transaction = none, on a connection of its own" do
+      TestUtils.with_bootstrapped_db do |db|
+        scripts = SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS)
+        sql = "-- sem.attribute.transaction = none\ncreate table psql_file_none (id integer);\n"
+        SchemaEvolutionManager::Library.write_to_temp_file(sql) do |path|
+          db.psql_file_command(path).should_not include("--command")
+          db.psql_file("20130318-105434.sql", path, scripts)
+        end
+        table_exists?(db, "psql_file_none").should be true
+        scripts.has_run?("20130318-105434.sql").should be true
+      end
+    end
+
   end
 
   describe "psql_file_command" do
@@ -137,7 +214,7 @@ describe SchemaEvolutionManager::Db do
   end
 
   it "psql_file reports the line number of an error as it is in the source file" do
-    TestUtils.with_db do |db|
+    TestUtils.with_bootstrapped_db do |db|
       sql = "select 1;\n\nselect * from psql_file_no_such_table;\n"
       SchemaEvolutionManager::Library.write_to_temp_file(sql) do |path|
         lambda {

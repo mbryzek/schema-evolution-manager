@@ -156,15 +156,14 @@ describe SchemaEvolutionManager::Scripts do
       calls.select { |kind, sql| kind == :command && sql.start_with?("insert into") }.size
     end
 
-    it "executes then records each script, printing Applying ... Done" do
+    it "applies each script through psql_file, which records it, printing Applying ... Done" do
       calls = []
       with_two_pending(calls) do |dir|
         expect {
           scripts.apply_pending!(dir, :execute => true, :dry_run => false, :label => "Applying").should == 2
         }.to output("Applying #{names[0]} Done\nApplying #{names[1]} Done\n").to_stdout
       end
-      calls.map(&:first).should == [:file, :command, :file, :command]
-      records(calls).should == 2
+      calls.should == [[:file, names[0]], [:file, names[1]]]
     end
 
     it "records without executing, printing Baselining" do
@@ -198,7 +197,7 @@ describe SchemaEvolutionManager::Scripts do
           scripts.apply_pending!(dir, :execute => true, :dry_run => false, :label => "Bootstrapping", :quiet => true).should == 2
         }.not_to output.to_stdout
       end
-      records(calls).should == 2
+      calls.should == [[:file, names[0]], [:file, names[1]]]
     end
 
     it "refuses a missing directory" do

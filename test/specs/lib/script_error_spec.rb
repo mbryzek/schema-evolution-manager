@@ -16,6 +16,13 @@ describe SchemaEvolutionManager::ScriptError do
     end
   end
 
+  it "applied? is false unless the script ran and only its record failed" do
+    db = TestUtils.create_db_config(:name => "test")
+    scripts = SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS)
+    script_error(db, SchemaEvolutionManager::Scripts::SCRIPTS).applied?.should be false
+    SchemaEvolutionManager::ScriptError.new(scripts, "20130318-105434.sql", "p", "o", :applied => true).applied?.should be true
+  end
+
   it "dml" do
     db = TestUtils.create_db_config(:name => "test")
     script_error(db, SchemaEvolutionManager::Scripts::SCRIPTS).dml.empty?.should be false

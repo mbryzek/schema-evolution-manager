@@ -77,8 +77,9 @@ module SchemaEvolutionManager
     # Walks the pending scripts of dir in order and records each as run,
     # returning how many were pending.
     #
-    # @param execute: true runs each script's body (psql_file) before
-    #        recording it; false only records it (a baseline)
+    # @param execute: true applies each script with Db#psql_file, which
+    #        records it too (inside the script's own transaction unless it
+    #        is transaction = none); false only records it (a baseline)
     # @param dry_run: true prints each pending script and its path and
     #        changes nothing
     # @param label: The action printed per script ("Applying",
@@ -103,7 +104,6 @@ module SchemaEvolutionManager
         elsif execute
           print "#{label} #{filename}" unless quiet
           @db.psql_file(filename, path, self)
-          record_as_run!(filename)
           puts " Done" unless quiet
         else
           puts "#{label} #{filename}" unless quiet
