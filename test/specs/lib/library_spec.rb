@@ -294,6 +294,36 @@ describe SchemaEvolutionManager::Library do
 
   end
 
+  describe "SchemaEvolutionManager::Library.git_tags" do
+
+    it "raises when git fails rather than reading as no tags" do
+      SchemaEvolutionManager::Library.with_temp_file do |dir|
+        SchemaEvolutionManager::Library.ensure_dir!(dir)
+        Dir.chdir(dir) do
+          expect { SchemaEvolutionManager::Library.git_tags }.to raise_error(/Non zero exit code/)
+        end
+      end
+    end
+
+  end
+
+  describe "SchemaEvolutionManager::Library.release_tags" do
+
+    it "keeps release tags only, in version order" do
+      SchemaEvolutionManager::Library.release_tags(["0.10.0", "test", "0.9.2", "0.9.10"]).map(&:to_version_string).should ==
+        ["0.9.2", "0.9.10", "0.10.0"]
+    end
+
+    it "reads the repository's tags by default" do
+      create_repo_with_commit do
+        SchemaEvolutionManager::Library.git_create_tag("0.1.0")
+        SchemaEvolutionManager::Library.git_create_tag("0.0.2")
+        SchemaEvolutionManager::Library.release_tags.map(&:to_version_string).should == ["0.0.2", "0.1.0"]
+      end
+    end
+
+  end
+
   describe "SchemaEvolutionManager::Library.latest_tag" do
 
     it "returns nil if no tags" do

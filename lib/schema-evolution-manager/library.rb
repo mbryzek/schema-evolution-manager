@@ -38,14 +38,8 @@ module SchemaEvolutionManager
     end
 
     def Library.git_assert_tag_exists(tag)
-      command = ["git", "tag", "-l"]
-      results = Library.system_or_error(command)
-      if results.nil?
-        raise "No git tags found"
-      end
-
       if !Library.tag_exists?(tag)
-        raise "Tag[#{tag}] not found. Check #{Shellwords.join(command)}"
+        raise "Tag[#{tag}] not found. Check git tag -l"
       end
     end
 
@@ -61,7 +55,13 @@ module SchemaEvolutionManager
     # no tags, otherwise returns an instance of Version. Only searches for
     # tags matching x.x.x (e.g. 1.0.2)
     def Library.latest_tag
-      Library.git_tags.select { |tag| Version.is_valid?(tag) }.map { |tag| Version.parse(tag) }.sort.last
+      Library.release_tags.last
+    end
+
+    # The release tags among +tags+ (x.y.z, optionally prefixed) as
+    # Versions, oldest first. Defaults to every tag in the repository.
+    def Library.release_tags(tags=Library.git_tags)
+      tags.select { |tag| Version.is_valid?(tag) }.map { |tag| Version.parse(tag) }.sort
     end
 
     # True only when a tag with exactly this name exists - 1.0.10 does
@@ -70,8 +70,10 @@ module SchemaEvolutionManager
       Library.git_tags.include?(tag)
     end
 
+    # Every tag in the repository. Raises when git fails (outside a
+    # checkout, git missing), so a failure never reads as "no tags".
     def Library.git_tags
-      `git tag -l`.strip.split
+      Library.system_or_error(["git", "tag", "-l"]).split
     end
 
     # Ex: Library.git_create_tag("0.0.1")

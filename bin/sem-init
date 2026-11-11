@@ -90,8 +90,7 @@ Dir.chdir(args.dir) do
   end
 
   # Create the first git tag if necessary
-  tags = SchemaEvolutionManager::Library.system_or_error(["git", "tag", "-l"])
-  if tags.nil? || tags == ""
+  if SchemaEvolutionManager::Library.git_tags.empty?
     puts "Creating initial git tag (0.0.1)"
     SchemaEvolutionManager::Library.git_create_tag("0.0.1")
   end
