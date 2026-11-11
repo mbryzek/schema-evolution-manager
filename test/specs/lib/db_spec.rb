@@ -176,6 +176,35 @@ describe SchemaEvolutionManager::Db do
     end
   end
 
+  describe "SchemaEvolutionManager::Db.from_args" do
+
+    def from_args(arg_string)
+      SchemaEvolutionManager::Db.from_args(SchemaEvolutionManager::Args.new(arg_string, :optional => SchemaEvolutionManager::Db::CONNECTION_FLAGS))
+    end
+
+    it "uses --url as given" do
+      from_args("--url postgresql://sem-test.invalid:5433/testdb --host ignored").url.should == "postgresql://sem-test.invalid:5433/testdb"
+    end
+
+    it "builds the url from --host, --port, --user and --name" do
+      from_args("--name testdb").url.should == "postgres://localhost:5432/testdb"
+      from_args("--host sem-test.invalid --port 5433 --user web --name testdb").url.should == "postgres://web@sem-test.invalid:5433/testdb"
+    end
+
+    it "refuses flags naming neither a url nor a database name" do
+      lambda {
+        from_args("--host sem-test.invalid --user web")
+      }.should raise_error(SchemaEvolutionManager::Db::InvalidConnection, "Missing database connection. Provide --url <postgres url> or --host/--name.")
+    end
+
+    it "refuses a bare database name passed as --url, naming --name" do
+      lambda {
+        from_args("--url testdb")
+      }.should raise_error(SchemaEvolutionManager::Db::InvalidConnection, /To connect by database name, use --name testdb/)
+    end
+
+  end
+
   it "should raise an error for invalid url" do
     lambda {
       SchemaEvolutionManager::Db.new("postgres://test_db")

@@ -259,7 +259,7 @@ There are two recommended ways in which to pass user passwords to psql:
     file](http://www.postgresql.org/docs/9.4/static/libpq-pgpass.html)
     with the appropriate credentials</li>
 
- 2. Specify a [--password] flag when running sem-apply. You will
+ 2. Specify a [--password] flag when running sem-apply or sem-baseline. You will
     then be prompted to enter your password once. sem will create a
     temporary file to store your password, using that file during the
     duration of the command and ensuring the file is deleted after sem
