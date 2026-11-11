@@ -24,6 +24,23 @@ describe SchemaEvolutionManager::Ask do
       SchemaEvolutionManager::Ask.for_string("Testing", :default => "hello world").should == "hello world"
     end
 
+    it "raises when standard input is closed and there is no default" do
+      SchemaEvolutionManager::Ask.should_receive(:get_input).once.and_return(nil)
+      lambda {
+        SchemaEvolutionManager::Ask.for_string("Password:")
+      }.should raise_error(RuntimeError, /standard input is closed/)
+    end
+
+    it "asks again after a blank line that is not end of input" do
+      SchemaEvolutionManager::Ask.should_receive(:get_input).twice.and_return("\n", "second")
+      SchemaEvolutionManager::Ask.for_string("Testing").should == "second"
+    end
+
+    it "accepts an explicit nil echo" do
+      SchemaEvolutionManager::Ask.should_receive(:get_input).with(nil).and_return("value")
+      SchemaEvolutionManager::Ask.for_string("Testing", :echo => nil).should == "value"
+    end
+
   end
 
   describe "SchemaEvolutionManager::Ask.for_boolean" do
