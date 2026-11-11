@@ -124,12 +124,8 @@ module SchemaEvolutionManager
       title = fields.size == 1 ? "Missing parameter" : "Missing parameters"
       sorted = fields.sort_by { |f| f.to_s }
 
-      puts "**************************************************"
-      puts "ERROR: #{title}: #{sorted.join(", ")}"
-      puts "**************************************************"
-      puts help_parameters("Required parameters", required)
-      puts help_parameters("Optional parameters", optional)
-      exit(1)
+      details = [help_parameters("Required parameters", required), help_parameters("Optional parameters", optional)]
+      RdocUsage.error!("#{title}: #{sorted.join(", ")}", RdocUsage::MISSING_INPUT, :details => details)
     end
 
     def help_parameters(title, parameters)

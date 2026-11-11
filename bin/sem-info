@@ -29,6 +29,13 @@
 #   libraries. Initially designed to help with wrapper scripts that
 #   needed information (like the next minor tag)
 #
+# Exit status
+#
+#   Errors go to stderr only, so stdout holds nothing but the answer.
+#   1: the command failed (e.g. the database could not be read)
+#   3: missing input (a command, subcommand, tag or connection)
+#   4: invalid input (an unrecognized value or a malformed --url)
+#
 
 load File.join(File.dirname(__FILE__), 'sem-config')
 
@@ -43,10 +50,9 @@ elsif command == "db"
 elsif command == "version"
   puts SchemaEvolutionManager::SemInfo.version(ARGV)
 
+elsif command == ""
+  SchemaEvolutionManager::RdocUsage.error!("Missing command", SchemaEvolutionManager::RdocUsage::MISSING_INPUT, :usage => true)
+
 else
-  if command != ""
-    puts "ERROR: Unrecognized command[%s]" % command
-    puts ""
-  end
-  SchemaEvolutionManager::RdocUsage.printAndExit(1)
+  SchemaEvolutionManager::RdocUsage.error!("Unrecognized command[%s]" % command, SchemaEvolutionManager::RdocUsage::INVALID_INPUT, :usage => true)
 end
