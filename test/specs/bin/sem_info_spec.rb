@@ -60,16 +60,37 @@ describe "sem-info" do
     end
   end
 
+  # A wrapper captures stdout (TAG=$(sem-info tag next minor)), so a usage
+  # error writes nothing there: one ERROR line on stderr and the exit code
+  # for its kind, 3 for missing input and 4 for invalid input.
+  it "usage errors write only to stderr, with one exit code per kind of fault" do
+    cases = [
+      [%w(tag next bogus), 4, "ERROR: Invalid component[bogus]"],
+      [%w(tag bogus), 4, "ERROR: Invalid tag subcommand[bogus]"],
+      [%w(tag), 3, "ERROR: Missing tag subcommand"],
+      [%w(tag exists), 3, "ERROR: Missing tag."],
+      [%w(db), 3, "ERROR: Missing db subcommand"],
+      [%w(db bogus), 4, "ERROR: Invalid db subcommand[bogus]"],
+      [%w(db version --url platformdb), 4, "ERROR: --url must be a full connection string"],
+      [%w(bogus), 4, "ERROR: Unrecognized command[bogus]"],
+      [[], 3, "ERROR: Missing command"]
+    ]
+    results = cases.map { |args, _, _| Thread.new { sem_info(*args) } }.map(&:value)
+    cases.zip(results).each do |(args, code, line), (stdout, stderr, status)|
+      [args, stdout, status.exitstatus, stderr.lines.first.to_s.start_with?(line)].should == [args, "", code, true]
+    end
+  end
+
   it "db version errors clearly when no connection is provided" do
     _, stderr, status = sem_info("db", "version")
-    status.exitstatus.should_not == 0
+    status.exitstatus.should == 3
     stderr.should match(/Missing database connection/)
     stderr.should_not match(/\.rb:\d+/)   # no ruby backtrace
   end
 
   it "db version gives a friendly, actionable error for a bare-name --url" do
     _, stderr, status = sem_info("db", "version", "--url", "platformdb")
-    status.exitstatus.should_not == 0
+    status.exitstatus.should == 4
     stderr.should match(/--name platformdb/)                        # actionable hint
     stderr.should_not match(/RuntimeError|parse_url|\.rb:\d+/)      # no ruby backtrace
   end

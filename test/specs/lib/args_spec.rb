@@ -1,4 +1,5 @@
 require File.expand_path('../../init.rb', __dir__)
+require 'stringio'
 
 describe SchemaEvolutionManager::Args do
 
@@ -68,6 +69,20 @@ describe SchemaEvolutionManager::Args do
     expect {
       SchemaEvolutionManager::Args.new("--set", :optional => %w(set))
     }.to raise_error(RuntimeError, /Flag\[--set\] needs a value/)
+  end
+
+  it "a missing required parameter is an ERROR on stderr and exit 3" do
+    out, err = $stdout, $stderr
+    $stdout, $stderr = StringIO.new, StringIO.new
+    begin
+      lambda {
+        SchemaEvolutionManager::Args.new("", :required => ['dir'])
+      }.should raise_error(SystemExit) { |e| e.status.should == 3 }
+      [$stdout.string, $stderr.string.lines.first].should == ["", "ERROR: Missing parameter: dir\n"]
+      $stderr.string.should include("--dir")
+    ensure
+      $stdout, $stderr = out, err
+    end
   end
 
   it "reads non_interactive" do

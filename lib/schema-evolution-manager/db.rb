@@ -10,6 +10,9 @@ module SchemaEvolutionManager
     # --name, or a --url that is not a connection string
     class InvalidConnection < RuntimeError; end
 
+    # Neither --url nor --name was given
+    class MissingConnection < InvalidConnection; end
+
     # psql_args: the psql executable and its global options, as an argv
     attr_reader :url, :psql_args
 
@@ -153,15 +156,17 @@ module SchemaEvolutionManager
 
     # The Db a command's connection flags name. Prompts for a password
     # when --password was given. A connection the flags do not name is
-    # one ERROR line on stderr and exit 3.
+    # one ERROR line on stderr: exit RdocUsage::MISSING_INPUT when no
+    # database is named, RdocUsage::INVALID_INPUT when --url is malformed.
     def Db.from_command_line(args)
       Preconditions.assert_class(args, Args)
       password = args.password ? Ask.for_password("Please enter your password: ") : nil
       begin
         Db.from_args(args, :password => password)
+      rescue MissingConnection => e
+        RdocUsage.error!(e.message, RdocUsage::MISSING_INPUT)
       rescue InvalidConnection => e
-        $stderr.puts "ERROR: %s" % e.message
-        exit(3)
+        RdocUsage.error!(e.message, RdocUsage::INVALID_INPUT)
       end
     end
 
@@ -189,7 +194,7 @@ module SchemaEvolutionManager
         end
         url
       elsif name.empty?
-        raise InvalidConnection.new("Missing database connection. Provide --url <postgres url> or --host/--name.")
+        raise MissingConnection.new("Missing database connection. Provide --url <postgres url> or --host/--name.")
       else
         base = "%s:%s/%s" % [args.host || "localhost", args.port || ConnectionData::DEFAULT_PORT, name]
         "postgres://" + (args.user ? "%s@%s" % [args.user, base] : base)

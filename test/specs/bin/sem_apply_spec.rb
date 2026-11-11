@@ -119,7 +119,7 @@ describe "Apply connection flags" do
     apply_path = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-apply")
     TestUtils.in_test_repo do
       _, stderr, status = Open3.capture3(apply_path, "--url", "testdb")
-      status.exitstatus.should == 3
+      status.exitstatus.should == 4
       stderr.should include("use --name testdb")
     end
   end
