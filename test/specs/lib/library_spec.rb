@@ -69,6 +69,18 @@ describe SchemaEvolutionManager::Library do
       SchemaEvolutionManager::Library.git_create_tag("0.0.5")
     end
 
+    it "pushes only the tag it creates" do
+      SchemaEvolutionManager::Library.with_temp_file do |origin|
+        SchemaEvolutionManager::Library.system_or_error(["git", "init", "--quiet", "--bare", origin])
+        TestUtils.in_test_repo_with_commit do
+          SchemaEvolutionManager::Library.system_or_error(["git", "remote", "add", "origin", origin])
+          SchemaEvolutionManager::Library.system_or_error(["git", "tag", "-a", "-m", "local", "0.0.4"])
+          SchemaEvolutionManager::Library.git_create_tag("0.0.5")
+          SchemaEvolutionManager::Library.system_or_error(["git", "ls-remote", "--tags", "--refs", "origin"]).split("\n").map { |l| l.split("\t").last }.should == ["refs/tags/0.0.5"]
+        end
+      end
+    end
+
     it "with invalid tag" do
       SchemaEvolutionManager::Library.should_not_receive(:system_or_error)
       lambda {

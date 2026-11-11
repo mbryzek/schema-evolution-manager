@@ -75,6 +75,7 @@ module SchemaEvolutionManager
     end
 
     # Ex: Library.git_create_tag("0.0.1")
+    # Pushes only the tag it creates, never the checkout's other local tags.
     def Library.git_create_tag(tag)
       Library.assert_valid_tag(tag)
       has_remote = Library.git_has_remote?
@@ -83,7 +84,7 @@ module SchemaEvolutionManager
       end
       Library.system_or_error(["git", "tag", "-a", "-m", tag, tag])
       if has_remote
-        Library.system_or_error(["git", "push", "--tags", "origin"])
+        Library.system_or_error(["git", "push", "origin", "refs/tags/%s" % tag])
       end
     end
 
