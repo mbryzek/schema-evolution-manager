@@ -2,7 +2,13 @@ module SchemaEvolutionManager
 
   class Version
 
-    VERSION_FILE = File.join(Library.base_dir, "VERSION") unless defined?(VERSION_FILE)
+    unless defined?(VERSION_FILE)
+      VERSION_FILE = File.join(Library.base_dir, "VERSION")
+      # An optional prefix (v1.2.3, r1.2.3) then major.minor.micro. The
+      # prefix is lazy so it never takes a leading digit of the major
+      # version: 10.2.3 is major 10, not prefix "1" and major 0.
+      PATTERN = /\A(\w*?)(\d+)\.(\d+)\.(\d+)\z/
+    end
 
     attr_reader :major, :minor, :micro
 
@@ -11,15 +17,13 @@ module SchemaEvolutionManager
       @minor = minor.to_i
       @micro = micro.to_i
       @prefix = opts.delete(:prefix) || nil
-      if !opts.empty?
-        raise "Invalid keys: " + opts.keys
-      end
+      Preconditions.assert_empty_opts(opts)
     end
 
     def Version.parse(version_string)
       Preconditions.check_not_blank(version_string, "version_string cannot be blank")
       Library.assert_valid_tag(version_string)
-      if md = version_string.match(/^(\w*)(\d+)\.(\d+)\.(\d+)$/)
+      if md = version_string.match(PATTERN)
         Version.new(md[2], md[3], md[4], :prefix => md[1])
       else
         raise "ERROR: Bug in version string parser for version[%s]" % version_string
@@ -74,7 +78,7 @@ module SchemaEvolutionManager
 
     def Version.is_valid?(version_string)
       Preconditions.check_not_blank(version_string, "version_string cannot be blank")
-      version_string.match(/^\w*\d+\.\d+\.\d+$/) ? true : false
+      PATTERN.match?(version_string)
     end
 
   end

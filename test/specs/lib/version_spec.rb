@@ -3,7 +3,7 @@ require File.expand_path('../../init.rb', __dir__)
 describe SchemaEvolutionManager::Version do
 
   VALID = ["0.0.0", "0.0.1", "0.1.0", "1.0.0", "10.12.492", "r1.2.3", "v1.2.3"]
-  INVALID = ["0.1", "a.0.1", "-1.1.0", "r20121212.1"]
+  INVALID = ["0.1", "a.0.1", "-1.1.0", "r20121212.1", "1.2.3\nfoo", "foo\n1.2.3"]
 
   describe "SchemaEvolutionManager::Version.is_valid?" do
 
@@ -58,6 +58,20 @@ describe SchemaEvolutionManager::Version do
     SchemaEvolutionManager::Version.parse("2.0.1").<=>(SchemaEvolutionManager::Version.parse("1.0.1")).should == 1
     SchemaEvolutionManager::Version.parse("v2.0.1").<=>(SchemaEvolutionManager::Version.parse("1.0.1")).should == 1
     SchemaEvolutionManager::Version.parse("2.0.1").<=>(SchemaEvolutionManager::Version.parse("r1.0.1")).should == 1
+  end
+
+  it "reads a multi-digit major version as the major version, not a prefix" do
+    version = SchemaEvolutionManager::Version.parse("10.2.3")
+    [version.major, version.minor, version.micro].should == [10, 2, 3]
+    SchemaEvolutionManager::Version.parse("v10.2.3").major.should == 10
+    SchemaEvolutionManager::Version.parse("10.0.0").<=>(SchemaEvolutionManager::Version.parse("9.0.0")).should == 1
+    SchemaEvolutionManager::Version.parse("19.0.0").next_major.to_version_string.should == "20.0.0"
+  end
+
+  it "refuses an unknown option" do
+    lambda {
+      SchemaEvolutionManager::Version.new(1, 2, 3, :other => "x")
+    }.should raise_error(RuntimeError, /Invalid opts/)
   end
 
   it "SchemaEvolutionManager::Version.read" do
