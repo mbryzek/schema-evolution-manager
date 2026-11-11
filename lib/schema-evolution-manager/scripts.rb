@@ -72,6 +72,45 @@ module SchemaEvolutionManager
       end
     end
 
+    # Walks the pending scripts of dir in order and records each as run,
+    # returning how many were pending.
+    #
+    # @param execute: true runs each script's body (psql_file) before
+    #        recording it; false only records it (a baseline)
+    # @param dry_run: true prints each pending script and its path and
+    #        changes nothing
+    # @param label: The action printed per script ("Applying",
+    #        "Baselining"); nil prints nothing
+    def apply_pending!(dir, opts={})
+      execute = opts.delete(:execute)
+      dry_run = opts.delete(:dry_run)
+      label = opts.delete(:label)
+      Preconditions.assert_empty_opts(opts)
+      Preconditions.check_state(File.directory?(dir),
+                                "Dir[%s] does not exist" % dir)
+
+      count = 0
+      each_pending(dir) do |filename, path|
+        count += 1
+        if dry_run
+          if label
+            puts "[DRY RUN] #{label} #{filename}"
+            puts path
+            puts ""
+          end
+        elsif execute
+          print "#{label} #{filename}" if label
+          @db.psql_file(filename, path)
+          record_as_run!(filename)
+          puts " Done" if label
+        else
+          puts "#{label} #{filename}" if label
+          record_as_run!(filename)
+        end
+      end
+      count
+    end
+
     # True if this script has already been applied to the db. False
     # otherwise.
     def has_run?(filename)

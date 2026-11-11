@@ -165,6 +165,19 @@ module TestUtils
     end
   end
 
+  # Yields a bootstrapped database from inside a test repository whose
+  # scripts directory holds one script, added by sem-add, with body sql
+  def TestUtils.with_sql_script(sql)
+    add = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-add")
+    TestUtils.with_bootstrapped_db do |db|
+      TestUtils.in_test_repo do
+        File.open("new.sql", "w") { |out| out << sql }
+        TestUtils.sh("#{add} ./new.sql")
+        yield db
+      end
+    end
+  end
+
   def TestUtils.in_test_repo_with_script(opts={})
     sql_command = opts.delete(:sql_command) || "select 1"
     filename = opts.delete(:filename) || "20130318-105434.sql"

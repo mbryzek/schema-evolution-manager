@@ -133,4 +133,80 @@ describe SchemaEvolutionManager::Scripts do
 
   end
 
+  describe "apply_pending!" do
+
+    let(:db) { SchemaEvolutionManager::Db.new("postgresql://sem-test.invalid/unused") }
+    let(:scripts) { SchemaEvolutionManager::Scripts.new(db, SchemaEvolutionManager::Scripts::SCRIPTS) }
+    let(:names) { ["20121113-150902.sql", "20121113-150903.sql"] }
+
+    # Yields a directory holding two scripts against a database whose sem
+    # schema is absent, so both are pending; records each psql call in calls
+    def with_two_pending(calls)
+      db.stub(:schema_schema_evolution_manager_exists?).and_return(false)
+      db.stub(:psql_file) { |filename, _| calls << [:file, filename] }
+      db.stub(:psql_command) { |sql| calls << [:command, sql]; "" }
+      SchemaEvolutionManager::Library.with_temp_file do |tmp|
+        SchemaEvolutionManager::Library.ensure_dir!(tmp)
+        names.each { |n| File.open(File.join(tmp, n), "w") { |out| out << "select 1" } }
+        yield tmp
+      end
+    end
+
+    def records(calls)
+      calls.select { |kind, sql| kind == :command && sql.start_with?("insert into") }.size
+    end
+
+    it "executes then records each script, printing Applying ... Done" do
+      calls = []
+      with_two_pending(calls) do |dir|
+        expect {
+          scripts.apply_pending!(dir, :execute => true, :dry_run => false, :label => "Applying").should == 2
+        }.to output("Applying #{names[0]} Done\nApplying #{names[1]} Done\n").to_stdout
+      end
+      calls.map(&:first).should == [:file, :command, :file, :command]
+      records(calls).should == 2
+    end
+
+    it "records without executing, printing Baselining" do
+      calls = []
+      with_two_pending(calls) do |dir|
+        expect {
+          scripts.apply_pending!(dir, :execute => false, :dry_run => false, :label => "Baselining").should == 2
+        }.to output("Baselining #{names[0]}\nBaselining #{names[1]}\n").to_stdout
+      end
+      calls.map(&:first).should == [:command, :command]
+      records(calls).should == 2
+    end
+
+    ["Applying", "Baselining"].each do |label|
+      it "dry run of #{label} prints each script and its path and writes nothing" do
+        calls = []
+        with_two_pending(calls) do |dir|
+          expected = names.map { |n| "[DRY RUN] #{label} #{n}\n#{File.join(dir, n)}\n\n" }.join
+          expect {
+            scripts.apply_pending!(dir, :execute => label == "Applying", :dry_run => true, :label => label).should == 2
+          }.to output(expected).to_stdout
+        end
+        calls.should == []
+      end
+    end
+
+    it "is silent without a label" do
+      calls = []
+      with_two_pending(calls) do |dir|
+        expect {
+          scripts.apply_pending!(dir, :execute => true, :dry_run => false).should == 2
+        }.not_to output.to_stdout
+      end
+      records(calls).should == 2
+    end
+
+    it "refuses a missing directory" do
+      lambda {
+        scripts.apply_pending!("/nonexistent/sem-scripts", :execute => true, :dry_run => false)
+      }.should raise_error(RuntimeError, "Dir[/nonexistent/sem-scripts] does not exist")
+    end
+
+  end
+
 end

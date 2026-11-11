@@ -39,10 +39,7 @@ module SchemaEvolutionManager
     def bootstrap!
       scripts = Scripts.new(self, Scripts::BOOTSTRAP_SCRIPTS)
       dir = File.join(Library.base_dir, "scripts")
-      scripts.each_pending(dir) do |filename, path|
-        psql_file(filename, path)
-        scripts.record_as_run!(filename)
-      end
+      scripts.apply_pending!(dir, :execute => true, :dry_run => false)
     end
 
     # executes a simple sql command.

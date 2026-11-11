@@ -2,18 +2,6 @@ require File.expand_path('../../init.rb', __dir__)
 
 describe SchemaEvolutionManager::BaselineUtil do
 
-  def with_sql_script(sql)
-    add = File.join(SchemaEvolutionManager::Library.base_dir, "bin/sem-add")
-    TestUtils.with_bootstrapped_db do |db|
-      TestUtils.in_test_repo do
-        File.open("new.sql", "w") { |out| out << sql }
-        TestUtils.sh("#{add} ./new.sql")
-        yield db
-      end
-    end
-
-  end
-
   it "dry_run?" do
     db = SchemaEvolutionManager::Db.new("postgres://postgres@localhost/test")
     SchemaEvolutionManager::BaselineUtil.new(db).dry_run?.should be true
@@ -23,7 +11,7 @@ describe SchemaEvolutionManager::BaselineUtil do
   end
 
   it "apply! with dry run" do
-    with_sql_script("create table tmp (id integer);\ninsert into tmp (id) values (5);") do |db|
+    TestUtils.with_sql_script("create table tmp (id integer);\ninsert into tmp (id) values (5);") do |db|
       util = SchemaEvolutionManager::BaselineUtil.new(db, :dry_run => true)
       util.apply!('./scripts').should == 1
       util.apply!('./scripts').should == 1
@@ -31,7 +19,7 @@ describe SchemaEvolutionManager::BaselineUtil do
   end
 
   it "apply! for real" do
-    with_sql_script("create table tmp (id integer);\ninsert into tmp (id) values (5);") do |db|
+    TestUtils.with_sql_script("create table tmp (id integer);\ninsert into tmp (id) values (5);") do |db|
       util = SchemaEvolutionManager::BaselineUtil.new(db, :dry_run => false)
       util.apply!('./scripts').should == 1
       util.apply!('./scripts').should == 0
