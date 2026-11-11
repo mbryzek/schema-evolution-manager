@@ -13,8 +13,7 @@ load File.join(File.dirname(__FILE__), 'sem-config')
 
 file = ARGV.shift
 if file.to_s.strip == ""
-  puts "**** ERROR: Need file path"
-  SchemaEvolutionManager::RdocUsage.printAndExit(1)
+  SchemaEvolutionManager::RdocUsage.error!("Missing file path", SchemaEvolutionManager::RdocUsage::MISSING_INPUT, :usage => true)
 end
 
 SchemaEvolutionManager::Preconditions.check_state(File.exist?(file), "File[#{file}] could not be found")

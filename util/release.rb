@@ -39,7 +39,7 @@ module SchemaEvolutionManager
     # The release tags among +tags+ (x.y.z, optionally prefixed), newest
     # last.
     def Release.release_tags(tags)
-      tags.select { |t| Version.is_valid?(t) }.map { |t| Version.parse(t) }.sort.map(&:to_version_string)
+      Library.release_tags(tags).map(&:to_version_string)
     end
 
     # The version to release, or a refusal. +tags_at_head+ are the tags on

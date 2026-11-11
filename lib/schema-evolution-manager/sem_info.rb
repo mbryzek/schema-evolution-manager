@@ -10,13 +10,10 @@ module SchemaEvolutionManager
       valid = ['version', 'scripts']
       subcommand = args.shift.to_s.strip
 
-      if !valid.include?(subcommand)
-        if subcommand.empty?
-          $stderr.puts "ERROR: Missing db subcommand. Must be one of: %s" % valid.join(", ")
-        else
-          $stderr.puts "ERROR: Invalid db subcommand[%s]. Must be one of: %s" % [subcommand, valid.join(", ")]
-        end
-        exit(4)
+      if subcommand.empty?
+        RdocUsage.error!("Missing db subcommand. Must be one of: %s" % valid.join(", "), RdocUsage::MISSING_INPUT)
+      elsif !valid.include?(subcommand)
+        RdocUsage.error!("Invalid db subcommand[%s]. Must be one of: %s" % [subcommand, valid.join(", ")], RdocUsage::INVALID_INPUT)
       end
 
       db_args = SchemaEvolutionManager::Args.new(args, :optional => SchemaEvolutionManager::Db::CONNECTION_FLAGS)
@@ -41,8 +38,7 @@ module SchemaEvolutionManager
       rescue => e
         # Surface a single clean line (e.g. bad url, unreachable host, missing
         # database) rather than a Ruby stack trace.
-        $stderr.puts "ERROR: %s" % e.message.to_s.split("\n").first
-        exit(3)
+        RdocUsage.error!(e.message.to_s.split("\n").first, RdocUsage::FAILED)
       end
     end
 
@@ -54,8 +50,7 @@ module SchemaEvolutionManager
       if subcommand == "exists"
         tag = args.shift.to_s.strip
         if tag.empty?
-          puts "ERROR: Missing tag."
-          exit(3)
+          RdocUsage.error!("Missing tag.", RdocUsage::MISSING_INPUT)
         elsif ::SchemaEvolutionManager::Library.tag_exists?(tag)
           puts "true"
         else
@@ -73,12 +68,10 @@ module SchemaEvolutionManager
         ::SchemaEvolutionManager::SemInfo::Tag.next(args).to_version_string
 
       elsif subcommand.empty?
-        puts "ERROR: Missing tag subcommand. Must be one of: %s" % valid.join(", ")
-        exit(3)
+        RdocUsage.error!("Missing tag subcommand. Must be one of: %s" % valid.join(", "), RdocUsage::MISSING_INPUT)
 
       else
-        puts "ERROR: Invalid tag subcommand[%s]. Must be one of: %s" % [subcommand, valid.join(", ")]
-        exit(4)
+        RdocUsage.error!("Invalid tag subcommand[%s]. Must be one of: %s" % [subcommand, valid.join(", ")], RdocUsage::INVALID_INPUT)
       end
     end
 
@@ -100,8 +93,7 @@ module SchemaEvolutionManager
         if valid.include?(component)
           latest.send("next_%s" % component)
         else
-          puts "ERROR: Invalid component[%s]. Must be one of: %s" % [component, valid.join(", ")]
-          exit(4)
+          RdocUsage.error!("Invalid component[%s]. Must be one of: %s" % [component, valid.join(", ")], RdocUsage::INVALID_INPUT)
         end
       end
 
