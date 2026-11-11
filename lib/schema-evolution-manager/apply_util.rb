@@ -30,7 +30,7 @@ module SchemaEvolutionManager
           puts ""
         else
           print "Applying #{filename}"
-          @db.psql_file(filename, path)
+          @db.psql_file(filename, path, @scripts)
           @scripts.record_as_run!(filename)
           puts " Done"
         end
