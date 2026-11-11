@@ -72,14 +72,6 @@ Dir.chdir(args.dir) do
     SchemaEvolutionManager::Library.system_or_error(["git", "commit", "-m", "Add schema-evolution-manager wrapper scripts", "--"] + wrappers)
   end
 
-  readme = "README.md"
-  if !File.exist?(readme)
-    puts "Creating #{readme}"
-    copy_file("schema-evolution-manager/template/README.md", "README.md", subs)
-    SchemaEvolutionManager::Library.system_or_error(["git", "add", "--", readme])
-    SchemaEvolutionManager::Library.system_or_error(["git", "commit", "-m", "Adding README.md", "--", readme])
-  end
-
   if args.scripts_dir
     config_file = SchemaEvolutionManager::Config::FILENAME
     if File.exist?(config_file)
