@@ -44,13 +44,29 @@ module SchemaEvolutionManager
     end
 
     # Installs schema_evolution_manager. Automatically upgrades schema_evolution_manager.
-    def bootstrap!
+    #
+    # @param dry_run: When true, prints each bootstrap script that would run
+    # and writes nothing: the schema is neither created nor upgraded. The
+    # pending-script reads answer for an absent schema, so a dry run of the
+    # scripts that follow needs no bootstrap. Returns the number of
+    # bootstrap scripts run (or, in a dry run, that would run).
+    def bootstrap!(opts={})
+      dry_run = opts.delete(:dry_run) || false
+      Preconditions.assert_empty_opts(opts)
+
       scripts = Scripts.new(self, Scripts::BOOTSTRAP_SCRIPTS)
       dir = File.join(Library.base_dir, "scripts")
+      count = 0
       scripts.each_pending(dir) do |filename, path|
-        psql_file(filename, path)
-        scripts.record_as_run!(filename)
+        count += 1
+        if dry_run
+          puts "[DRY RUN] Bootstrapping #{filename}"
+        else
+          psql_file(filename, path)
+          scripts.record_as_run!(filename)
+        end
       end
+      count
     end
 
     # executes a simple sql command.

@@ -22,7 +22,7 @@ config = SchemaEvolutionManager::Config.load
 util = SchemaEvolutionManager::ApplyUtil.new(db, :dry_run => args.dry_run || false)
 
 begin
-  db.bootstrap!
+  db.bootstrap!(:dry_run => util.dry_run?)
 
   puts "Upgrading schema for #{db.sanitized_url}"
   count = util.apply!(config.scripts_dir)

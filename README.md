@@ -244,7 +244,13 @@ deploy process.
 
     sem-apply --url postgresql://postgres@localhost/sample --dry_run
 
-You will likely see a number of create table statements (see data model section below). You should also see:
+A dry run writes nothing to the database: not your scripts, and not sem's own
+schema either. On a database sem has not yet installed itself in, it lists the
+bootstrap scripts that would create that schema (see data model section below):
+
+      [DRY RUN] Bootstrapping 20130318-105434.sql
+
+You should also see:
 
       [DRY RUN] Applying 20130318-214407.sql
 

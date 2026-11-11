@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# == Makes sure that sem is bootstapped, and then adds all existing scripts to the sem-database without applying
+# == Makes sure that sem is bootstrapped, and then adds all existing scripts to the sem-database without applying
 #    Useful for migration to sem
 #
 # == Usage
@@ -19,9 +19,9 @@ args = SchemaEvolutionManager::Args.from_stdin(:optional => SchemaEvolutionManag
 db = SchemaEvolutionManager::Db.from_command_line(args)
 
 config = SchemaEvolutionManager::Config.load
-db.bootstrap!
 
 dry_run = args.dry_run.nil? ? false : args.dry_run
+db.bootstrap!(:dry_run => dry_run)
 
 util = SchemaEvolutionManager::BaselineUtil.new(db, :dry_run => dry_run)
 
