@@ -40,7 +40,7 @@ Release = SchemaEvolutionManager::Release
 
 SEM_VERSION_PATH = "lib/schema-evolution-manager/sem_version.rb"
 # The files a release writes its version into, relative to the checkout.
-VERSION_FILES = ["VERSION", "README.md", SEM_VERSION_PATH]
+VERSION_FILES = ["VERSION", "README.md", "Gemfile.lock", SEM_VERSION_PATH]
 
 # ci/build.fast.sh starts a throwaway Postgres container for the suite and streams
 # the rspec output here, so a failing spec is readable rather than captured.
@@ -50,13 +50,19 @@ def run_tests
   puts "All tests passed"
 end
 
-# Writes +version+ into VERSION, README.md and sem_version.rb under +dir+.
+# Writes +version+ into VERSION, README.md, Gemfile.lock and sem_version.rb under +dir+.
 def write_version_files(dir, version)
   readme_path = File.join(dir, "README.md")
   new_readme = Release.readme_with_version(IO.read(readme_path), version)
   Pre.check_state(!new_readme.nil?, "Failed to update %s" % readme_path)
   puts "Update version in %s" % readme_path
   File.open(readme_path, "w") { |out| out << new_readme }
+
+  lock_path = File.join(dir, "Gemfile.lock")
+  new_lock = Release.gemfile_lock_with_version(IO.read(lock_path), version)
+  Pre.check_state(!new_lock.nil?, "Failed to update %s" % lock_path)
+  puts "Update version in %s" % lock_path
+  File.open(lock_path, "w") { |out| out << new_lock }
 
   sem_version_path = File.join(dir, SEM_VERSION_PATH)
   puts "Updating version in %s" % sem_version_path

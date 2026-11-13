@@ -110,6 +110,27 @@ describe SchemaEvolutionManager::Release do
 
   end
 
+  describe "gemfile_lock_with_version" do
+
+    it "rewrites the gem's own version under PATH and CHECKSUMS" do
+      text = "PATH\n  remote: .\n  specs:\n    schema-evolution-manager (0.9.75)\n\nCHECKSUMS\n  schema-evolution-manager (0.9.75)\n"
+      Release.gemfile_lock_with_version(text, "0.9.76").should == "PATH\n  remote: .\n  specs:\n    schema-evolution-manager (0.9.76)\n\nCHECKSUMS\n  schema-evolution-manager (0.9.76)\n"
+    end
+
+    it "is nil for a lockfile that names no version of the gem" do
+      Release.gemfile_lock_with_version("GEM\n  specs:\n", "0.9.76").should be_nil
+    end
+
+    it "matches the repository's own lockfile at its VERSION" do
+      root = File.expand_path('../../..', __dir__)
+      lock = IO.read(File.join(root, "Gemfile.lock"))
+      version = IO.read(File.join(root, "VERSION")).strip
+      lock.should include("schema-evolution-manager (%s)" % version)
+      Release.gemfile_lock_with_version(lock, "99.0.0").scan("(99.0.0)").size.should == 2
+    end
+
+  end
+
   describe "BUILD_SCRIPT" do
 
     it "names an executable script the tree has" do

@@ -1,0 +1,20 @@
+PATH
+  remote: .
+  specs:
+    schema-evolution-manager (0.9.75)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  schema-evolution-manager!
+
+CHECKSUMS
+  schema-evolution-manager (0.9.75)
+
+BUNDLED WITH
+  4.0.23
