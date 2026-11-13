@@ -3,7 +3,7 @@ module SchemaEvolutionManager
 
 module SemVersion
 
-VERSION ||= '0.9.99'
+VERSION ||= '0.10.0'
 
 end
 
