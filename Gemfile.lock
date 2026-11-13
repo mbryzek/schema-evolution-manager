@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    schema-evolution-manager (0.9.88)
+    schema-evolution-manager (0.9.89)
 
 GEM
   remote: https://rubygems.org/
@@ -14,7 +14,7 @@ DEPENDENCIES
   schema-evolution-manager!
 
 CHECKSUMS
-  schema-evolution-manager (0.9.88)
+  schema-evolution-manager (0.9.89)
 
 BUNDLED WITH
   4.0.23
