@@ -111,6 +111,15 @@ module SchemaEvolutionManager
       found ? lines.join : nil
     end
 
+    # Gemfile.lock pins the gem's own version twice: under PATH specs and
+    # under CHECKSUMS. A release rewrites both, so the committed lockfile
+    # always matches VERSION. nil when the lockfile names no version.
+    def Release.gemfile_lock_with_version(text, version)
+      pattern = /^(\s+schema-evolution-manager \()\d+\.\d+\.\d+(\))$/
+      return nil unless text.match(pattern)
+      text.gsub(pattern) { "%s%s%s" % [$1, version, $2] }
+    end
+
     def Release.sem_version_source(version)
       "# File automatically created and updated by util/create-release.rb\n" +
         "module SchemaEvolutionManager\n\n" +
