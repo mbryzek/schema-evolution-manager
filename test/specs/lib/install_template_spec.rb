@@ -63,9 +63,11 @@ describe SchemaEvolutionManager::Library do
     Dir.chdir(SchemaEvolutionManager::Library.base_dir) do
       install_file = "unit_test_install.#{Process.pid}.rb"
 
-      # List of files in root directory that should be copied over
+      # List of files in root directory that should be copied over. The gem's
+      # build files (the gemspec, Gemfile and Gemfile.lock) are not installed.
       root_files = Dir.glob("#{SchemaEvolutionManager::Library.base_dir}/*").select { |f|
-        File.file?(f) && !f.match(/\.rb$/) && !f.match(/\.gem$/) && !f.match(/\.gemspec$/)
+        File.file?(f) && !f.match(/\.rb$/) && !f.match(/\.gem$/) && !f.match(/\.gemspec$/) &&
+          !["Gemfile", "Gemfile.lock"].include?(File.basename(f))
       }.map { |f| File.basename(f) }
 
       SchemaEvolutionManager::Library.with_temp_file do |dir|
