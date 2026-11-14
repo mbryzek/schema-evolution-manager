@@ -120,6 +120,17 @@ module SchemaEvolutionManager
       text.gsub(pattern) { "%s%s%s" % [$1, version, $2] }
     end
 
+    # The subject of the commit a release writes its version files under.
+    # Two readers recognise the release's own bump by this subject, never by
+    # the files it touches, so neither releases it as a version of its own:
+    # devops' Publish_recovery.declares_released_version, read by the rollout
+    # job (Sem_release.changed), and platform's
+    # VersionDeclarations.declaredVersion, read by RolloutCreation off the
+    # commit's recorded subject. Changing it changes both (ISS-86205).
+    def Release.bump_subject(version)
+      "autocommit: Update version to %s" % version
+    end
+
     def Release.sem_version_source(version)
       "# File automatically created and updated by util/create-release.rb\n" +
         "module SchemaEvolutionManager\n\n" +
