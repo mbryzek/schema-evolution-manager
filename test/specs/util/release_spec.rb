@@ -152,4 +152,14 @@ describe SchemaEvolutionManager::Release do
 
   end
 
+  describe "bump_subject" do
+
+    # devops' Publish_recovery.declares_released_version and platform's
+    # VersionDeclarations.declaredVersion recognise exactly this (ISS-86205).
+    it "is the subject both readers recognise as the release's own bump" do
+      Release.bump_subject("0.9.61").should == "autocommit: Update version to 0.9.61"
+    end
+
+  end
+
 end

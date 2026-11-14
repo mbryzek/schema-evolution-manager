@@ -138,7 +138,8 @@ module Publish
       begin
         Lib.system_or_error(["git", "worktree", "add", "--detach", dir, "origin/main"])
         write_version_files(dir, version)
-        Lib.system_or_error(["git", "-C", dir, "commit", "-m", "autocommit: Update version to %s" % version, *VERSION_FILES])
+        # Release.bump_subject is how devops and platform tell this commit from a change.
+        Lib.system_or_error(["git", "-C", dir, "commit", "-m", Release.bump_subject(version), *VERSION_FILES])
         if system("git", "-C", dir, "push", "origin", "HEAD:refs/heads/main")
           puts "Pushed the version bump to %s onto origin/main" % version
           return
@@ -203,7 +204,8 @@ new_version = value
 run_tests
 write_version_files(".", new_version)
 
-Lib.system_or_error(["git", "commit", "--allow-empty", "-m", "autocommit: Update version to %s" % new_version, *VERSION_FILES])
+# Release.bump_subject is how devops and platform tell this commit from a change.
+Lib.system_or_error(["git", "commit", "--allow-empty", "-m", Release.bump_subject(new_version), *VERSION_FILES])
 
 puts "Creating git tag[%s]" % new_version
 Lib.system_or_error(["git", "tag", "-a", "-m", new_version, new_version])
