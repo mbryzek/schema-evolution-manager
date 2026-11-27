@@ -8,7 +8,7 @@
 #
 # It runs the rspec suite (test/run.rb; `./run.rb --install` puts rspec in ./gems).
 # Most specs create and drop a database, so the suite needs a Postgres server.
-# This script starts one in a throwaway container on a port Docker picks, points
+# This script starts one in a throwaway container on a port it picks, points
 # the specs at it through SEM_TEST_PGHOST / SEM_TEST_PGPORT (test/init.rb), and
 # removes the container on exit. It never connects to localhost:5432: that is a
 # developer's own Postgres on these machines, and the specs create and drop
@@ -68,23 +68,82 @@ export GIT_AUTHOR_NAME="sem ci" GIT_AUTHOR_EMAIL="sem-ci@example.invalid"
 export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME" GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
 
 echo "--- postgres ($PG_IMAGE)"
+# ── a container published on a host port no sbt fork can draw ───────────────
+# NEVER A PORT DOCKER CHOOSES. `-p 127.0.0.1::PORT` publishes on an ephemeral
+# port bound to 127.0.0.1, and sbt's ForkTests, building on the same runner,
+# binds its handshake socket on the wildcard, which does not reserve that port:
+# a fork that draws it connects to this container instead (ISS-5585, ISS-5599).
+# So the host port is picked here from ci_container_ports, below every ephemeral
+# range (Linux 32768, macOS 49152) and clear of the session databases' 5500-9999
+# and platform's stripe-mock 12112-12999, and Docker's refusal of a taken one is
+# answered with the next pick. ISS-155870
+#
+# A CONTAINER WHOSE BUILD IS GONE IS REAPED. A trap removes it on exit, which a
+# SIGKILL skips, so every container carries its build's pid and that pid's start
+# time (ci_container_owner_label), and each start removes the labelled containers
+# whose owner no longer runs. The label is shared with every repository that
+# carries this helper, so any build reaps any other's orphan.
+ci_container_ports_low=13000
+ci_container_ports_high=13999
+ci_container_attempts=20
+ci_container_owner_label=dev.ci-container.owner
+
+ci_container_owner_of() {          # ci_container_owner_of <pid>: "<pid>@<start time>", or nothing
+  local started
+  started=$(ps -o lstart= -p "$1" 2>/dev/null) || return 0
+  [ -n "$started" ] && printf '%s@%s' "$1" "$(tr -s ' ' '_' <<<"$started")"
+}
+
+ci_container_reap() {
+  local id owner pid
+  docker ps -a --no-trunc --filter "label=${ci_container_owner_label}" \
+    --format "{{.ID}} {{.Label \"${ci_container_owner_label}\"}}" 2>/dev/null |
+    while read -r id owner; do
+      pid=${owner%%@*}
+      [[ $pid =~ ^[0-9]+$ ]] || continue
+      [ "$owner" = "$(ci_container_owner_of "$pid")" ] || docker rm -f "$id" >/dev/null 2>&1 || true
+    done
+}
+
+# ci_container_start <name> <container port> <docker run args...>
+# Starts `docker run -d --rm` under <name> and prints the host port it publishes
+# <container port> on. The caller traps `docker rm -f <name>` before calling.
+ci_container_start() {
+  local name=$1 container_port=$2 owner port out attempt span
+  shift 2
+  ci_container_reap
+  owner=$(ci_container_owner_of "$$")
+  span=$((ci_container_ports_high - ci_container_ports_low + 1))
+  for attempt in $(seq 1 "$ci_container_attempts"); do
+    port=$((ci_container_ports_low + (RANDOM * 32768 + RANDOM) % span))
+    if out=$(docker run -d --rm --name "$name" --label "${ci_container_owner_label}=${owner}" \
+      -p "127.0.0.1:${port}:${container_port}" "$@" 2>&1); then
+      echo "$port"
+      return 0
+    fi
+    # A run Docker refused can leave the container created under its name.
+    docker rm -f "$name" >/dev/null 2>&1 || true
+    case $(tr '[:upper:]' '[:lower:]' <<<"$out") in
+      *"port is already allocated"* | *"address already in use"*) continue ;;
+    esac
+    echo "$out" >&2
+    return 1
+  done
+  echo "docker refused every one of ${ci_container_attempts} host ports picked from ${ci_container_ports_low}-${ci_container_ports_high} as taken" >&2
+  return 1
+}
+
 container="sem-ci-$$-$RANDOM"
 cleanup() { docker rm -f "$container" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
-# `127.0.0.1::5432` publishes on a host port Docker chooses, so concurrent
-# builds on one box never contend for a port and none can land on :5432.
-docker run -d --rm --name "$container" \
-  -e POSTGRES_HOST_AUTH_METHOD=trust \
-  -p 127.0.0.1::5432 \
-  "$PG_IMAGE" >/dev/null || infra "could not start a $PG_IMAGE container"
-
-mapping=$(docker port "$container" 5432/tcp | head -1) || infra "could not read the container's port"
-port=${mapping##*:}
-case $port in
-  "" | *[!0-9]*) infra "could not parse a host port from '$mapping'" ;;
-  5432) infra "Docker published the container on 5432, which this build never uses" ;;
-esac
+# The host port comes from ci_container_ports, so concurrent builds on one box
+# retry past each other's ports and none can land on :5432.
+port=$(ci_container_start "$container" 5432 -e POSTGRES_HOST_AUTH_METHOD=trust "$PG_IMAGE") ||
+  infra "could not start a $PG_IMAGE container"
 
 # The image's entrypoint runs initdb with TCP closed and restarts the server
 # once it is done, so a TCP answer means the final server is up.
